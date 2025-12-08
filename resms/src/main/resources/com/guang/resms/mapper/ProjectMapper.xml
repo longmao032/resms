@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guang.resms.mapper.ProjectMapper">
+
+    <select id="selectProjectHouseStatPage" resultType="com.guang.resms.entity.vo.ProjectHouseStatVO">
+        SELECT
+        p.id,
+        p.project_no AS projectNo,
+        p.project_name AS projectName,
+        p.developer,
+        p.property_company AS propertyCompany,
+        p.address,
+        p.total_area AS totalArea,
+        p.price_avg AS priceAvg,
+        p.description,
+        p.city,
+        p.district,
+        p.business_district AS businessDistrict,
+        p.cover_url AS coverImg,
+        p.opening_time AS openingTime,
+        COUNT(h.id) AS houseCount,
+        MIN(h.area) AS minArea,
+        MAX(h.area) AS maxArea,
+        MIN(h.price) AS minPrice,
+        MAX(h.price) AS maxPrice,
+        MIN(ROUND(h.price / h.area, 2)) AS minUnitPrice,
+        MAX(ROUND(h.price / h.area, 2)) AS maxUnitPrice,
+        GROUP_CONCAT(DISTINCT h.layout ORDER BY h.layout SEPARATOR '、') AS layoutConcat
+        FROM tb_project p
+        LEFT JOIN tb_house h
+        ON p.id = h.project_id
+        AND h.house_type = 2
+        AND h.status = 1
+        WHERE p.status = 1
+        <!-- 城市区域筛选 -->
+        <if test="params.city != null and params.city != ''">
+            AND p.city = #{params.city}
+        </if>
+        <if test="params.district != null and params.district != ''">
+            AND p.district = #{params.district}
+        </if>
+
+        <!-- 项目均价筛选（核心修改） -->
+        <if test="params.minPrice != null">
+            AND p.price_avg >= #{params.minPrice}
+        </if>
+        <if test="params.maxPrice != null">
+            AND p.price_avg &lt;= #{params.maxPrice}  <!-- 这里修正为 &lt;= -->
+        </if>
+
+        <!-- 关键字搜索 -->
+        <if test="params.keyword != null and params.keyword != ''">
+            AND (p.project_name LIKE CONCAT('%', #{params.keyword}, '%')
+            OR p.address LIKE CONCAT('%', #{params.keyword}, '%')
+            OR p.business_district LIKE CONCAT('%', #{params.keyword}, '%'))
+        </if>
+
+        <!-- 项目类型筛选 -->
+        <if test="params.propertyType != null and params.propertyType != ''">
+            AND p.property_type = #{params.propertyType}
+        </if>
+
+        <!-- 房屋特征筛选（这些条件会影响统计结果） -->
+        <if test="params.layout != null and params.layout != ''">
+            AND h.layout LIKE CONCAT('%', #{params.layout}, '%')
+        </if>
+        <if test="params.minArea != null">
+            AND h.area &gt;= #{params.minArea}
+        </if>
+        <if test="params.maxArea != null">
+            AND h.area &lt;= #{params.maxArea}
+        </if>
+        <if test="params.minUnitPrice != null">
+            AND ROUND(h.price / h.area, 2) &gt;= #{params.minUnitPrice}
+        </if>
+        <if test="params.maxUnitPrice != null">
+            AND ROUND(h.price / h.area, 2) &lt;= #{params.maxUnitPrice}
+        </if>
+
+        GROUP BY
+        p.id, p.project_no, p.project_name, p.developer, p.property_company,
+        p.address, p.total_area, p.price_avg, p.description,
+        p.city, p.district, p.business_district, p.cover_url, p.opening_time
+
+        <!-- 排序配置 -->
+        <choose>
+            <when test="params.sortField != null and params.sortField != ''">
+                ORDER BY
+                <choose>
+                    <!-- 项目均价排序 -->
+                    <when test="params.sortField == 'priceAvg'">
+                        p.price_avg
+                    </when>
+                    <!-- 房屋统计信息排序 -->
+                    <when test="params.sortField == 'minPrice'">
+                        MIN(h.price)
+                    </when>
+                    <when test="params.sortField == 'maxPrice'">
+                        MAX(h.price)
+                    </when>
+                    <when test="params.sortField == 'minArea'">
+                        MIN(h.area)
+                    </when>
+                    <when test="params.sortField == 'maxArea'">
+                        MAX(h.area)
+                    </when>
+                    <when test="params.sortField == 'minUnitPrice'">
+                        MIN(ROUND(h.price / h.area, 2))
+                    </when>
+                    <when test="params.sortField == 'maxUnitPrice'">
+                        MAX(ROUND(h.price / h.area, 2))
+                    </when>
+                    <!-- 项目其他属性排序 -->
+                    <when test="params.sortField == 'openingTime'">
+                        p.opening_time
+                    </when>
+                    <when test="params.sortField == 'totalArea'">
+                        p.total_area
+                    </when>
+                    <when test="params.sortField == 'houseCount'">
+                        COUNT(h.id)
+                    </when>
+                    <!-- 默认按项目均价排序 -->
+                    <otherwise>
+                        p.price_avg
+                    </otherwise>
+                </choose>
+                <!-- 排序方向 -->
+                <if test="params.sortOrder != null and params.sortOrder == 'asc'">
+                    ASC
+                </if>
+                <if test="params.sortOrder == null or params.sortOrder != 'asc'">
+                    DESC
+                </if>
+            </when>
+            <!-- 默认排序：按项目均价降序 -->
+            <otherwise>
+                ORDER BY p.price_avg DESC
+            </otherwise>
+        </choose>
+    </select>
+</mapper>

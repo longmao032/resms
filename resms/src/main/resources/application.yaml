@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: RESMS
+  datasource:
+    url: jdbc:mysql://localhost:3306/hms_sys?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
+
+server:
+  port: 8080
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# 文件上传配置
+file:
+  upload:
+    path: uploads/house

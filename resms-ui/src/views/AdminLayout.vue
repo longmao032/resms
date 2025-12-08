@@ -1,0 +1,540 @@
+<template>
+  <div class="admin-layout">
+    <!-- 顶部导航栏 -->
+    <el-header class="header">
+      <div class="header-content">
+        <div class="logo">
+          <h2>后台管理系统</h2>
+        </div>
+        <div class="user-info">
+          <el-avatar
+            :src="userStore.currentUser?.avatar"
+            :alt="userStore.currentUser?.realName"
+            class="user-avatar"
+          >
+            {{ userStore.currentUser?.realName?.charAt(0) }}
+          </el-avatar>
+          <div class="user-details">
+            <span class="username">{{ userStore.currentUser?.realName }}</span>
+            <span class="role">管理员</span>
+          </div>
+          <el-dropdown @command="handleCommand">
+            <span class="el-dropdown-link">
+              <el-icon><ArrowDown /></el-icon>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="profile">个人资料</el-dropdown-item>
+                <el-dropdown-item command="settings">系统设置</el-dropdown-item>
+                <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
+      </div>
+    </el-header>
+
+    <!-- 主内容区域 -->
+    <el-container class="main-container">
+      <!-- 左侧菜单 -->
+      <el-aside :width="sidebarCollapsed ? '64px' : '200px'" class="sidebar">
+        <div class="sidebar-header">
+          <el-button
+            type="text"
+            @click="toggleSidebar"
+            class="collapse-btn"
+            :icon="sidebarCollapsed ? Expand : Fold"
+          />
+        </div>
+
+        <el-menu
+          :default-active="activeMenu"
+          :collapse="sidebarCollapsed"
+          :unique-opened="true"
+          router
+          class="menu"
+          @select="handleMenuSelect"
+        >
+          <template v-for="menu in filteredMenus" :key="menu.id">
+            <!-- 有子菜单的项目 -->
+            <el-sub-menu v-if="menu.children && menu.children.length > 0" :index="menu.path">
+              <template #title>
+                <el-icon>
+                  <component :is="getIconComponent(menu.icon)" />
+                </el-icon>
+                <span>{{ menu.name }}</span>
+              </template>
+              <el-menu-item
+                v-for="child in menu.children"
+                :key="child.id"
+                :index="child.path"
+                v-show="hasPermission(child.code)"
+              >
+                <el-icon>
+                  <component :is="getIconComponent(child.icon)" />
+                </el-icon>
+                <span>{{ child.name }}</span>
+              </el-menu-item>
+            </el-sub-menu>
+
+            <!-- 无子菜单的项目 -->
+            <el-menu-item
+              v-else
+              :index="menu.path"
+              v-show="hasPermission(menu.code)"
+            >
+              <el-icon>
+                <component :is="getIconComponent(menu.icon)" />
+              </el-icon>
+              <span>{{ menu.name }}</span>
+            </el-menu-item>
+          </template>
+        </el-menu>
+      </el-aside>
+
+      <!-- 右侧内容区域 -->
+      <el-container class="content-container">
+        <!-- 面包屑导航 -->
+        <el-header class="breadcrumb-header">
+          <el-breadcrumb separator="/">
+            <el-breadcrumb-item>首页</el-breadcrumb-item>
+            <el-breadcrumb-item v-for="item in breadcrumbList" :key="item.path">
+              {{ item.name }}
+            </el-breadcrumb-item>
+          </el-breadcrumb>
+        </el-header>
+
+        <!-- 主内容 -->
+        <el-main class="main-content">
+          <router-view />
+        </el-main>
+      </el-container>
+    </el-container>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import {
+  ArrowDown,
+  Expand,
+  Fold,
+  Setting,
+  User,
+  House,
+  Avatar,
+  OfficeBuilding,
+  Menu as MenuIcon,
+  Reading,
+  Grid,
+  Check,
+  TrendCharts,
+  Service,
+  Document,
+  ChatDotRound,
+  Coin,
+  Wallet,
+  Management,
+  Trophy
+} from '@element-plus/icons-vue'
+import { useUserStore } from '@/stores/userStore'
+import type { Menu } from '@/api/user/type'
+
+const router = useRouter()
+const route = useRoute()
+const userStore = useUserStore()
+
+// 状态管理
+const sidebarCollapsed = ref(false)
+const activeMenu = ref('')
+const breadcrumbList = ref<Menu[]>([])
+
+// 图标映射
+const iconMap: Record<string, any> = {
+  setting: Setting,
+  user: User,
+  home: House,
+  team: Avatar,
+  apartment: OfficeBuilding,
+  menu: MenuIcon,
+  book: Reading,
+  table: Grid,
+  audit: Check,
+  'bar-chart': TrendCharts,
+  'customer-service': Service,
+  form: Document,
+  interaction: ChatDotRound,
+  transaction: Coin,
+  'money-collect': Wallet,
+  calculator: Management,
+  trophy: Trophy
+}
+
+// 获取图标组件
+const getIconComponent = (iconName: string) => {
+  return iconMap[iconName] || Setting
+}
+
+// 过滤菜单 - 只显示有权限的菜单
+const filteredMenus = computed(() => {
+  return userStore.userMenus.filter(menu => hasPermission(menu.code))
+})
+
+// 检查权限
+const hasPermission = (permission: string) => {
+  if (!permission) return true
+  return userStore.hasPermission(permission)
+}
+
+// 切换侧边栏
+const toggleSidebar = () => {
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
+// 处理菜单选择
+const handleMenuSelect = (index: string) => {
+  activeMenu.value = index
+  // 更新面包屑
+  updateBreadcrumb(index)
+}
+
+// 更新面包屑导航
+const updateBreadcrumb = (path: string) => {
+  const findMenuByPath = (menus: Menu[], targetPath: string): Menu[] => {
+    for (const menu of menus) {
+      if (menu.path === targetPath) {
+        return [menu]
+      }
+      if (menu.children && menu.children.length > 0) {
+        const childResult = findMenuByPath(menu.children, targetPath)
+        if (childResult.length > 0) {
+          return [menu, ...childResult]
+        }
+      }
+    }
+    return []
+  }
+
+  breadcrumbList.value = findMenuByPath(userStore.userMenus, path)
+}
+
+// 处理下拉菜单命令
+const handleCommand = (command: string) => {
+  switch (command) {
+    case 'profile':
+      ElMessage.info('个人资料功能开发中')
+      break
+    case 'settings':
+      ElMessage.info('系统设置功能开发中')
+      break
+    case 'logout':
+      handleLogout()
+      break
+  }
+}
+
+// 处理退出登录
+const handleLogout = () => {
+  ElMessageBox.confirm('确定要退出登录吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    userStore.logout()
+    router.push('/login')
+    ElMessage.success('已退出登录')
+  })
+}
+
+// 监听路由变化，更新活动菜单
+watch(
+  () => route.path,
+  (newPath) => {
+    activeMenu.value = newPath
+    updateBreadcrumb(newPath)
+  },
+  { immediate: true }
+)
+
+// 组件挂载时初始化
+onMounted(() => {
+  // 如果用户未登录，重定向到登录页
+  if (!userStore.isLoggedIn) {
+    router.push('/login')
+    return
+  }
+  // 尝试将后端返回的子菜单注册为路由（如果对应视图存在）
+  // 使用 Vite 的 import.meta.glob 列出所有视图文件作为候选
+  const modules = import.meta.glob('/src/views/**/*.vue') as Record<string, () => Promise<any>>
+
+  const capitalize = (s: string) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s
+  const pathToName = (p: string) => p.split('/').filter(Boolean).map(segment => capitalize(segment)).join('_')
+
+  // 优先使用后端返回的 `component` 字段来定位视图文件（例如: "system/user/index"）
+  const tryMatchComponent = (menuPath: string, backendComponent?: string) => {
+    const candidates: string[] = []
+
+    // 如果后端提供 component 字段，先尝试根据它解析
+    if (backendComponent) {
+      const normalized = backendComponent.replace(/^\/+/, '')
+      candidates.push(`/src/views/${normalized}.vue`)
+      candidates.push(`/src/views/${normalized}/index.vue`)
+    }
+
+    // 回退：根据 path 拼接常见文件名
+    const segments = menuPath.split('/').filter(Boolean)
+    if (segments.length > 0) {
+      candidates.push(`/src/views/${segments.join('/')}.vue`)
+      if (segments.length >= 2) {
+        candidates.push(`/src/views/${segments[0]}/${capitalize(segments[1])}.vue`)
+        candidates.push(`/src/views/${segments[0]}/${capitalize(segments[1])}Manage.vue`)
+        candidates.push(`/src/views/${segments[0]}/${capitalize(segments[1])}/index.vue`)
+      }
+      if (segments.length > 2) {
+        candidates.push(`/src/views/${segments.join('/')}/index.vue`)
+      }
+    }
+
+    for (const c of candidates) {
+      if (modules[c]) return modules[c]
+    }
+    return null
+  }
+
+  // 为每个菜单子项注册路由（避免重复注册）
+  try {
+    for (const menu of userStore.userMenus) {
+      if (!menu.children || menu.children.length === 0) continue
+      for (const child of menu.children) {
+        if (!child.path) continue
+        const exists = router.getRoutes().some(r => r.path === child.path)
+        if (exists) continue
+
+        const loader = tryMatchComponent(child.path, (child as any).component)
+        const routeName = pathToName(child.path)
+        if (loader) {
+          router.addRoute({
+            path: child.path,
+            name: routeName,
+            component: loader
+          })
+        } else {
+          // 如果找不到实现视图，注册一个占位组件以避免导航错误
+          router.addRoute({
+            path: child.path,
+            name: routeName,
+            component: {
+              template: `<div style="padding:24px">页面未实现：${child.name} (${child.path})</div>`
+            }
+          })
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('注册后端路由异常：', err)
+  }
+
+  // 设置默认活动菜单
+  activeMenu.value = route.path
+  updateBreadcrumb(route.path)
+})
+</script>
+
+<style scoped lang="scss">
+.admin-layout {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background-color: #001529;
+  color: #fff;
+  padding: 0;
+  height: 64px;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+
+  .header-content {
+    height: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 24px;
+
+    .logo {
+      h2 {
+        margin: 0;
+        color: #fff;
+        font-size: 18px;
+        font-weight: 600;
+      }
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .user-avatar {
+        width: 32px;
+        height: 32px;
+      }
+
+      .user-details {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+
+        .username {
+          font-size: 14px;
+          font-weight: 500;
+          color: #fff;
+          line-height: 1.2;
+        }
+
+        .role {
+          font-size: 12px;
+          color: rgba(255, 255, 255, 0.65);
+          line-height: 1.2;
+        }
+      }
+
+      .el-dropdown-link {
+        color: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+
+        &:hover {
+          color: #40a9ff;
+        }
+      }
+    }
+  }
+}
+
+.main-container {
+  flex: 1;
+  overflow: hidden;
+}
+
+.sidebar {
+  background-color: #fff;
+  border-right: 1px solid #e6e6e6;
+  transition: width 0.2s;
+
+  .sidebar-header {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 16px;
+    border-bottom: 1px solid #e6e6e6;
+
+    .collapse-btn {
+      color: #666;
+      padding: 8px;
+    }
+  }
+
+  .menu {
+    border-right: none;
+    height: calc(100vh - 128px);
+    overflow-y: auto;
+
+    :deep(.el-menu-item),
+    :deep(.el-sub-menu__title) {
+      height: 48px;
+      line-height: 48px;
+      margin: 4px 8px;
+      border-radius: 6px;
+      font-size: 14px;
+
+      &:hover {
+        background-color: #f5f5f5;
+      }
+
+      &.is-active {
+        background-color: #e6f7ff;
+        color: #1890ff;
+
+        &:hover {
+          background-color: #dcf4ff;
+        }
+      }
+    }
+
+    :deep(.el-sub-menu .el-menu-item) {
+      height: 40px;
+      line-height: 40px;
+      margin: 2px 8px;
+      padding-left: 50px !important;
+      font-size: 13px;
+    }
+  }
+}
+
+.content-container {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.breadcrumb-header {
+  background-color: #fff;
+  border-bottom: 1px solid #e6e6e6;
+  padding: 0 24px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+}
+
+.main-content {
+  flex: 1;
+  background-color: #f5f5f5;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .header .header-content {
+    padding: 0 16px;
+
+    .logo h2 {
+      font-size: 16px;
+    }
+
+    .user-info .user-details {
+      display: none;
+    }
+  }
+
+  .sidebar {
+    position: absolute;
+    top: 64px;
+    left: 0;
+    z-index: 1000;
+    height: calc(100vh - 64px);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+
+    &.el-aside--width-64px {
+      width: 64px !important;
+    }
+
+    &.el-aside--width-200px {
+      width: 200px !important;
+    }
+  }
+
+  .main-content {
+    padding: 16px;
+  }
+
+  .breadcrumb-header {
+    padding: 0 16px;
+  }
+}
+</style>
