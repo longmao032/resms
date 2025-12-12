@@ -3,7 +3,7 @@ package com.guang.resms;
 import com.guang.resms.entity.User;
 import com.guang.resms.entity.vo.LoginResponseVo;
 import com.guang.resms.service.AuthService;
-import com.guang.resms.utils.exception.ServiceException;
+import com.guang.resms.common.exception.ServiceException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

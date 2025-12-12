@@ -5,12 +5,16 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.guang.resms.common.exception.ServiceException;
+import com.guang.resms.common.utils.SecurityUtils;
 import com.guang.resms.entity.SecondHouseCommunity;
 import com.guang.resms.entity.dto.CommunityQueryDTO;
 import com.guang.resms.mapper.SecondHouseCommunityMapper;
 import com.guang.resms.service.CommunityService;
+import com.guang.resms.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,10 +23,14 @@ import java.util.Map;
  * 小区Service实现类
  */
 @Service
-public class CommunityServiceImpl extends ServiceImpl<SecondHouseCommunityMapper, SecondHouseCommunity> implements CommunityService {
+public class CommunityServiceImpl extends ServiceImpl<SecondHouseCommunityMapper, SecondHouseCommunity>
+        implements CommunityService {
 
     @Autowired
     private SecondHouseCommunityMapper communityMapper;
+
+    @Autowired
+    private NotificationService notificationService;
 
     @Override
     public Map<String, Object> getCommunityPage(CommunityQueryDTO queryDTO) {
@@ -99,9 +107,22 @@ public class CommunityServiceImpl extends ServiceImpl<SecondHouseCommunityMapper
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public SecondHouseCommunity addCommunity(SecondHouseCommunity community) {
+        // 获取当前用户ID作为创建人
+        Integer creatorId = SecurityUtils.getUserId();
+        community.setCreatorId(creatorId);
+        community.setStatus(1); // 默认待审核
+
         // 保存小区
         communityMapper.insert(community);
+
+        // 发送自动通知给管理员
+        notificationService.notifyCommunityCreated(
+                community.getId(),
+                community.getCommunityName(),
+                creatorId);
+
         return community;
     }
 
@@ -111,14 +132,40 @@ public class CommunityServiceImpl extends ServiceImpl<SecondHouseCommunityMapper
         if (community.getId() == null) {
             throw new RuntimeException("小区ID不能为空");
         }
-        
+
         SecondHouseCommunity existingCommunity = communityMapper.selectById(community.getId());
         if (existingCommunity == null) {
             throw new RuntimeException("小区不存在");
         }
-        
+
         // 更新小区
         communityMapper.updateById(community);
         return communityMapper.selectById(community.getId());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void auditCommunity(Integer id, Integer status, String reason) {
+        SecondHouseCommunity community = communityMapper.selectById(id);
+        if (community == null) {
+            throw new ServiceException("小区不存在");
+        }
+
+        if (community.getStatus() != 1) {
+            throw new ServiceException("该小区不是待审核状态");
+        }
+
+        // 更新状态
+        community.setStatus(status);
+        communityMapper.updateById(community);
+
+        // 发送审核结果通知给创建人
+        boolean approved = (status == 0);
+        notificationService.notifyCommunityAudited(
+                id,
+                community.getCommunityName(),
+                community.getCreatorId(),
+                approved,
+                reason);
     }
 }

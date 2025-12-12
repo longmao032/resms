@@ -81,7 +81,7 @@
         </div>
 
         <div class="account-operation">
-          <el-button type="text" class="logout-btn" @click="handleLogout">
+          <el-button type="link" class="logout-btn" @click="handleLogout">
             <el-icon><CircleClose /></el-icon>
             <span>注销账号</span>
           </el-button>
@@ -102,7 +102,7 @@
               <el-form-item label="头像">
                 <div class="avatar-upload">
                   <el-avatar :icon="User" class="big-avatar" />
-                  <el-button type="text" class="edit-btn">修改</el-button>
+                  <el-button type="link" class="edit-btn">修改</el-button>
                 </div>
               </el-form-item>
               
@@ -115,28 +115,28 @@
               <el-form-item label="昵称">
                 <div class="form-value with-action">
                   <span>{{ formData.nickname }}</span>
-                  <el-button type="text" class="edit-btn" @click="handleEdit('nickname')">修改</el-button>
+                  <el-button type="link" class="edit-btn" @click="handleEdit('nickname')">修改</el-button>
                 </div>
               </el-form-item>
               
               <el-form-item label="邮箱">
                 <div class="form-value with-action">
                   <span>{{ formData.email || '暂无提供' }}</span>
-                  <el-button type="text" class="edit-btn" @click="handleEdit('email')">绑定</el-button>
+                  <el-button type="link" class="edit-btn" @click="handleEdit('email')">绑定</el-button>
                 </div>
               </el-form-item>
               
               <el-form-item label="手机">
                 <div class="form-value with-action">
                   <span>{{ formData.phone }}</span>
-                  <el-button type="text" class="edit-btn" @click="handleEdit('phone')">修改</el-button>
+                  <el-button type="link" class="edit-btn" @click="handleEdit('phone')">修改</el-button>
                 </div>
               </el-form-item>
               
               <el-form-item label="密码">
                 <div class="form-value with-action">
                   <span>暂无提供</span>
-                  <el-button type="text" class="edit-btn" @click="handleEdit('password')">修改</el-button>
+                  <el-button type="link" class="edit-btn" @click="handleEdit('password')">修改</el-button>
                 </div>
               </el-form-item>
             </el-form>
@@ -148,7 +148,7 @@
               <el-form-item label="微信">
                 <div class="form-value with-action">
                   <span>{{ formData.wechat || '未绑定' }}</span>
-                  <el-button type="text" class="edit-btn" @click="handleWechatAction">
+                  <el-button type="link" class="edit-btn" @click="handleWechatAction">
                     {{ formData.wechat ? '解绑' : '绑定' }}
                   </el-button>
                 </div>

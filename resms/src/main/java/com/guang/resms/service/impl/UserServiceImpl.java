@@ -9,7 +9,8 @@ import com.guang.resms.entity.vo.UserVO;
 import com.guang.resms.mapper.UserMapper;
 import com.guang.resms.mapper.UserRoleMapper;
 import com.guang.resms.service.UserService;
-import com.guang.resms.utils.exception.ServiceException;
+import com.guang.resms.common.exception.ServiceException;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -95,8 +96,8 @@ public class UserServiceImpl implements UserService {
         // 转换为VO对象
         Page<UserVO> resultPage = new Page<>(userPage.getCurrent(), userPage.getSize(), userPage.getTotal());
         List<UserVO> userVOs = userPage.getRecords().stream()
-            .map(this::convertToUserVO)
-            .collect(Collectors.toList());
+                .map(this::convertToUserVO)
+                .collect(Collectors.toList());
 
         resultPage.setRecords(userVOs);
         return resultPage;
@@ -114,14 +115,26 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<UserVO> getAllUsers() {
         List<User> users = userMapper.selectList(
-            new LambdaQueryWrapper<User>()
-                .eq(User::getStatus, 1)  // 只查询启用状态的用户
-                .orderByAsc(User::getUsername)
-        );
+                new LambdaQueryWrapper<User>()
+                        .eq(User::getStatus, 1) // 只查询启用状态的用户
+                        .orderByAsc(User::getUsername));
 
         return users.stream()
-            .map(this::convertToUserVO)
-            .collect(Collectors.toList());
+                .map(this::convertToUserVO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<UserVO> getUsersByRoleType(Integer roleType) {
+        List<User> users = userMapper.selectList(
+                new LambdaQueryWrapper<User>()
+                        .eq(User::getStatus, 1) // 只查询启用状态的用户
+                        .eq(User::getRoleType, roleType) // 按角色类型筛选
+                        .orderByAsc(User::getRealName));
+
+        return users.stream()
+                .map(this::convertToUserVO)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -129,7 +142,6 @@ public class UserServiceImpl implements UserService {
     public void saveUser(User user) {
         // 验证输入
         validateUserInput(user, null);
-
 
         if (StringUtils.hasText(user.getPassword())) {
             user.setPassword(user.getPassword());
@@ -160,6 +172,11 @@ public class UserServiceImpl implements UserService {
     public void updateUser(User user) {
         // 验证输入
         validateUserInput(user, user.getId());
+
+        // 如果是系统管理员，不能禁用
+        if (user.getId() == 1 && user.getStatus() != null && user.getStatus() == 0) {
+            throw new ServiceException("不能禁用系统管理员");
+        }
 
         // 如果提供了新密码
         if (StringUtils.hasText(user.getPassword())) {
@@ -197,9 +214,8 @@ public class UserServiceImpl implements UserService {
 
         // 删除用户角色关联
         userRoleMapper.delete(
-            new LambdaQueryWrapper<UserRole>()
-                .eq(UserRole::getUserId, userId)
-        );
+                new LambdaQueryWrapper<UserRole>()
+                        .eq(UserRole::getUserId, userId));
 
         // 删除用户
         int result = userMapper.deleteById(userId);
@@ -222,9 +238,8 @@ public class UserServiceImpl implements UserService {
 
         // 删除用户角色关联
         userRoleMapper.delete(
-            new LambdaQueryWrapper<UserRole>()
-                .in(UserRole::getUserId, userIds)
-        );
+                new LambdaQueryWrapper<UserRole>()
+                        .in(UserRole::getUserId, userIds));
 
         // 批量删除用户
         int result = userMapper.deleteBatchIds(userIds);
@@ -302,7 +317,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public boolean isUsernameAvailable(String username, Integer excludeId) {
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<User>()
-            .eq(User::getUsername, username.trim());
+                .eq(User::getUsername, username.trim());
 
         if (excludeId != null) {
             queryWrapper.ne(User::getId, excludeId);
@@ -314,7 +329,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public boolean isPhoneAvailable(String phone, Integer excludeId) {
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<User>()
-            .eq(User::getPhone, phone.trim());
+                .eq(User::getPhone, phone.trim());
 
         if (excludeId != null) {
             queryWrapper.ne(User::getId, excludeId);
@@ -330,7 +345,7 @@ public class UserServiceImpl implements UserService {
         }
 
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<User>()
-            .eq(User::getEmail, email.trim().toLowerCase());
+                .eq(User::getEmail, email.trim().toLowerCase());
 
         if (excludeId != null) {
             queryWrapper.ne(User::getId, excludeId);
@@ -357,9 +372,8 @@ public class UserServiceImpl implements UserService {
     private void updateUserRoleAssociation(Integer userId, Integer roleType) {
         // 删除现有关联
         userRoleMapper.delete(
-            new LambdaQueryWrapper<UserRole>()
-                .eq(UserRole::getUserId, userId)
-        );
+                new LambdaQueryWrapper<UserRole>()
+                        .eq(UserRole::getUserId, userId));
 
         // 创建新关联
         createUserRoleAssociation(userId, roleType);
@@ -442,20 +456,20 @@ public class UserServiceImpl implements UserService {
         String statusText = user.getStatus() != null && user.getStatus() == 1 ? "正常" : "禁用";
 
         return UserVO.builder()
-            .id(user.getId())
-            .username(user.getUsername())
-            .realName(user.getRealName())
-            .phone(user.getPhone())
-            .email(user.getEmail())
-            .avatar(user.getAvatar())
-            .roleType(user.getRoleType())
-            .roleName(roleName)
-            .status(user.getStatus())
-            .statusText(statusText)
-            .createTime(user.getCreateTime() != null ? user.getCreateTime().format(DATE_FORMATTER) : null)
-            .updateTime(user.getUpdateTime() != null ? user.getUpdateTime().format(DATE_FORMATTER) : null)
-            .lastLoginTime(null) // 这里可以根据需要添加最后登录时间字段
-            .build();
+                .id(user.getId())
+                .username(user.getUsername())
+                .realName(user.getRealName())
+                .phone(user.getPhone())
+                .email(user.getEmail())
+                .avatar(user.getAvatar())
+                .roleType(user.getRoleType())
+                .roleName(roleName)
+                .status(user.getStatus())
+                .statusText(statusText)
+                .createTime(user.getCreateTime() != null ? user.getCreateTime().format(DATE_FORMATTER) : null)
+                .updateTime(user.getUpdateTime() != null ? user.getUpdateTime().format(DATE_FORMATTER) : null)
+                .lastLoginTime(null) // 这里可以根据需要添加最后登录时间字段
+                .build();
     }
 
     /**
@@ -467,12 +481,37 @@ public class UserServiceImpl implements UserService {
         }
 
         switch (roleType) {
-            case 1: return "系统管理员";
-            case 2: return "销售顾问";
-            case 3: return "销售经理";
-            case 4: return "财务人员";
-            case 5: return "普通用户";
-            default: return "未知角色";
+            case 1:
+                return "系统管理员";
+            case 2:
+                return "销售顾问";
+            case 3:
+                return "销售经理";
+            case 4:
+                return "财务人员";
+            case 5:
+                return "普通用户";
+            default:
+                return "未知角色";
         }
+    }
+
+    @Override
+    public List<UserVO> getEnableUsersByRole(Integer roleType) {
+        // 1. 构建查询条件
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getRoleType, roleType) // 匹配角色
+                .eq(User::getStatus, 1) // 必须是启用状态 (1=正常)
+                .select(User::getId, User::getRealName, User::getUsername); // 只查询必要字段，提升性能
+
+        // 2. 执行查询
+        List<User> userList = userMapper.selectList(wrapper);
+
+        // 3. 转换实体为 VO
+        return userList.stream().map(user -> {
+            UserVO vo = new UserVO();
+            BeanUtils.copyProperties(user, vo);
+            return vo;
+        }).collect(Collectors.toList());
     }
 }

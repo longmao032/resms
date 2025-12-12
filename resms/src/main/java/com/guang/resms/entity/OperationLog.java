@@ -1,10 +1,10 @@
 package com.guang.resms.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 /**
@@ -89,6 +89,5 @@ public class OperationLog implements Serializable {
     /**
      * 操作时间
      */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date operationTime;
+    private LocalDateTime operationTime;
 }

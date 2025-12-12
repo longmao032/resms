@@ -49,6 +49,7 @@ export const useUserStore = defineStore('user', () => {
         // 存储登录时间戳，用于会话过期检查
         const loginTime = Date.now()
         localStorage.setItem('loginTime', loginTime.toString())
+        localStorage.setItem('token', response.data.token) // 手动存储token供request.ts使用
 
         // 设置会话过期检查定时器
         setupSessionExpiryCheck()
@@ -86,6 +87,7 @@ export const useUserStore = defineStore('user', () => {
 
     // 清除登录时间戳和定时器
     localStorage.removeItem('loginTime')
+    localStorage.removeItem('token') // 清除token
     if (sessionCheckTimer) {
       clearInterval(sessionCheckTimer)
       sessionCheckTimer = null
@@ -96,18 +98,21 @@ export const useUserStore = defineStore('user', () => {
 
   const fetchUserInfo = async () => {
     if (!token.value) return
-    
+
     loading.value = true
     error.value = null
 
     try {
       const response = await reqUserInfo()
-      
+
       if (response.code === 200 && response.status) {
+        if (response.data && !response.data.userId && response.data.id) {
+          response.data.userId = response.data.id
+        }
         userInfo.value = response.data
         menus.value = response.data.menus
         permissions.value = response.data.permissions
-        
+
         return response.data
       } else {
         throw new Error(response.message || '获取用户信息失败')

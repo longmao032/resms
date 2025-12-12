@@ -6,8 +6,9 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
+
 
 /**
  * 销售团队表
@@ -36,8 +37,8 @@ public class Team implements Serializable {
     /**
      * 成立时间
      */
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private Date establishTime;
+
+    private LocalDate establishTime;
 
     /**
      * 团队人数

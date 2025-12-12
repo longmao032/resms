@@ -1,5 +1,5 @@
 import request from "@/utils/request";
-import type {loginForm,loginResp} from "@/api/user/type";
+import type { loginForm, loginResp } from "@/api/user/type";
 
 enum API {
         LOGIN_URL = "/auth/login",
@@ -18,9 +18,9 @@ enum API {
         USER_CHECK_EMAIL_URL = "/user/check-email",
 }
 
-export const reqLogin = (data:loginForm) => request.post<any,loginResp>(API.LOGIN_URL,data);
+export const reqLogin = (data: loginForm) => request.post<any, loginResp>(API.LOGIN_URL, data);
 
-export const reqUserInfo = ()=>request.get<any,loginResp>(API.USERINFO_URL);
+export const reqUserInfo = () => request.get<any, loginResp>(API.USERINFO_URL);
 
 // 用户管理相关接口
 export const reqUserPage = (data: any) => request.post<any, any>(API.USER_PAGE_URL, data);

@@ -7,8 +7,40 @@
           <h2>后台管理系统</h2>
         </div>
         <div class="user-info">
+          <el-popover
+            placement="bottom"
+            :width="300"
+            trigger="hover"
+            popper-class="notice-popover"
+          >
+            <template #reference>
+              <div class="header-icon" @click="goToNoticeList">
+                <el-badge :value="noticeStore.unreadCount" :max="99" :hidden="noticeStore.unreadCount === 0" class="notice-badge">
+                  <el-icon :size="20"><Bell /></el-icon>
+                </el-badge>
+              </div>
+            </template>
+            <div class="notice-list">
+              <div class="notice-header">
+                <span>未读通知 ({{ noticeStore.unreadCount }})</span>
+                <el-button link type="primary" size="small" @click="goToNoticeList">查看全部</el-button>
+              </div>
+              <div v-if="noticeStore.unreadList.length > 0" class="notice-items">
+                <div 
+                  v-for="item in noticeStore.unreadList" 
+                  :key="item.id" 
+                  class="notice-item"
+                  @click="goToNoticeList"
+                >
+                  <div class="notice-title">{{ item.noticeTitle }}</div>
+                  <div class="notice-time">{{ item.sendTime }}</div>
+                </div>
+              </div>
+              <el-empty v-else description="暂无未读通知" :image-size="60" />
+            </div>
+          </el-popover>
           <el-avatar
-            :src="userStore.currentUser?.avatar"
+            :src="getImageUrl(userStore.currentUser?.avatar)"
             :alt="userStore.currentUser?.realName"
             class="user-avatar"
           >
@@ -40,7 +72,7 @@
       <el-aside :width="sidebarCollapsed ? '64px' : '200px'" class="sidebar">
         <div class="sidebar-header">
           <el-button
-            type="text"
+            type="link"
             @click="toggleSidebar"
             class="collapse-btn"
             :icon="sidebarCollapsed ? Expand : Fold"
@@ -114,7 +146,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -137,19 +169,39 @@ import {
   Coin,
   Wallet,
   Management,
-  Trophy
+  Trophy,
+  Bell
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/userStore'
+import { useNoticeStore } from '@/stores/noticeStore'
 import type { Menu } from '@/api/user/type'
 
 const router = useRouter()
 const route = useRoute()
+
+const getImageUrl = (url: string | undefined) => {
+  if (!url) return ''
+  // 如果是完整 URL，直接返回
+  if (url.startsWith('http')) return url
+  // 如果以 /upload 开头，说明已经包含前缀（兼容旧数据）
+  if (url.startsWith('/uploads')) return `http://localhost:8080${url}`
+  // 否则补全 /uploads 前缀
+  return `http://localhost:8080/uploads${url}`
+}
+
+// Store
 const userStore = useUserStore()
+const noticeStore = useNoticeStore() // 使用 store
 
 // 状态管理
 const sidebarCollapsed = ref(false)
 const activeMenu = ref('')
 const breadcrumbList = ref<Menu[]>([])
+
+// 跳转到通知列表
+const goToNoticeList = () => {
+  router.push('/work-notice/list')
+}
 
 // 图标映射
 const iconMap: Record<string, any> = {
@@ -224,7 +276,7 @@ const updateBreadcrumb = (path: string) => {
 const handleCommand = (command: string) => {
   switch (command) {
     case 'profile':
-      ElMessage.info('个人资料功能开发中')
+      router.push('/profile')
       break
     case 'settings':
       ElMessage.info('系统设置功能开发中')
@@ -315,14 +367,14 @@ onMounted(() => {
         const loader = tryMatchComponent(child.path, (child as any).component)
         const routeName = pathToName(child.path)
         if (loader) {
-          router.addRoute({
+          router.addRoute('Layout', {
             path: child.path,
             name: routeName,
             component: loader
           })
         } else {
           // 如果找不到实现视图，注册一个占位组件以避免导航错误
-          router.addRoute({
+          router.addRoute('Layout', {
             path: child.path,
             name: routeName,
             component: {
@@ -339,6 +391,17 @@ onMounted(() => {
   // 设置默认活动菜单
   activeMenu.value = route.path
   updateBreadcrumb(route.path)
+
+  // 设置默认活动菜单
+  activeMenu.value = route.path
+  updateBreadcrumb(route.path)
+
+  // 开启消息轮询
+  noticeStore.startPolling()
+})
+
+onUnmounted(() => {
+  noticeStore.stopPolling()
 })
 </script>
 
@@ -376,6 +439,19 @@ onMounted(() => {
       display: flex;
       align-items: center;
       gap: 12px;
+
+      .header-icon {
+        color: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        padding: 0 4px;
+        margin-right: 4px;
+
+        &:hover {
+          color: #40a9ff;
+        }
+      }
 
       .user-avatar {
         width: 32px;
@@ -535,6 +611,61 @@ onMounted(() => {
 
   .breadcrumb-header {
     padding: 0 16px;
+  }
+}
+</style>
+
+<style lang="scss">
+.notice-popover {
+  padding: 0 !important;
+
+  .notice-list {
+    .notice-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid #EBEEF5;
+      
+      span {
+        font-weight: 600;
+        color: #303133;
+      }
+    }
+
+    .notice-items {
+      max-height: 300px;
+      overflow-y: auto;
+
+      .notice-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        border-bottom: 1px solid #EBEEF5;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        &:hover {
+          background-color: #F5F7FA;
+        }
+
+        .notice-title {
+          font-size: 14px;
+          color: #303133;
+          margin-bottom: 4px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .notice-time {
+          font-size: 12px;
+          color: #909399;
+        }
+      }
+    }
   }
 }
 </style>

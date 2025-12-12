@@ -36,6 +36,13 @@
             style="width: 150px"
           />
         </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="queryParams.status" placeholder="请选择状态" clearable style="width: 120px">
+            <el-option label="通过" :value="0" />
+            <el-option label="待审核" :value="1" />
+            <el-option label="驳回" :value="2" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="建成年代">
           <el-date-picker
             v-model="buildYearRange"
@@ -76,10 +83,33 @@
         stripe
         style="width: 100%"
       >
+        <el-table-column label="封面图" width="100" align="center">
+          <template #default="{ row }">
+            <el-image 
+              v-if="row.coverUrl" 
+              :src="getImageUrl(row.coverUrl)" 
+              :preview-src-list="[getImageUrl(row.coverUrl)]"
+              fit="cover"
+              style="width: 60px; height: 60px; border-radius: 4px; cursor: pointer;"
+              preview-teleported
+            />
+            <div v-else class="no-cover">
+              <el-icon :size="24" color="#c0c4cc"><Picture /></el-icon>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column prop="communityName" label="小区名称" min-width="180" show-overflow-tooltip />
         <el-table-column prop="city" label="城市" width="100" />
         <el-table-column prop="district" label="区县" width="100" />
         <el-table-column prop="address" label="小区地址" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="status" label="状态" width="80">
+          <template #default="{ row }">
+            <el-tag v-if="row.status === 0" type="success">通过</el-tag>
+            <el-tag v-else-if="row.status === 1" type="danger">待审核</el-tag>
+            <el-tag v-else-if="row.status === 2" type="info">驳回</el-tag>
+            <el-tag v-else type="info">未知</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="buildYear" label="建成年代" width="100">
           <template #default="{ row }">
             {{ row.buildYear ? row.buildYear + '年' : '-' }}
@@ -94,8 +124,12 @@
         </el-table-column>
         <el-table-column prop="metroStation" label="最近地铁" width="120" show-overflow-tooltip />
         <el-table-column prop="schoolDistrict" label="所属学区" width="120" show-overflow-tooltip />
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
+             <el-button v-if="row.status === 1" link type="success" @click="handleAudit(row)">
+               <el-icon><Check /></el-icon>
+               审核
+             </el-button>
             <el-button link type="primary" @click="handleView(row)">
               <el-icon><View /></el-icon>
               查看
@@ -120,15 +154,58 @@
         @current-change="handlePageChange"
       />
     </el-card>
+
+     <!-- 审核弹窗 -->
+    <el-dialog
+      v-model="auditVisible"
+      title="小区审核"
+      width="600px"
+      append-to-body
+      destroy-on-close
+    >
+      <div v-loading="auditLoading" class="audit-container">
+        <div v-if="auditData" class="community-info">
+          <!-- 小区没有图片字段，仅显示基本信息 -->
+          <el-descriptions :column="2" border size="small">
+            <el-descriptions-item label="小区名称">{{ auditData.communityName }}</el-descriptions-item>
+            <el-descriptions-item label="开发商">{{ auditData.developer || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="区域">{{ auditData.city }} - {{ auditData.district }}</el-descriptions-item>
+            <el-descriptions-item label="地址">{{ auditData.address }}</el-descriptions-item>
+            <el-descriptions-item label="建成年代">{{ auditData.buildYear || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="物业费">{{ auditData.propertyFee || '-' }} 元/㎡/月</el-descriptions-item>
+          </el-descriptions>
+        </div>
+
+        <el-divider />
+
+        <el-form ref="auditFormRef" :model="auditForm" label-width="80px">
+          <el-form-item label="审核结果" required>
+            <el-radio-group v-model="auditForm.status">
+              <el-radio :label="0">通过</el-radio>
+              <el-radio :label="2">驳回</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item label="审核备注" v-if="auditForm.status === 2" required>
+             <el-input v-model="auditForm.reason" type="textarea" placeholder="请输入驳回原因" />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="auditVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitAudit" :loading="auditLoading">提交</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Search, Refresh, View, Edit, Plus } from '@element-plus/icons-vue'
+import { Search, Refresh, View, Edit, Plus, Check, Picture } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { getCommunityPage } from '@/api/community'
+import { getCommunityPage, getCommunityById, auditCommunity } from '@/api/community'
 
 const router = useRouter()
 
@@ -140,6 +217,7 @@ const queryParams = reactive({
   city: '',
   district: '',
   developer: '',
+  status: undefined,
   minBuildYear: undefined as number | undefined,
   maxBuildYear: undefined as number | undefined,
   sortField: '',
@@ -153,6 +231,16 @@ const buildYearRange = ref<any>(null)
 const communityList = ref<any[]>([])
 const total = ref(0)
 const loading = ref(false)
+
+// 审核相关
+const auditVisible = ref(false)
+const auditLoading = ref(false)
+const auditData = ref<any>(null)
+const auditForm = reactive({
+  id: 0,
+  status: 0,
+  reason: ''
+})
 
 // 处理建成年代范围变化
 const handleBuildYearChange = (val: any) => {
@@ -197,6 +285,7 @@ const handleReset = () => {
     city: '',
     district: '',
     developer: '',
+    status: undefined,
     minBuildYear: undefined,
     maxBuildYear: undefined,
     sortField: '',
@@ -232,7 +321,59 @@ const handleAdd = () => {
   router.push('/community/add')
 }
 
+// 审核
+const handleAudit = async (row: any) => {
+  auditVisible.value = true
+  auditLoading.value = true
+  auditForm.id = row.id
+  auditForm.status = 0 // 默认通过
+  auditForm.reason = ''
+  auditData.value = null
+
+  try {
+     const res = await getCommunityById(row.id)
+     if(res.status) {
+         auditData.value = res.data
+     } else {
+         ElMessage.error('获取详情失败')
+     }
+  } catch(error) {
+      console.error(error)
+      ElMessage.error('获取详情失败')
+  } finally {
+      auditLoading.value = false
+  }
+}
+
+// 提交审核
+const submitAudit = async () => {
+  if (auditForm.status === 2 && !auditForm.reason) {
+    ElMessage.warning('请输入驳回原因')
+    return
+  }
+  
+  auditLoading.value = true
+  try {
+    await auditCommunity(auditForm.id, auditForm.status, auditForm.reason)
+    ElMessage.success('审核完成')
+    auditVisible.value = false
+    loadCommunityList()
+  } catch (error) {
+    console.error('审核失败', error)
+    ElMessage.error('审核失败')
+  } finally {
+    auditLoading.value = false
+  }
+}
+
 // 组件挂载时加载数据
+
+// 获取图片地址
+const getImageUrl = (url: string) => {
+  if (!url) return ''
+  return `http://localhost:8080/uploads${url}`
+}
+
 onMounted(() => {
   loadCommunityList()
 })
@@ -251,5 +392,22 @@ onMounted(() => {
       margin-bottom: 20px;
     }
   }
+}
+
+.audit-container {
+    .community-info {
+        margin-bottom: 20px;
+    }
+}
+
+.no-cover {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f7fa;
+  border-radius: 4px;
+  margin: 0 auto;
 }
 </style>

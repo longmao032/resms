@@ -90,19 +90,6 @@
             />
           </div>
         </el-form>
-
-        <!-- 开发环境信息 -->
-        <div v-if="isDev" class="dev-info">
-          <el-collapse class="dev-collapse">
-            <el-collapse-item title="开发环境信息" name="1">
-              <div class="dev-details">
-                <p><strong>后端接口:</strong> http://localhost:8080/auth/login</p>
-                <p><strong>测试账号:</strong> admin / 123456</p>
-                <p><strong>安全特性:</strong> 已启用登录失败次数限制</p>
-              </div>
-            </el-collapse-item>
-          </el-collapse>
-        </div>
       </div>
     </div>
 

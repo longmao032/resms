@@ -40,6 +40,14 @@ public interface UserService {
     List<UserVO> getAllUsers();
 
     /**
+     * 根据角色类型获取用户列表
+     *
+     * @param roleType 角色类型：2=销售顾问, 3=销售经理
+     * @return 用户列表
+     */
+    List<UserVO> getUsersByRoleType(Integer roleType);
+
+    /**
      * 新增用户
      *
      * @param user 用户信息
@@ -117,4 +125,11 @@ public interface UserService {
      * @return 是否可用
      */
     boolean isEmailAvailable(String email, Integer excludeId);
+
+    /**
+     * 根据角色类型获取启用的用户列表
+     * @param roleType 角色类型 (2=销售顾问, 3=销售经理 等)
+     * @return 用户选项列表
+     */
+    List<UserVO> getEnableUsersByRole(Integer roleType);
 }

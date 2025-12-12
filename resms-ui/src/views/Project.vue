@@ -81,7 +81,7 @@
             <el-tag v-if="filters.area !== '不限'" closable @close="filters.area = '不限'" type="primary" size="large">
               面积：{{ filters.area }}
             </el-tag>
-            <el-button type="text" @click="clearAllFilters" class="clear-all-btn">
+            <el-button type="link" @click="clearAllFilters" class="clear-all-btn">
               清空所有条件
             </el-button>
           </div>

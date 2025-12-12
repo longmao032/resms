@@ -71,7 +71,7 @@ public class Project implements Serializable {
     /**
      * 总户数
      */
-    private String totalHouseholds ;
+    private String totalHouseholds;
 
     /**
      * 平均价格（元/㎡）
@@ -153,12 +153,16 @@ public class Project implements Serializable {
     /**
      * 默认封面图片URL
      */
-     private String coverUrl;
+    private String coverUrl;
 
     /**
      * 状态：1=在售，2=售罄，3=待售
      */
     private Integer status;
+    /**
+     * 创建人
+     */
+    private Integer creatorId;
 
     /**
      * 创建时间
@@ -171,7 +175,6 @@ public class Project implements Serializable {
      */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
-
 
     // 关联的新房列表
     @TableField(exist = false)

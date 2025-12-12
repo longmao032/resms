@@ -49,3 +49,16 @@ export const updateProject = (data: FormData) => {
 export const deleteProject = (id: number) => {
   return request.delete(`/projects/${id}`)
 }
+
+/**
+ * 审核项目
+ */
+export const auditProject = (id: number, status: number, reason?: string) => {
+  return request.post(`/projects/audit/${id}`, null, {
+    params: {
+      status,
+      reason
+    }
+  })
+}
+

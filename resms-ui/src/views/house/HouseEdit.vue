@@ -455,6 +455,18 @@ import type { HouseFormData } from '@/api/house/type'
 const router = useRouter()
 const route = useRoute()
 
+// 图片 URL 处理
+const getImageUrl = (url: string) => {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  // 处理已包含 /uploads 的情况
+  if (url.startsWith('/uploads')) return `http://localhost:8080${url}`
+  // 处理以 / 开头的情况 (如 /project/1.jpg)
+  if (url.startsWith('/')) return `http://localhost:8080/uploads${url}`
+  // 处理相对路径 (如 temp_...)
+  return `http://localhost:8080/uploads/${url}`
+}
+
 // 表单引用
 const formRef = ref<FormInstance>()
 
@@ -553,6 +565,9 @@ const formRules = reactive<FormRules>({
   ]
 })
 
+// 生命周期
+
+
 // 加载房源详情
 const loadHouseDetail = async () => {
   const id = route.params.id
@@ -565,8 +580,32 @@ const loadHouseDetail = async () => {
   loading.value = true
   try {
     const res = await getHouseById(Number(id))
-    if (res.status && res.data) {
-      const house = res.data
+    // 兼容处理：检查返回结构
+    const anyRes: any = res
+    // 兼容多种返回结构：
+    // 1) 拦截器返回的 ApiResponse (res = { code, status, message, data })
+    // 2) AxiosResponse 包裹的 ApiResponse (res.data = ApiResponse)
+    // 3) 已直接返回的资源对象 (res = house)
+    let apiCandidate = anyRes
+    if (anyRes && anyRes.data && typeof anyRes.data === 'object' && typeof anyRes.data.code === 'number') {
+      apiCandidate = anyRes.data
+    }
+
+    let house: any = null
+    if (apiCandidate && typeof apiCandidate.code === 'number') {
+      // ApiResponse
+      if (!apiCandidate.status) {
+        ElMessage.error(apiCandidate.message || '加载房源详情失败')
+        router.push('/house/list')
+        return
+      }
+      house = apiCandidate.data
+    } else {
+      // 直接返回资源对象
+      house = apiCandidate
+    }
+
+    if (house) {
       
       // 填充基本信息
       Object.assign(formData, {
@@ -617,13 +656,13 @@ const loadHouseDetail = async () => {
       if (house.images && house.images.length > 0) {
         fileList.value = house.images.map((url: string, index: number) => ({
           name: `image-${index + 1}`,
-          url: `http://localhost:8080/uploads${url}`,
+          url: getImageUrl(url),
           uid: Date.now() + index,
           status: 'success'
         }))
       }
     } else {
-      ElMessage.error(res.message || '加载房源详情失败')
+      ElMessage.error('加载房源详情失败')
       router.push('/house/list')
     }
   } catch (error) {
@@ -708,55 +747,57 @@ const handleRemove = (file: UploadFile) => {
 const handleSubmit = async () => {
   if (!formRef.value) return
 
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
-      try {
-        submitLoading.value = true
+  try {
+    await formRef.value.validate()
+  } catch (err) {
+    ElMessage.warning('请填写必填项')
+    return
+  }
 
-        // 处理图片上传
-        let imageUrls: string[] = []
-        const hasNewImages = fileList.value.some(file => file.raw)
-        
-        if (hasNewImages) {
-          // 有新上传的图片
-          imageUrls = await uploadImages()
-        } else if (fileList.value.length > 0) {
-          // 保持原有图片
-          imageUrls = fileList.value.map(file => {
-            // 从完整URL中提取相对路径
-            if (file.url && file.url.includes('/uploads')) {
-              return file.url.substring(file.url.indexOf('/uploads') + 8)
-            }
-            return ''
-          }).filter(url => url)
-        }
+  try {
+    submitLoading.value = true
 
-        // 构建提交数据
-        const submitData = {
-          ...formData,
-          images: imageUrls.length > 0 ? imageUrls : undefined
-        }
+    // 处理图片上传
+    let imageUrls: string[] = []
+    const hasNewImages = fileList.value.some(file => file.raw)
 
-        const res = await updateHouse(submitData)
-        
-        if (res.status) {
-          ElMessage.success('更新房源成功')
-          // 跳转到列表页
-          router.push('/house/list')
-        } else {
-          ElMessage.error(res.message || '更新房源失败')
+    if (hasNewImages) {
+      // 有新上传的图片
+      imageUrls = await uploadImages()
+    } else if (fileList.value.length > 0) {
+      // 保持原有图片
+      imageUrls = fileList.value.map(file => {
+        // 从完整URL中提取相对路径
+        if (file.url && file.url.includes('/uploads')) {
+          return file.url.substring(file.url.indexOf('/uploads') + 8)
         }
-      } catch (error: any) {
-        console.error('更新房源失败:', error)
-        ElMessage.error(error.message || '更新房源失败')
-      } finally {
-        submitLoading.value = false
-      }
-    } else {
-      ElMessage.warning('请填写必填项')
-      return false
+        return ''
+      }).filter(url => url)
     }
-  })
+
+    // 构建提交数据
+    const submitData = {
+      ...formData,
+      images: imageUrls.length > 0 ? imageUrls : undefined
+    }
+
+    const res = await updateHouse(submitData)
+    const anyRes: any = res
+    const apiResp = anyRes.data ?? anyRes
+
+    if (apiResp.status) {
+      ElMessage.success('更新房源成功')
+      // 跳转到列表页
+      router.push('/house/list')
+    } else {
+      ElMessage.error(apiResp.message || '更新房源失败')
+    }
+  } catch (error: any) {
+    console.error('更新房源失败:', error)
+    ElMessage.error(error.message || '更新房源失败')
+  } finally {
+    submitLoading.value = false
+  }
 }
 
 // 上传图片

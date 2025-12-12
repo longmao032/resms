@@ -62,6 +62,26 @@
       >
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column label="房源编号" prop="houseNo" width="140" />
+        <el-table-column label="房产图片" width="120" align="center">
+          <template #default="{ row }">
+            <el-image
+              v-if="row.images && row.images.length > 0"
+              :src="getImageUrl(row.images[0])"
+              :preview-src-list="row.images.map((img: string) => getImageUrl(img))"
+              fit="cover"
+              style="width: 80px; height: 60px; border-radius: 4px; cursor: pointer;"
+            >
+              <template #error>
+                <div style="display: flex; align-items: center; justify-content: center; width: 80px; height: 60px; background: #f5f7fa; border-radius: 4px;">
+                  <el-icon :size="20" color="#c0c4cc"><Picture /></el-icon>
+                </div>
+              </template>
+            </el-image>
+            <div v-else style="display: flex; align-items: center; justify-content: center; width: 80px; height: 60px; background: #f5f7fa; border-radius: 4px;">
+              <el-icon :size="20" color="#c0c4cc"><Picture /></el-icon>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column label="户型" prop="layout" width="100" />
         <el-table-column label="面积(㎡)" prop="area" width="100" align="right" />
         <el-table-column label="楼层" width="100" align="center">
@@ -69,7 +89,6 @@
             {{ row.floor }}/{{ row.totalFloor }}
           </template>
         </el-table-column>
-        <el-table-column label="朝向" prop="orientation" width="100" />
         <el-table-column label="装修" prop="decoration" width="100" />
         <el-table-column label="价格(万)" width="120" align="right">
           <template #default="{ row }">
@@ -154,8 +173,8 @@
             <el-image
               v-for="(image, index) in currentAuditHouse.images"
               :key="index"
-              :src="`http://localhost:8080/uploads${image}`"
-              :preview-src-list="currentAuditHouse.images.map((img: string) => `http://localhost:8080/uploads${img}`)"
+              :src="getImageUrl(image)"
+              :preview-src-list="currentAuditHouse.images.map((img: string) => getImageUrl(img))"
               :initial-index="index"
               fit="cover"
               class="audit-image"
@@ -483,6 +502,17 @@ const getStatusTag = (status: number) => {
     4: 'danger'
   }
   return tagMap[status] || 'info'
+}
+// 图片 URL 处理
+const getImageUrl = (url: string) => {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  // 处理已包含 /uploads 的情况
+  if (url.startsWith('/uploads')) return `http://localhost:8080${url}`
+  // 处理以 / 开头的情况 (如 /project/1.jpg)
+  if (url.startsWith('/')) return `http://localhost:8080/uploads${url}`
+  // 处理相对路径 (如 temp_...)
+  return `http://localhost:8080/uploads/${url}`
 }
 </script>
 

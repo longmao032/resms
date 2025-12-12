@@ -12,7 +12,7 @@ import com.guang.resms.mapper.RoleMapper;
 import com.guang.resms.mapper.RolePermissionMapper;
 import com.guang.resms.mapper.UserRoleMapper;
 import com.guang.resms.service.RoleService;
-import com.guang.resms.utils.exception.ServiceException;
+import com.guang.resms.common.exception.ServiceException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -39,7 +39,7 @@ public class RoleServiceImpl implements RoleService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public RoleServiceImpl(RoleMapper roleMapper, UserRoleMapper userRoleMapper,
-                          RolePermissionMapper rolePermissionMapper, PermissionMapper permissionMapper) {
+            RolePermissionMapper rolePermissionMapper, PermissionMapper permissionMapper) {
         this.roleMapper = roleMapper;
         this.userRoleMapper = userRoleMapper;
         this.rolePermissionMapper = rolePermissionMapper;
@@ -78,8 +78,8 @@ public class RoleServiceImpl implements RoleService {
         // 转换为VO对象
         Page<RoleVO> resultPage = new Page<>(rolePage.getCurrent(), rolePage.getSize(), rolePage.getTotal());
         List<RoleVO> roleVOs = rolePage.getRecords().stream()
-            .map(this::convertToRoleVO)
-            .collect(Collectors.toList());
+                .map(this::convertToRoleVO)
+                .collect(Collectors.toList());
 
         resultPage.setRecords(roleVOs);
         return resultPage;
@@ -97,14 +97,13 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public List<RoleVO> getAllRoles() {
         List<Role> roles = roleMapper.selectList(
-            new LambdaQueryWrapper<Role>()
-                .eq(Role::getStatus, 1)  // 只查询启用状态的角色
-                .orderByAsc(Role::getRoleName)
-        );
+                new LambdaQueryWrapper<Role>()
+                        .eq(Role::getStatus, 1) // 只查询启用状态的角色
+                        .orderByAsc(Role::getRoleName));
 
         return roles.stream()
-            .map(this::convertToRoleVO)
-            .collect(Collectors.toList());
+                .map(this::convertToRoleVO)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -126,6 +125,11 @@ public class RoleServiceImpl implements RoleService {
         // 验证输入
         validateRoleInput(role, role.getId());
 
+        // 如果是系统管理员角色，不能禁用
+        if (role.getId() == 1 && role.getStatus() != null && role.getStatus() == 0) {
+            throw new ServiceException("不能禁用系统管理员角色");
+        }
+
         // 更新角色
         int result = roleMapper.updateById(role);
         if (result <= 0) {
@@ -142,13 +146,17 @@ public class RoleServiceImpl implements RoleService {
             throw new ServiceException("角色不存在");
         }
 
+        // 不能删除系统管理员角色
+        if (roleId == 1) {
+            throw new ServiceException("不能删除系统管理员角色");
+        }
+
         // 检查是否被用户使用
         Long userCount = userRoleMapper.selectCount(
-            new LambdaQueryWrapper<UserRole>()
-                .eq(UserRole::getRoleId, roleId)
-        );
+                new LambdaQueryWrapper<UserRole>()
+                        .eq(UserRole::getRoleId, roleId));
 
-// 使用 userCount
+        // 使用 userCount
         if (userCount > 0) {
             // 有用户使用该角色
             System.out.println("该角色下有 " + userCount + " 个用户");
@@ -160,9 +168,8 @@ public class RoleServiceImpl implements RoleService {
 
         // 删除角色权限关联
         rolePermissionMapper.delete(
-            new LambdaQueryWrapper<RolePermission>()
-                .eq(RolePermission::getRoleId, roleId)
-        );
+                new LambdaQueryWrapper<RolePermission>()
+                        .eq(RolePermission::getRoleId, roleId));
 
         // 删除角色
         int result = roleMapper.deleteById(roleId);
@@ -178,12 +185,16 @@ public class RoleServiceImpl implements RoleService {
             return;
         }
 
+        // 检查是否包含系统管理员角色
+        if (roleIds.contains(1)) {
+            throw new ServiceException("不能删除系统管理员角色");
+        }
+
         Long userCount = userRoleMapper.selectCount(
                 new LambdaQueryWrapper<UserRole>()
-                        .in(UserRole::getRoleId, roleIds)
-        );
+                        .in(UserRole::getRoleId, roleIds));
 
-// 使用 userCount
+        // 使用 userCount
         if (userCount > 0) {
             // 有用户使用该角色
             System.out.println("该角色下有 " + userCount + " 个用户");
@@ -194,9 +205,8 @@ public class RoleServiceImpl implements RoleService {
 
         // 删除角色权限关联
         rolePermissionMapper.delete(
-            new LambdaQueryWrapper<RolePermission>()
-                .in(RolePermission::getRoleId, roleIds)
-        );
+                new LambdaQueryWrapper<RolePermission>()
+                        .in(RolePermission::getRoleId, roleIds));
 
         // 批量删除角色
         int result = roleMapper.deleteBatchIds(roleIds);
@@ -214,11 +224,15 @@ public class RoleServiceImpl implements RoleService {
             throw new ServiceException("角色不存在");
         }
 
+        // 不能修改系统管理员角色的权限
+        if (roleId == 1) {
+            throw new ServiceException("不能修改系统管理员角色的权限");
+        }
+
         // 删除现有的权限关联
         rolePermissionMapper.delete(
-            new LambdaQueryWrapper<RolePermission>()
-                .eq(RolePermission::getRoleId, roleId)
-        );
+                new LambdaQueryWrapper<RolePermission>()
+                        .eq(RolePermission::getRoleId, roleId));
 
         // 添加新的权限关联
         if (permissionIds != null && !permissionIds.isEmpty()) {
@@ -234,19 +248,18 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public List<Integer> getRolePermissionIds(Integer roleId) {
         List<RolePermission> rolePermissions = rolePermissionMapper.selectList(
-            new LambdaQueryWrapper<RolePermission>()
-                .eq(RolePermission::getRoleId, roleId)
-        );
+                new LambdaQueryWrapper<RolePermission>()
+                        .eq(RolePermission::getRoleId, roleId));
 
         return rolePermissions.stream()
-            .map(RolePermission::getPermissionId)
-            .collect(Collectors.toList());
+                .map(RolePermission::getPermissionId)
+                .collect(Collectors.toList());
     }
 
     @Override
     public boolean isRoleNameAvailable(String roleName, Integer excludeId) {
         LambdaQueryWrapper<Role> queryWrapper = new LambdaQueryWrapper<Role>()
-            .eq(Role::getRoleName, roleName.trim());
+                .eq(Role::getRoleName, roleName.trim());
 
         if (excludeId != null) {
             queryWrapper.ne(Role::getId, excludeId);
@@ -258,7 +271,7 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public boolean isRoleCodeAvailable(String roleCode, Integer excludeId) {
         LambdaQueryWrapper<Role> queryWrapper = new LambdaQueryWrapper<Role>()
-            .eq(Role::getRoleCode, roleCode.trim());
+                .eq(Role::getRoleCode, roleCode.trim());
 
         if (excludeId != null) {
             queryWrapper.ne(Role::getId, excludeId);
@@ -325,22 +338,21 @@ public class RoleServiceImpl implements RoleService {
         // 获取用户数量
         int userCount = Math.toIntExact(userRoleMapper.selectCount(
                 new LambdaQueryWrapper<UserRole>()
-                        .eq(UserRole::getRoleId, role.getId())
-        ));
+                        .eq(UserRole::getRoleId, role.getId())));
 
         return RoleVO.builder()
-            .id(role.getId())
-            .roleName(role.getRoleName())
-            .roleCode(role.getRoleCode())
-            .description(role.getDescription())
-            .dataScope(role.getDataScope())
-            .dataScopeText(dataScopeText)
-            .status(role.getStatus())
-            .statusText(statusText)
-            .createTime(role.getCreateTime() != null ? role.getCreateTime().format(DATE_FORMATTER) : null)
-            .updateTime(role.getUpdateTime() != null ? role.getUpdateTime().format(DATE_FORMATTER) : null)
-            .userCount(userCount)
-            .build();
+                .id(role.getId())
+                .roleName(role.getRoleName())
+                .roleCode(role.getRoleCode())
+                .description(role.getDescription())
+                .dataScope(role.getDataScope())
+                .dataScopeText(dataScopeText)
+                .status(role.getStatus())
+                .statusText(statusText)
+                .createTime(role.getCreateTime() != null ? role.getCreateTime().format(DATE_FORMATTER) : null)
+                .updateTime(role.getUpdateTime() != null ? role.getUpdateTime().format(DATE_FORMATTER) : null)
+                .userCount(userCount)
+                .build();
     }
 
     /**
@@ -352,11 +364,16 @@ public class RoleServiceImpl implements RoleService {
         }
 
         switch (dataScope) {
-            case 1: return "全部数据";
-            case 2: return "本部门数据";
-            case 3: return "本部门及以下数据";
-            case 4: return "仅本人数据";
-            default: return "未知范围";
+            case 1:
+                return "全部数据";
+            case 2:
+                return "本部门数据";
+            case 3:
+                return "本部门及以下数据";
+            case 4:
+                return "仅本人数据";
+            default:
+                return "未知范围";
         }
     }
 }

@@ -18,7 +18,7 @@ mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
-# 文件上传配置
+# File Upload Configuration
 file:
   upload:
-    path: uploads/house
+    path: resms/uploads

@@ -24,7 +24,7 @@
           <el-card class="stat-card">
             <div class="stat-content">
               <div class="stat-icon">
-                <el-icon size="32" color="#67C23A"><Home /></el-icon>
+                <el-icon size="32" color="#67C23A"><HomeFilled /></el-icon>
               </div>
               <div class="stat-info">
                 <div class="stat-number">{{ stats.houses }}</div>
@@ -37,7 +37,7 @@
           <el-card class="stat-card">
             <div class="stat-content">
               <div class="stat-icon">
-                <el-icon size="32" color="#E6A23C"><Transaction /></el-icon>
+                <el-icon size="32" color="#E6A23C"><Sell /></el-icon>
               </div>
               <div class="stat-info">
                 <div class="stat-number">{{ stats.transactions }}</div>
@@ -50,7 +50,7 @@
           <el-card class="stat-card">
             <div class="stat-content">
               <div class="stat-icon">
-                <el-icon size="32" color="#F56C6C"><MoneyCollect /></el-icon>
+                <el-icon size="32" color="#F56C6C"><Money /></el-icon>
               </div>
               <div class="stat-info">
                 <div class="stat-number">{{ stats.commissions }}</div>
@@ -106,12 +106,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, markRaw } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
   User,
   House,
+  HomeFilled,
+  Sell,
+  Money,
   Coin,
   Wallet,
   Plus,
@@ -148,42 +151,42 @@ const quickActions = ref([
     key: 'add-house',
     label: '添加房源',
     type: 'primary' as const,
-    icon: Plus,
+    icon: markRaw(Plus),
     path: '/house/list'
   },
   {
     key: 'view-customers',
     label: '查看客户',
     type: 'success' as const,
-    icon: User,
+    icon: markRaw(User),
     path: '/customer/list'
   },
   {
     key: 'transaction-audit',
     label: '交易审核',
     type: 'warning' as const,
-    icon: Coin,
+    icon: markRaw(Coin),
     path: '/transaction/audit'
   },
   {
     key: 'commission-calc',
     label: '佣金核算',
     type: 'danger' as const,
-    icon: Wallet,
+    icon: markRaw(Wallet),
     path: '/commission/calculate'
   },
   {
     key: 'system-settings',
     label: '系统设置',
     type: 'info' as const,
-    icon: Setting,
+    icon: markRaw(Setting),
     path: '/system/user'
   },
   {
     key: 'view-reports',
     label: '查看报表',
     type: 'primary' as const,
-    icon: TrendCharts,
+    icon: markRaw(TrendCharts),
     path: '/house/statistics'
   }
 ])

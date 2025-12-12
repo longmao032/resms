@@ -1,19 +1,12 @@
 package com.guang.resms.controller;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.guang.resms.entity.SecondHouseInfo;
-import com.guang.resms.entity.SecondHouseCommunity;
 import com.guang.resms.entity.dto.QueryDTO;
-import com.guang.resms.entity.vo.SecondHouseVo;
 import com.guang.resms.service.SecondHouseInfoService;
-import com.guang.resms.service.SecondHouseCommunityService;
-import com.guang.resms.utils.exception.ResponseResult;
+import com.guang.resms.common.exception.ResponseResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.util.Map;
 
 /**
  * 二手房信息控制器

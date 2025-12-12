@@ -126,18 +126,21 @@
             </template>
           </el-table-column>
           <el-table-column prop="createTime" label="创建时间" width="180" />
-          <el-table-column label="操作" fixed="right" width="250">
+          <el-table-column label="操作" fixed="right" width="300">
             <template #default="scope">
-              <el-button size="small" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
-              <el-button size="small" type="warning" @click="handleResetPassword(scope.row)">重置密码</el-button>
-              <el-button
-                size="small"
-                :type="scope.row.status === 1 ? 'danger' : 'success'"
-                @click="handleToggleStatus(scope.row)"
-              >
-                {{ scope.row.status === 1 ? '禁用' : '启用' }}
-              </el-button>
-              <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+              <div style="display: flex; align-items: center; justify-content: flex-start; flex-wrap: nowrap;">
+                <el-button size="small" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
+                <el-button size="small" type="warning" @click="handleResetPassword(scope.row)">重置密码</el-button>
+                <el-button
+                  size="small"
+                  :type="scope.row.status === 1 ? 'danger' : 'success'"
+                  @click="handleToggleStatus(scope.row)"
+                  :disabled="scope.row.id === 1"
+                >
+                  {{ scope.row.status === 1 ? '禁用' : '启用' }}
+                </el-button>
+                <el-button size="small" type="danger" @click="handleDelete(scope.row)" :disabled="scope.row.id === 1">删除</el-button>
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -282,6 +285,7 @@
                 v-model="userForm.status"
                 placeholder="请选择状态"
                 style="width: 100%"
+                :disabled="userForm.id === 1"
               >
                 <el-option label="正常" :value="1" />
                 <el-option label="禁用" :value="0" />
@@ -387,7 +391,8 @@ const userForm = reactive<UserSaveParams>({
   email: '',
   avatar: '',
   roleType: 5,
-  status: 1
+  status: 1,
+  id: undefined
 })
 
 // 表单验证规则

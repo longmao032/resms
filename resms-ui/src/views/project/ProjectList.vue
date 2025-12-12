@@ -41,6 +41,8 @@
             <el-option label="在售" :value="1" />
             <el-option label="售罄" :value="2" />
             <el-option label="待售" :value="3" />
+            <el-option label="待审核" :value="4" />
+            <el-option label="已驳回" :value="5" />
           </el-select>
         </el-form-item>
         <el-form-item label="物业类型">
@@ -81,6 +83,21 @@
         style="width: 100%"
       >
         <el-table-column prop="projectNo" label="项目编号" width="120" />
+        <el-table-column label="封面图" width="100" align="center">
+          <template #default="{ row }">
+            <el-image 
+              v-if="row.coverUrl" 
+              :src="getImageUrl(row.coverUrl)" 
+              :preview-src-list="[getImageUrl(row.coverUrl)]"
+              fit="cover"
+              style="width: 60px; height: 60px; border-radius: 4px; cursor: pointer;"
+              preview-teleported
+            />
+            <div v-else class="no-cover">
+              <el-icon :size="24" color="#c0c4cc"><Picture /></el-icon>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column prop="projectName" label="项目名称" min-width="180" show-overflow-tooltip />
         <el-table-column prop="developer" label="开发商" min-width="150" show-overflow-tooltip />
         <el-table-column prop="city" label="城市" width="100" />
@@ -98,6 +115,8 @@
             <el-tag v-if="row.status === 1" type="success">在售</el-tag>
             <el-tag v-else-if="row.status === 2" type="info">售罄</el-tag>
             <el-tag v-else-if="row.status === 3" type="warning">待售</el-tag>
+            <el-tag v-else-if="row.status === 4" type="danger">待审核</el-tag>
+            <el-tag v-else-if="row.status === 5" type="danger">已驳回</el-tag>
             <el-tag v-else type="info">未知</el-tag>
           </template>
         </el-table-column>
@@ -109,6 +128,10 @@
         </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
+            <el-button v-if="row.status === 4" link type="success" @click="handleAudit(row)">
+              <el-icon><Check /></el-icon>
+              审核
+            </el-button>
             <el-button link type="primary" @click="handleView(row)">
               <el-icon><View /></el-icon>
               查看
@@ -133,15 +156,60 @@
         @current-change="handlePageChange"
       />
     </el-card>
+
+    <!-- 审核弹窗 -->
+    <el-dialog
+      v-model="auditVisible"
+      title="项目审核"
+      width="600px"
+      append-to-body
+      destroy-on-close
+    >
+      <div v-loading="auditLoading" class="audit-container">
+        <div v-if="auditData" class="project-info">
+          <div v-if="auditData.coverUrl" class="cover-image">
+            <img :src="getImageUrl(auditData.coverUrl)" alt="项目封面" />
+          </div>
+          <el-descriptions :column="2" border size="small">
+            <el-descriptions-item label="项目名称">{{ auditData.projectName }}</el-descriptions-item>
+            <el-descriptions-item label="开发商">{{ auditData.developer }}</el-descriptions-item>
+            <el-descriptions-item label="区域">{{ auditData.city }} - {{ auditData.district }}</el-descriptions-item>
+            <el-descriptions-item label="地址">{{ auditData.address }}</el-descriptions-item>
+            <el-descriptions-item label="物业类型">{{ auditData.propertyType }}</el-descriptions-item>
+            <el-descriptions-item label="均价">{{ auditData.priceAvg }} 元/㎡</el-descriptions-item>
+          </el-descriptions>
+        </div>
+
+        <el-divider />
+
+        <el-form ref="auditFormRef" :model="auditForm" label-width="80px">
+          <el-form-item label="审核结果" required>
+            <el-radio-group v-model="auditForm.status">
+              <el-radio :label="3">通过 (待售)</el-radio>
+              <el-radio :label="5">驳回</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item label="审核备注" v-if="auditForm.status === 5" required>
+             <el-input v-model="auditForm.reason" type="textarea" placeholder="请输入驳回原因" />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="auditVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitAudit" :loading="auditLoading">提交</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Search, Refresh, View, Edit, Plus } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search, Refresh, View, Edit, Plus, Check, Picture } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { getProjectPage } from '@/api/project'
+import { getProjectPage, getProjectById, auditProject } from '@/api/project'
 
 const router = useRouter()
 
@@ -163,6 +231,16 @@ const queryParams = reactive({
 const projectList = ref<any[]>([])
 const total = ref(0)
 const loading = ref(false)
+
+// 审核相关
+const auditVisible = ref(false)
+const auditLoading = ref(false)
+const auditData = ref<any>(null)
+const auditForm = reactive({
+  id: 0,
+  status: 3,
+  reason: ''
+})
 
 // 加载数据
 const loadProjectList = async () => {
@@ -230,6 +308,56 @@ const handleAdd = () => {
   router.push('/project/add')
 }
 
+// 审核
+const handleAudit = async (row: any) => {
+  auditVisible.value = true
+  auditLoading.value = true
+  auditForm.id = row.id
+  auditForm.status = 3 // 默认通过
+  auditForm.reason = ''
+  auditData.value = null
+
+  try {
+    const res = await getProjectById(row.id)
+    if (res.status) {
+      auditData.value = res.data
+    } else {
+      ElMessage.error('获取项目详情失败')
+    }
+  } catch (error) {
+    console.error('获取详情失败', error)
+    ElMessage.error('获取详情失败')
+  } finally {
+    auditLoading.value = false
+  }
+}
+
+// 提交审核
+const submitAudit = async () => {
+  if (auditForm.status === 5 && !auditForm.reason) {
+    ElMessage.warning('请输入驳回原因')
+    return
+  }
+
+  auditLoading.value = true
+  try {
+    await auditProject(auditForm.id, auditForm.status, auditForm.reason)
+    ElMessage.success('审核完成')
+    auditVisible.value = false
+    loadProjectList()
+  } catch (error) {
+    console.error('审核失败', error)
+    ElMessage.error('审核失败')
+  } finally {
+    auditLoading.value = false
+  }
+}
+
+const getImageUrl = (url: string) => {
+    if (!url) return ''
+    return `http://localhost:8080/uploads${url}`
+}
+
 // 组件挂载时加载数据
 onMounted(() => {
   loadProjectList()
@@ -249,5 +377,33 @@ onMounted(() => {
       margin-bottom: 20px;
     }
   }
+}
+
+.no-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+}
+
+.audit-container {
+    .project-info {
+        margin-bottom: 20px;
+        
+        .cover-image {
+            text-align: center;
+            margin-bottom: 15px;
+            
+            img {
+                max-width: 100%;
+                max-height: 200px;
+                object-fit: cover;
+                border-radius: 4px;
+            }
+        }
+    }
 }
 </style>

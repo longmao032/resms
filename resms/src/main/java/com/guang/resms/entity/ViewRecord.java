@@ -14,6 +14,7 @@ import java.util.Date;
 @Data
 @TableName("tb_view_record")
 public class ViewRecord implements Serializable {
+    // Force recompile
     private static final long serialVersionUID = 1L;
 
     /**
@@ -54,9 +55,25 @@ public class ViewRecord implements Serializable {
     private String followAdvice;
 
     /**
+     * 状态：0=待确认, 1=已预约, 2=已完成, 3=已取消
+     */
+    private Integer status;
+
+    /**
+     * 预约方式：1=销售录入, 2=客户线上申请
+     */
+    private Integer appointType;
+
+    /**
+     * 取消原因
+     */
+    private String cancelReason;
+
+    /**
      * 创建时间
      */
     @TableField(fill = FieldFill.INSERT)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;
 
     /**

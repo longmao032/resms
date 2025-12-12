@@ -51,14 +51,12 @@ public class Commission implements Serializable {
     /**
      * 核算时间
      */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date calculateTime;
+    private LocalDateTime calculateTime;
 
     /**
      * 发放时间
      */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date issueTime;
+    private LocalDateTime issueTime;
 
     /**
      * 核算财务ID（关联tb_user表）

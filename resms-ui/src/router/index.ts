@@ -12,6 +12,7 @@ const router = createRouter({
     },
     {
       path: '/',
+      name: 'Layout',
       component: () => import('@/views/AdminLayout.vue'),
       meta: { requiresAuth: true },
       children: [
@@ -53,12 +54,17 @@ const router = createRouter({
           component: () => import('@/views/house/HouseList.vue'),
           meta: { title: '房源列表', permission: 'house:list:manage' }
         },
+        // 注释掉独立的"新增房源"菜单路由
+        // 根据权限优化方案，新增房源改为仅在房源列表页通过按钮访问
+        // 如需恢复独立菜单，请取消注释并在数据库中启用 house:add:page 权限
+        /*
         {
           path: '/house/add',
           name: 'HouseAdd',
           component: () => import('@/views/house/HouseAdd.vue'),
           meta: { title: '新增房源', permission: 'house:add:page' }
         },
+        */
         {
           path: '/house/edit/:id',
           name: 'HouseEdit',
@@ -201,6 +207,75 @@ const router = createRouter({
           name: 'TeamPerformance',
           component: () => import('@/views/team/TeamPerformance.vue'),
           meta: { title: '团队业绩', permission: 'team:performance' }
+        },
+        // 收款记录
+        {
+          path: '/payment/list',
+          name: 'PaymentList',
+          component: () => import('@/views/payment/payMentList.vue'),
+          meta: { title: '收款记录列表', permission: 'payment:list:manage' }
+        },
+        {
+          path: '/payment/statistics',
+          name: 'PaymentStatistics',
+          component: () => import('@/views/payment/PaymentStatistics.vue'),
+          meta: { title: '收款统计', permission: 'payment:statistics:manage' }
+        },
+        // 工作通知
+        {
+          path: '/work-notice/list',
+          name: 'WorkNoticeList',
+          component: () => import('@/views/work-notice/list/index.vue'),
+          meta: { title: '通知列表', permission: 'work:notice:list:manage' }
+        },
+        {
+          path: '/work-notice/send',
+          redirect: '/work-notice/list'
+        },
+        // 报表管理
+        {
+          path: '/report/sale',
+          name: 'SaleReport',
+          component: () => import('@/views/report/sale/index.vue'),
+          meta: { title: '销售报表', permission: 'report:sale:manage' }
+        },
+        {
+          path: '/report/financial',
+          name: 'FinancialReport',
+          component: () => import('@/views/report/financial/index.vue'),
+          meta: { title: '财务报表', permission: 'report:financial:manage' }
+        },
+        {
+          path: '/report/customer',
+          name: 'CustomerReport',
+          component: () => import('@/views/report/customer/index.vue'),
+          meta: { title: '客户报表', permission: 'report:customer:manage' }
+        },
+        // 个人中心
+        {
+          path: '/profile',
+          name: 'Profile',
+          component: () => import('@/views/profile/index.vue'),
+          meta: { title: '个人中心' }
+        },
+        {
+          path: '/profile/info',
+          name: 'ProfileInfo',
+          component: () => import('@/views/profile/index.vue'),
+          meta: { title: '个人资料' }
+        },
+        {
+          path: '/profile/password',
+          name: 'ProfilePassword',
+          component: () => import('@/views/profile/index.vue'),
+          meta: { title: '修改密码' }
+        },
+        // 操作日志
+        {
+          path: '/system/log',
+          name: 'SystemLog',
+          component: () => import('@/views/Dashboard.vue'),
+          meta: { title: '操作日志', permission: 'system:log:manage' }
         }
       ]
     },

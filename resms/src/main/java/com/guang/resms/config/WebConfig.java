@@ -9,15 +9,29 @@ import java.io.File;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
+    @org.springframework.beans.factory.annotation.Value("${file.upload.path:uploads}")
+    private String uploadPath;
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 获取项目根目录
-        String projectRoot = System.getProperty("user.dir");
-        String uploadsPath = projectRoot + File.separator + "uploads";
+        // 获取所有配置的上传路径
+        String fullPath;
+        File file = new File(uploadPath);
+        if (!file.isAbsolute()) {
+            fullPath = System.getProperty("user.dir") + File.separator + uploadPath;
+        } else {
+            fullPath = uploadPath;
+        }
+
+        // 规范化路径（Windows下将\转换为/）
+        fullPath = fullPath.replace("\\", "/");
+        if (!fullPath.endsWith("/")) {
+            fullPath += "/";
+        }
 
         // 映射uploads文件夹
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + uploadsPath + File.separator);
+                .addResourceLocations("file:" + fullPath);
 
         // 同时保留默认的静态资源映射
         registry.addResourceHandler("/**")

@@ -4,9 +4,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.guang.resms.entity.Role;
 import com.guang.resms.entity.vo.RoleVO;
 import com.guang.resms.service.RoleService;
-import com.guang.resms.utils.exception.HttpEnums;
-import com.guang.resms.utils.exception.ResponseResult;
-import com.guang.resms.utils.exception.ServiceException;
+import com.guang.resms.common.exception.HttpEnums;
+import com.guang.resms.common.exception.ResponseResult;
+import com.guang.resms.common.exception.ServiceException;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 

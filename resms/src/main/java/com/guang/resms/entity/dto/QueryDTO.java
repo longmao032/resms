@@ -21,4 +21,7 @@ public class QueryDTO {
     private String layout;
     private String sortField;
     private String sortOrder;
+
+    private Integer noticeType; // 筛选类型
+    private Integer isRead;     // 筛选状态: 0=未读, 1=已读
 }

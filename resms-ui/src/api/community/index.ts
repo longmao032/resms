@@ -34,3 +34,27 @@ export const updateCommunity = (data: any) => {
 export const deleteCommunity = (id: number) => {
   return request.delete(`/community/${id}`)
 }
+
+/**
+ * 审核小区
+ */
+export const auditCommunity = (id: number, status: number, reason?: string) => {
+  return request.post(`/community/audit/${id}`, null, {
+    params: {
+      status,
+      reason
+    }
+  })
+}
+
+/**
+ * 上传小区封面图片
+ */
+export const uploadCommunityCover = (file: File, communityName: string = 'community') => {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('communityName', communityName)
+  return request.post('/community/uploadCover', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}

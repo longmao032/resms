@@ -4,9 +4,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.guang.resms.entity.User;
 import com.guang.resms.entity.vo.UserVO;
 import com.guang.resms.service.UserService;
-import com.guang.resms.utils.exception.HttpEnums;
-import com.guang.resms.utils.exception.ResponseResult;
-import com.guang.resms.utils.exception.ServiceException;
+import com.guang.resms.common.exception.HttpEnums;
+import com.guang.resms.common.exception.ResponseResult;
+import com.guang.resms.common.exception.ServiceException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -86,6 +86,22 @@ public class UserController {
     }
 
     /**
+     * 获取当前登录用户信息
+     */
+    @GetMapping("/info")
+    public ResponseResult<UserVO> getUserInfo() {
+        try {
+            Integer userId = com.guang.resms.common.utils.SecurityUtils.getUserId();
+            if (userId == null) {
+                return ResponseResult.fail(HttpEnums.UNAUTHORIZED.getCode(), "未登录");
+            }
+            return getUserDetail(userId);
+        } catch (Exception e) {
+            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(), "获取当前用户信息失败");
+        }
+    }
+
+    /**
      * 获取用户信息详情
      */
     @GetMapping("/{id}")
@@ -114,6 +130,26 @@ public class UserController {
     public ResponseResult<List<UserVO>> getAllUsers() {
         try {
             List<UserVO> users = userService.getAllUsers();
+            return ResponseResult.success("查询成功", users);
+
+        } catch (Exception e) {
+            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(), "获取用户列表失败");
+        }
+    }
+
+    /**
+     * 根据角色类型获取用户列表（用于团队管理中选择经理/成员）
+     * 
+     * @param roleType 角色类型：2=销售顾问, 3=销售经理
+     */
+    @GetMapping("/listByRole/{roleType}")
+    public ResponseResult<List<UserVO>> getUsersByRole(@PathVariable Integer roleType) {
+        try {
+            if (roleType == null) {
+                return ResponseResult.fail(HttpEnums.BAD_REQUEST.getCode(), "角色类型不能为空");
+            }
+
+            List<UserVO> users = userService.getUsersByRoleType(roleType);
             return ResponseResult.success("查询成功", users);
 
         } catch (Exception e) {
@@ -256,7 +292,8 @@ public class UserController {
      * 更新用户密码
      */
     @PutMapping("/password")
-    public ResponseResult<Void> updateUserPassword(@RequestBody Map<String, Object> params, HttpServletRequest request) {
+    public ResponseResult<Void> updateUserPassword(@RequestBody Map<String, Object> params,
+            HttpServletRequest request) {
         try {
             Integer userId = (Integer) params.get("userId");
             String oldPassword = (String) params.get("oldPassword");
@@ -291,7 +328,7 @@ public class UserController {
      */
     @GetMapping("/check-username")
     public ResponseResult<Map<String, Boolean>> checkUsername(@RequestParam String username,
-                                                             @RequestParam(required = false) Integer excludeId) {
+            @RequestParam(required = false) Integer excludeId) {
         try {
             if (!StringUtils.hasText(username)) {
                 return ResponseResult.fail(HttpEnums.BAD_REQUEST.getCode(), "用户名不能为空");
@@ -313,7 +350,7 @@ public class UserController {
      */
     @GetMapping("/check-phone")
     public ResponseResult<Map<String, Boolean>> checkPhone(@RequestParam String phone,
-                                                          @RequestParam(required = false) Integer excludeId) {
+            @RequestParam(required = false) Integer excludeId) {
         try {
             if (!StringUtils.hasText(phone)) {
                 return ResponseResult.fail(HttpEnums.BAD_REQUEST.getCode(), "手机号不能为空");
@@ -335,7 +372,7 @@ public class UserController {
      */
     @GetMapping("/check-email")
     public ResponseResult<Map<String, Boolean>> checkEmail(@RequestParam String email,
-                                                          @RequestParam(required = false) Integer excludeId) {
+            @RequestParam(required = false) Integer excludeId) {
         try {
             if (!StringUtils.hasText(email)) {
                 return ResponseResult.fail(HttpEnums.BAD_REQUEST.getCode(), "邮箱不能为空");
@@ -350,5 +387,17 @@ public class UserController {
         } catch (Exception e) {
             return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(), "检查邮箱失败");
         }
+    }
+
+    /**
+     * 根据角色获取启用状态的用户列表（用于下拉框）
+     * * @param roleType 角色ID
+     * 
+     * @return {@link ResponseResult}
+     */
+    @GetMapping("/teamListByRole/{roleType}")
+    public ResponseResult<List<UserVO>> getListByRole(@PathVariable Integer roleType) {
+        List<UserVO> list = userService.getEnableUsersByRole(roleType);
+        return ResponseResult.success(list);
     }
 }

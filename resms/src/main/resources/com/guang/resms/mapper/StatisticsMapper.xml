@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guang.resms.mapper.StatisticsMapper">
+
+    <!-- 房源统计 -->
+    <select id="countTotalHouses" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM tb_house
+    </select>
+
+    <select id="countHousesByStatus" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM tb_house WHERE status = #{status}
+    </select>
+
+    <select id="countHousesGroupByStatus" resultType="java.util.Map">
+        SELECT status, COUNT(*) as count 
+        FROM tb_house 
+        GROUP BY status
+    </select>
+
+    <select id="countHousesGroupByType" resultType="java.util.Map">
+        SELECT house_type as type, COUNT(*) as count 
+        FROM tb_house 
+        GROUP BY house_type
+    </select>
+
+    <!-- 客户统计 -->
+    <select id="countTotalCustomers" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM tb_customer
+    </select>
+
+    <select id="countNewCustomersLineDate" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM tb_customer WHERE DATE(create_time) &gt;= #{date}
+    </select>
+
+    <select id="countCustomersGroupByIntention" resultType="java.util.Map">
+        SELECT intention_level as level, COUNT(*) as count 
+        FROM tb_customer 
+        GROUP BY intention_level
+    </select>
+
+    <select id="countCustomersGroupBySource" resultType="java.util.Map">
+        SELECT source, COUNT(*) as count 
+        FROM tb_customer 
+        GROUP BY source
+    </select>
+
+    <!-- 交易统计 -->
+    <select id="sumTotalTransactionAmount" resultType="java.math.BigDecimal">
+        SELECT IFNULL(SUM(deal_price), 0) FROM tb_transaction WHERE status != 5
+    </select>
+
+    <select id="countTotalTransactions" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM tb_transaction
+    </select>
+
+    <select id="countPendingAuditTransactions" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM tb_transaction WHERE manager_audit = 0
+    </select>
+
+    <select id="selectRecentTransactionTrend" resultType="java.util.Map">
+        SELECT 
+            DATE_FORMAT(create_time, '%Y-%m-%d') as date,
+            COUNT(*) as count,
+            IFNULL(SUM(deal_price), 0) as amount
+        FROM tb_transaction
+        WHERE create_time >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+        GROUP BY DATE_FORMAT(create_time, '%Y-%m-%d')
+        ORDER BY date ASC
+    </select>
+
+    <!-- 收款统计 -->
+    <select id="sumTotalPaymentAmount" resultType="java.math.BigDecimal">
+        SELECT IFNULL(SUM(amount), 0) FROM tb_payment WHERE payment_status = 1
+    </select>
+
+    <select id="sumPaymentAmountByDate" resultType="java.math.BigDecimal">
+        SELECT IFNULL(SUM(amount), 0) FROM tb_payment 
+        WHERE payment_status = 1 AND DATE(payment_time) = #{date}
+    </select>
+
+    <select id="countPendingConfirmPayments" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM tb_payment WHERE payment_status = 0
+    </select>
+
+    <select id="selectRecentPaymentTrend" resultType="java.util.Map">
+        SELECT 
+            DATE_FORMAT(payment_time, '%Y-%m-%d') as date,
+            IFNULL(SUM(amount), 0) as amount
+        FROM tb_payment
+        WHERE payment_status = 1 AND payment_time >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+        GROUP BY DATE_FORMAT(payment_time, '%Y-%m-%d')
+        ORDER BY date ASC
+    </select>
+
+</mapper>

@@ -83,11 +83,13 @@
             </template>
           </el-table-column>
           <el-table-column prop="createTime" label="创建时间" width="180" />
-          <el-table-column label="操作" fixed="right" width="200">
+          <el-table-column label="操作" fixed="right" width="280">
             <template #default="scope">
-              <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
-              <el-button size="small" type="success" @click="handleAssignPermissions(scope.row)">权限配置</el-button>
-              <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+              <div style="display: flex; align-items: center; justify-content: flex-start; flex-wrap: nowrap;">
+                <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
+                <el-button size="small" type="success" @click="handleAssignPermissions(scope.row)" :disabled="scope.row.id === 1">权限配置</el-button>
+                <el-button size="small" type="danger" @click="handleDelete(scope.row)" :disabled="scope.row.id === 1">删除</el-button>
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -155,6 +157,7 @@
                 v-model="roleForm.dataScope"
                 placeholder="请选择数据权限范围"
                 style="width: 100%"
+                :disabled="roleForm.id === 1"
               >
                 <el-option
                   v-for="scope in dataScopeOptions"
@@ -171,6 +174,7 @@
                 v-model="roleForm.status"
                 placeholder="请选择状态"
                 style="width: 100%"
+                :disabled="roleForm.id === 1"
               >
                 <el-option label="启用" :value="1" />
                 <el-option label="禁用" :value="0" />
@@ -292,7 +296,8 @@ const roleForm = reactive<RoleSaveParams>({
   roleCode: '',
   description: '',
   dataScope: 1,
-  status: 1
+  status: 1,
+  id: undefined
 })
 
 // 表单验证规则

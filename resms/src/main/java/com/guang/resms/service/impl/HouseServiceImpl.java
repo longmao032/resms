@@ -14,21 +14,18 @@ import com.guang.resms.mapper.HouseImageMapper;
 import com.guang.resms.mapper.HouseMapper;
 import com.guang.resms.mapper.NewHouseInfoMapper;
 import com.guang.resms.mapper.SecondHouseInfoMapper;
+import com.guang.resms.mapper.SecondHouseInfoMapper;
 import com.guang.resms.service.HouseService;
-import com.guang.resms.utils.exception.ServiceException;
+import com.guang.resms.service.NotificationService;
+import com.guang.resms.common.exception.ServiceException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -48,6 +45,9 @@ public class HouseServiceImpl implements HouseService {
 
     @Autowired
     private SecondHouseInfoMapper secondHouseInfoMapper;
+
+    @Autowired
+    private NotificationService notificationService;
 
     @Autowired
     private HouseImageMapper houseImageMapper;
@@ -80,22 +80,27 @@ public class HouseServiceImpl implements HouseService {
         Long total = houseMapper.selectHouseCount(queryDTO);
 
         // 为 Mapper 设置 OFFSET 和 LIMIT 参数
-        queryDTO.setPageNum(offset);  // 传给 Mapper 的是 offset
+        queryDTO.setPageNum(offset); // 传给 Mapper 的是 offset
         queryDTO.setPageSize(pageSize);
 
         // 查询列表
         List<HouseVO> list = houseMapper.selectHouseListWithDetails(queryDTO);
 
-        // 设置状态文本和类型文本
-        list.forEach(this::setTextFields);
+        // 设置状态文本和类型文本，并加载图片列表
+        list.forEach(house -> {
+            setTextFields(house);
+            // 查询并设置房源图片列表
+            List<String> images = houseMapper.selectHouseImages(house.getId());
+            house.setImages(images);
+        });
 
         // 构建返回结果
         Map<String, Object> result = new HashMap<>();
         result.put("total", total);
         result.put("list", list);
-        result.put("pageNum", currentPage);  // 返回原始页码
+        result.put("pageNum", currentPage); // 返回原始页码
         result.put("pageSize", pageSize);
-        result.put("pages", (total + pageSize - 1) / pageSize);  // 总页数
+        result.put("pages", (total + pageSize - 1) / pageSize); // 总页数
 
         return result;
     }
@@ -134,7 +139,8 @@ public class HouseServiceImpl implements HouseService {
                 if (secondHouseInfo != null) {
                     // 设置状态文本
                     secondHouseInfo.setMortgageStatusText(getMortgageStatusText(secondHouseInfo.getMortgageStatus()));
-                    secondHouseInfo.setCertificateStatusText(getCertificateStatusText(secondHouseInfo.getCertificateStatus()));
+                    secondHouseInfo
+                            .setCertificateStatusText(getCertificateStatusText(secondHouseInfo.getCertificateStatus()));
                     houseVO.setSecondHouseInfo(secondHouseInfo);
                 }
             }
@@ -150,6 +156,8 @@ public class HouseServiceImpl implements HouseService {
 
         return houseVO;
     }
+
+    // ... (省略addHouse前面的部分)
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -167,7 +175,7 @@ public class HouseServiceImpl implements HouseService {
         House house = new House();
         BeanUtils.copyProperties(houseDTO, house);
         house.setHouseNo(houseNo);
-        
+
         // 设置默认值
         if (house.getStatus() == null) {
             house.setStatus(0); // 默认状态：待审核
@@ -188,6 +196,10 @@ public class HouseServiceImpl implements HouseService {
         // 保存图片信息
         saveImages(houseDTO, houseId, houseNo);
 
+        // 发送自动通知给管理员
+        String houseTitle = String.format("%s (%s)", houseNo, houseDTO.getLayout());
+        notificationService.notifyHouseCreated(houseId, houseTitle, house.getSalesId());
+
         log.info("新增房源：{} - {}", houseNo, houseDTO.getLayout());
         return true;
     }
@@ -197,12 +209,12 @@ public class HouseServiceImpl implements HouseService {
      */
     private void saveExtendInfo(HouseDTO houseDTO, Integer houseId) {
         Integer houseType = houseDTO.getHouseType();
-        
+
         if (houseType == 2 && houseDTO.getNewHouseInfo() != null) {
             // 保存新房扩展信息
             NewHouseInfo newHouseInfo = new NewHouseInfo();
             HouseDTO.NewHouseInfoDTO dto = houseDTO.getNewHouseInfo();
-            
+
             newHouseInfo.setHouseId(houseId);
             newHouseInfo.setPreSaleLicenseNo(dto.getPreSaleLicenseNo());
             newHouseInfo.setRecordPrice(dto.getRecordPrice());
@@ -210,7 +222,7 @@ public class HouseServiceImpl implements HouseService {
             newHouseInfo.setDeliveryStandard(dto.getDeliveryStandard());
             newHouseInfo.setElevatorRatio(dto.getElevatorRatio());
             newHouseInfo.setActualAreaRate(dto.getActualAreaRate());
-            
+
             // 处理预计交房时间
             if (dto.getEstimatedDeliveryTime() != null && !dto.getEstimatedDeliveryTime().isEmpty()) {
                 try {
@@ -220,20 +232,20 @@ public class HouseServiceImpl implements HouseService {
                     log.warn("预计交房时间格式错误: {}", dto.getEstimatedDeliveryTime());
                 }
             }
-            
+
             int insertResult = newHouseInfoMapper.insert(newHouseInfo);
             if (insertResult <= 0) {
                 throw new ServiceException("保存新房扩展信息失败");
             }
             log.info("保存新房扩展信息成功，houseId={}", houseId);
-            
+
         } else if (houseType == 1 && houseDTO.getSecondHouseInfo() != null) {
             // 保存二手房扩展信息
             SecondHouseInfo secondHouseInfo = new SecondHouseInfo();
             HouseDTO.SecondHouseInfoDTO dto = houseDTO.getSecondHouseInfo();
-            
+
             secondHouseInfo.setHouseId(houseId);
-            
+
             // 处理建筑年代
             if (dto.getBuildYear() != null && !dto.getBuildYear().isEmpty()) {
                 try {
@@ -242,7 +254,7 @@ public class HouseServiceImpl implements HouseService {
                     log.warn("建筑年代格式错误: {}", dto.getBuildYear());
                 }
             }
-            
+
             // 处理装修时间
             if (dto.getDecorationTime() != null && !dto.getDecorationTime().isEmpty()) {
                 try {
@@ -255,13 +267,13 @@ public class HouseServiceImpl implements HouseService {
                     log.warn("装修时间格式错误: {}", dto.getDecorationTime());
                 }
             }
-            
+
             secondHouseInfo.setIsOverTwo(dto.getIsOverTwo());
             secondHouseInfo.setIsOverFive(dto.getIsOverFive());
             secondHouseInfo.setIsOnlyHouse(dto.getIsOnlyHouse());
             secondHouseInfo.setMortgageStatus(dto.getMortgageStatus());
             secondHouseInfo.setHouseUsage(dto.getHouseUsage());
-            
+
             int insertResult = secondHouseInfoMapper.insert(secondHouseInfo);
             if (insertResult <= 0) {
                 throw new ServiceException("保存二手房扩展信息失败");
@@ -275,17 +287,16 @@ public class HouseServiceImpl implements HouseService {
      */
     private void updateExtendInfo(HouseDTO houseDTO, Integer houseId) {
         Integer houseType = houseDTO.getHouseType();
-        
+
         if (houseType == 2 && houseDTO.getNewHouseInfo() != null) {
             // 更新新房扩展信息
             HouseDTO.NewHouseInfoDTO dto = houseDTO.getNewHouseInfo();
-            
+
             // 检查是否已存在记录
             NewHouseInfo existingInfo = newHouseInfoMapper.selectOne(
-                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<NewHouseInfo>()
-                    .eq(NewHouseInfo::getHouseId, houseId)
-            );
-            
+                    new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<NewHouseInfo>()
+                            .eq(NewHouseInfo::getHouseId, houseId));
+
             if (existingInfo != null) {
                 // 更新现有记录
                 existingInfo.setPreSaleLicenseNo(dto.getPreSaleLicenseNo());
@@ -294,7 +305,7 @@ public class HouseServiceImpl implements HouseService {
                 existingInfo.setDeliveryStandard(dto.getDeliveryStandard());
                 existingInfo.setElevatorRatio(dto.getElevatorRatio());
                 existingInfo.setActualAreaRate(dto.getActualAreaRate());
-                
+
                 // 处理预计交房时间
                 if (dto.getEstimatedDeliveryTime() != null && !dto.getEstimatedDeliveryTime().isEmpty()) {
                     try {
@@ -304,24 +315,23 @@ public class HouseServiceImpl implements HouseService {
                         log.warn("预计交房时间格式错误: {}", dto.getEstimatedDeliveryTime());
                     }
                 }
-                
+
                 newHouseInfoMapper.updateById(existingInfo);
                 log.info("更新新房扩展信息成功，houseId={}", houseId);
             } else {
                 // 不存在则新增
                 saveExtendInfo(houseDTO, houseId);
             }
-            
+
         } else if (houseType == 1 && houseDTO.getSecondHouseInfo() != null) {
             // 更新二手房扩展信息
             HouseDTO.SecondHouseInfoDTO dto = houseDTO.getSecondHouseInfo();
-            
+
             // 检查是否已存在记录
             SecondHouseInfo existingInfo = secondHouseInfoMapper.selectOne(
-                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SecondHouseInfo>()
-                    .eq(SecondHouseInfo::getHouseId, houseId)
-            );
-            
+                    new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SecondHouseInfo>()
+                            .eq(SecondHouseInfo::getHouseId, houseId));
+
             if (existingInfo != null) {
                 // 更新现有记录
                 // 处理建筑年代
@@ -332,7 +342,7 @@ public class HouseServiceImpl implements HouseService {
                         log.warn("建筑年代格式错误: {}", dto.getBuildYear());
                     }
                 }
-                
+
                 // 处理装修时间
                 if (dto.getDecorationTime() != null && !dto.getDecorationTime().isEmpty()) {
                     try {
@@ -345,13 +355,13 @@ public class HouseServiceImpl implements HouseService {
                         log.warn("装修时间格式错误: {}", dto.getDecorationTime());
                     }
                 }
-                
+
                 existingInfo.setIsOverTwo(dto.getIsOverTwo());
                 existingInfo.setIsOverFive(dto.getIsOverFive());
                 existingInfo.setIsOnlyHouse(dto.getIsOnlyHouse());
                 existingInfo.setMortgageStatus(dto.getMortgageStatus());
                 existingInfo.setHouseUsage(dto.getHouseUsage());
-                
+
                 secondHouseInfoMapper.updateById(existingInfo);
                 log.info("更新二手房扩展信息成功，houseId={}", houseId);
             } else {
@@ -403,7 +413,7 @@ public class HouseServiceImpl implements HouseService {
                 log.warn("保存图片信息失败: {}", imageUrl);
             }
         }
-        
+
         log.info("保存房源图片成功，houseId={}, 图片数量={}", houseId, images.size());
     }
 
@@ -418,9 +428,8 @@ public class HouseServiceImpl implements HouseService {
 
         // 删除旧图片记录
         houseImageMapper.delete(
-            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<HouseImage>()
-                .eq(HouseImage::getHouseId, houseId)
-        );
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<HouseImage>()
+                        .eq(HouseImage::getHouseId, houseId));
         log.info("删除房源旧图片记录，houseId={}", houseId);
 
         // 保存新图片
@@ -629,10 +638,16 @@ public class HouseServiceImpl implements HouseService {
 
         int result = houseMapper.updateById(house);
 
-        // TODO: 记录审核日志
-
-        log.info("审核房源：{} - {} - 原因：{}", house.getHouseNo(), 
-                 approved ? "通过" : "拒绝", reason);
+        // 发送审核结果通知给销售
+        String houseTitle = String.format("%s (%s)", house.getHouseNo(), house.getLayout());
+        notificationService.notifyHouseAudited(
+                house.getId(),
+                houseTitle,
+                house.getSalesId(),
+                approved,
+                reason);
+        log.info("审核房源：{} - {} - 原因：{}", house.getHouseNo(),
+                approved ? "通过" : "拒绝", reason);
         return result > 0;
     }
 

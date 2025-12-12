@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guang.resms.mapper.CommissionMapper">
+    <select id="selectPageVO" resultType="com.guang.resms.entity.vo.CommissionVO">
+        SELECT c.id, c.commission_rate, c.amount, c.status, c.calculate_time, c.issue_time,
+               t.transaction_no, t.deal_price,
+               u.real_name AS sales_name,
+               f.real_name AS finance_name
+        FROM tb_commission c
+        LEFT JOIN tb_transaction t ON c.transaction_id = t.id
+        LEFT JOIN tb_user u ON c.sales_id = u.id
+        LEFT JOIN tb_user f ON c.finance_id = f.id
+        WHERE 1=1
+        <if test="dto.transactionNo != null and dto.transactionNo != ''">
+          AND t.transaction_no LIKE CONCAT('%', #{dto.transactionNo}, '%')
+        </if>
+        <if test="dto.salesName != null and dto.salesName != ''">
+          AND u.real_name LIKE CONCAT('%', #{dto.salesName}, '%')
+        </if>
+        <if test="dto.status != null">
+          AND c.status = #{dto.status}
+        </if>
+        ORDER BY c.create_time DESC
+    </select>
+</mapper>

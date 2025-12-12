@@ -8,11 +8,16 @@ export interface loginForm {
 // 用户信息类型
 export interface UserInfo {
     userId: number;
+    id?: number; // 兼容UserVO
     username: string;
     realName: string;
     avatar: string;
     token: string;
     roleType: number;
+    phone?: string;
+    email?: string;
+    sex?: number;
+    remark?: string;
     menus: Menu[];
     permissions: string[];
 }

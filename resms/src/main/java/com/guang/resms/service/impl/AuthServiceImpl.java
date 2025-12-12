@@ -7,9 +7,9 @@ import com.guang.resms.entity.vo.MenuVO;
 import com.guang.resms.mapper.UserMapper;
 import com.guang.resms.service.AuthService;
 import com.guang.resms.service.PermissionService;
-import com.guang.resms.utils.JwtUtil;
-import com.guang.resms.utils.exception.HttpEnums;
-import com.guang.resms.utils.exception.ServiceException;
+import com.guang.resms.common.utils.JwtUtil;
+import com.guang.resms.common.exception.HttpEnums;
+import com.guang.resms.common.exception.ServiceException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 

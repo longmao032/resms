@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guang.resms.mapper.PaymentMapper">
+
+    <select id="selectPaymentPage" resultType="com.guang.resms.entity.vo.PaymentVO">
+        SELECT
+        p.*,
+        t.transaction_no,
+        c.real_name AS customer_name,
+        h.house_no,
+        u.real_name AS finance_name
+        FROM tb_payment p
+        LEFT JOIN tb_transaction t ON p.transaction_id = t.id
+        LEFT JOIN tb_customer c ON t.customer_id = c.id
+        LEFT JOIN tb_house h ON t.house_id = h.id
+        LEFT JOIN tb_user u ON p.finance_id = u.id
+        <where>
+            <if test="dto.transactionId != null">AND p.transaction_id = #{dto.transactionId}</if>
+            <if test="dto.paymentType != null">AND p.payment_type = #{dto.paymentType}</if>
+            <if test="dto.paymentStatus != null">AND p.payment_status = #{dto.paymentStatus}</if>
+            <if test="dto.financeId != null">AND p.finance_id = #{dto.financeId}</if>
+            <if test="dto.receiptNo != null and dto.receiptNo != ''">AND p.receipt_no LIKE CONCAT('%', #{dto.receiptNo}, '%')</if>
+            <if test="dto.startDate != null">AND p.payment_time &gt;= #{dto.startDate}</if>
+            <if test="dto.endDate != null">AND p.payment_time &lt;= #{dto.endDate}</if>
+        </where>
+        ORDER BY p.create_time DESC
+    </select>
+
+    <select id="selectOverviewStats" resultType="java.util.Map">
+        SELECT
+            SUM(amount) as total_amount,
+            SUM(CASE WHEN DATE(payment_time) = CURDATE() THEN amount ELSE 0 END) as today_amount,
+            SUM(CASE WHEN DATE_FORMAT(payment_time, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m') THEN amount ELSE 0 END) as month_amount,
+            SUM(CASE WHEN payment_status = 0 THEN amount ELSE 0 END) as pending_amount
+        FROM tb_payment
+        WHERE payment_status != 2 -- 排除已作废
+    </select>
+
+    <select id="selectTrendStats" resultType="java.util.Map">
+        SELECT
+            DATE_FORMAT(payment_time, '%Y-%m') as `month`,
+            SUM(amount) as `amount`
+        FROM tb_payment
+        WHERE payment_status = 1
+          AND payment_time >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+        GROUP BY `month`
+        ORDER BY `month` ASC
+    </select>
+
+    <select id="selectTypeStats" resultType="java.util.Map">
+        SELECT
+            CASE payment_type
+                WHEN 1 THEN '定金'
+                WHEN 2 THEN '首付款'
+                WHEN 3 THEN '尾款'
+                WHEN 4 THEN '中介费'
+                ELSE '其他'
+                END as `name`,
+            SUM(amount) as `value`
+        FROM tb_payment
+        WHERE payment_status = 1
+        GROUP BY payment_type
+    </select>
+
+    <select id="selectSalesRanking" resultType="java.util.Map">
+        SELECT
+            u.real_name as sales_name,
+            SUM(p.amount) as total_amount
+        FROM tb_payment p
+                 JOIN tb_transaction t ON p.transaction_id = t.id
+                 JOIN tb_user u ON t.sales_id = u.id
+        WHERE p.payment_status = 1
+        GROUP BY u.id
+        ORDER BY total_amount DESC
+            LIMIT 10
+    </select>
+
+</mapper>

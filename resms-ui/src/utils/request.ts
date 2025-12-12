@@ -10,7 +10,7 @@ const getCsrfToken = async (): Promise<string | null> => {
   if (csrfToken) return csrfToken
 
   try {
-    const response: AxiosResponse = await axios.get('http://localhost:8080/auth/csrf-token', {
+    const response: AxiosResponse = await axios.get('/api/auth/csrf-token', {
       withCredentials: true
     })
 
@@ -27,7 +27,7 @@ const getCsrfToken = async (): Promise<string | null> => {
 
 // 创建axios实例
 const request = axios.create({
-  baseURL: 'http://localhost:8080', // 根据你的后端地址修改
+  baseURL: '/api', // 使用相对路径，通过 Vite 代理转发到后端
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'

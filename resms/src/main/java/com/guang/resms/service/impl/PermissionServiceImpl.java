@@ -12,7 +12,7 @@ import com.guang.resms.mapper.PermissionMapper;
 import com.guang.resms.mapper.RolePermissionMapper;
 import com.guang.resms.mapper.UserRoleMapper;
 import com.guang.resms.service.PermissionService;
-import com.guang.resms.utils.exception.ServiceException;
+import com.guang.resms.common.exception.ServiceException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -32,8 +32,8 @@ public class PermissionServiceImpl implements PermissionService {
     private final PermissionMapper permissionMapper;
 
     public PermissionServiceImpl(UserRoleMapper userRoleMapper,
-                                RolePermissionMapper rolePermissionMapper,
-                                PermissionMapper permissionMapper) {
+            RolePermissionMapper rolePermissionMapper,
+            PermissionMapper permissionMapper) {
         this.userRoleMapper = userRoleMapper;
         this.rolePermissionMapper = rolePermissionMapper;
         this.permissionMapper = permissionMapper;
@@ -47,32 +47,30 @@ public class PermissionServiceImpl implements PermissionService {
 
         // 1. 获取用户角色
         List<UserRole> userRoles = userRoleMapper.selectList(
-            new LambdaQueryWrapper<UserRole>()
-                .eq(UserRole::getUserId, userId)
-        );
+                new LambdaQueryWrapper<UserRole>()
+                        .eq(UserRole::getUserId, userId));
 
         if (userRoles.isEmpty()) {
             return new ArrayList<>();
         }
 
         List<Integer> roleIds = userRoles.stream()
-            .map(UserRole::getRoleId)
-            .collect(Collectors.toList());
+                .map(UserRole::getRoleId)
+                .collect(Collectors.toList());
 
         // 2. 获取角色权限关联
         List<RolePermission> rolePermissions = rolePermissionMapper.selectList(
-            new LambdaQueryWrapper<RolePermission>()
-                .in(RolePermission::getRoleId, roleIds)
-        );
+                new LambdaQueryWrapper<RolePermission>()
+                        .in(RolePermission::getRoleId, roleIds));
 
         if (rolePermissions.isEmpty()) {
             return new ArrayList<>();
         }
 
         List<Integer> permissionIds = rolePermissions.stream()
-            .map(RolePermission::getPermissionId)
-            .distinct()
-            .collect(Collectors.toList());
+                .map(RolePermission::getPermissionId)
+                .distinct()
+                .collect(Collectors.toList());
 
         // 3. 获取权限信息并转换为菜单结构
         List<Permission> permissions = permissionMapper.selectBatchIds(permissionIds);
@@ -88,42 +86,40 @@ public class PermissionServiceImpl implements PermissionService {
 
         // 1. 获取用户角色
         List<UserRole> userRoles = userRoleMapper.selectList(
-            new LambdaQueryWrapper<UserRole>()
-                .eq(UserRole::getUserId, userId)
-        );
+                new LambdaQueryWrapper<UserRole>()
+                        .eq(UserRole::getUserId, userId));
 
         if (userRoles.isEmpty()) {
             return new ArrayList<>();
         }
 
         List<Integer> roleIds = userRoles.stream()
-            .map(UserRole::getRoleId)
-            .collect(Collectors.toList());
+                .map(UserRole::getRoleId)
+                .collect(Collectors.toList());
 
         // 2. 获取角色权限关联
         List<RolePermission> rolePermissions = rolePermissionMapper.selectList(
-            new LambdaQueryWrapper<RolePermission>()
-                .in(RolePermission::getRoleId, roleIds)
-        );
+                new LambdaQueryWrapper<RolePermission>()
+                        .in(RolePermission::getRoleId, roleIds));
 
         if (rolePermissions.isEmpty()) {
             return new ArrayList<>();
         }
 
         List<Integer> permissionIds = rolePermissions.stream()
-            .map(RolePermission::getPermissionId)
-            .distinct()
-            .collect(Collectors.toList());
+                .map(RolePermission::getPermissionId)
+                .distinct()
+                .collect(Collectors.toList());
 
         // 3. 获取所有权限（包括菜单权限和按钮权限）
         List<Permission> permissions = permissionMapper.selectBatchIds(permissionIds);
 
         // 4. 提取所有权限码（不仅仅是菜单权限）
         return permissions.stream()
-            .filter(p -> StringUtils.hasText(p.getPermissionCode()))
-            .map(Permission::getPermissionCode)
-            .distinct()
-            .collect(Collectors.toList());
+                .filter(p -> StringUtils.hasText(p.getPermissionCode()))
+                .map(Permission::getPermissionCode)
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -147,14 +143,14 @@ public class PermissionServiceImpl implements PermissionService {
     private List<MenuVO> buildMenuTree(List<Permission> permissions) {
         // 只处理菜单类型的权限（type=1）
         List<Permission> menuPermissions = permissions.stream()
-            .filter(p -> p.getPermissionType() != null && p.getPermissionType() == 1)
-            .collect(Collectors.toList());
+                .filter(p -> p.getPermissionType() != null && p.getPermissionType() == 1)
+                .collect(Collectors.toList());
 
         // 获取根菜单（parentId为null或0）
         List<MenuVO> rootMenus = menuPermissions.stream()
-            .filter(p -> p.getParentId() == null || p.getParentId() == 0)
-            .map(this::convertToMenuVO)
-            .collect(Collectors.toList());
+                .filter(p -> p.getParentId() == null || p.getParentId() == 0)
+                .map(this::convertToMenuVO)
+                .collect(Collectors.toList());
 
         // 递归构建子菜单
         rootMenus.forEach(menu -> buildChildren(menu, menuPermissions));
@@ -167,9 +163,9 @@ public class PermissionServiceImpl implements PermissionService {
      */
     private void buildChildren(MenuVO parent, List<Permission> allPermissions) {
         List<MenuVO> children = allPermissions.stream()
-            .filter(p -> parent.getId().equals(p.getParentId()))
-            .map(this::convertToMenuVO)
-            .collect(Collectors.toList());
+                .filter(p -> parent.getId().equals(p.getParentId()))
+                .map(this::convertToMenuVO)
+                .collect(Collectors.toList());
 
         if (!children.isEmpty()) {
             parent.setChildren(children);
@@ -182,17 +178,17 @@ public class PermissionServiceImpl implements PermissionService {
      */
     private MenuVO convertToMenuVO(Permission permission) {
         return MenuVO.builder()
-            .id(permission.getId())
-            .name(permission.getPermissionName())
-            .code(permission.getPermissionCode())
-            .type(permission.getPermissionType())
-            .parentId(permission.getParentId())
-            .path(permission.getPath())
-            .component(permission.getComponent())
-            .icon(permission.getIcon())
-            .sortOrder(permission.getSortOrder())
-            .description(null) // Permission表中没有description字段
-            .build();
+                .id(permission.getId())
+                .name(permission.getPermissionName())
+                .code(permission.getPermissionCode())
+                .type(permission.getPermissionType())
+                .parentId(permission.getParentId())
+                .path(permission.getPath())
+                .component(permission.getComponent())
+                .icon(permission.getIcon())
+                .sortOrder(permission.getSortOrder())
+                .description(null) // Permission表中没有description字段
+                .build();
     }
 
     /**
@@ -236,12 +232,12 @@ public class PermissionServiceImpl implements PermissionService {
 
         // 转换为VO
         List<PermissionVO> permissionVOs = permissionPage.getRecords().stream()
-            .map(this::convertToPermissionVO)
-            .collect(Collectors.toList());
+                .map(this::convertToPermissionVO)
+                .collect(Collectors.toList());
 
         Page<PermissionVO> resultPage = new Page<>(permissionPage.getCurrent(),
-                                                  permissionPage.getSize(),
-                                                  permissionPage.getTotal());
+                permissionPage.getSize(),
+                permissionPage.getTotal());
         resultPage.setRecords(permissionVOs);
 
         return resultPage;
@@ -257,15 +253,14 @@ public class PermissionServiceImpl implements PermissionService {
     public List<PermissionVO> getPermissionTree() {
         // 获取所有权限
         List<Permission> permissions = permissionMapper.selectList(
-            new LambdaQueryWrapper<Permission>()
-                .eq(Permission::getStatus, 1) // 只获取启用的权限
-                .orderByAsc(Permission::getSortOrder)
-        );
+                new LambdaQueryWrapper<Permission>()
+                        .eq(Permission::getStatus, 1) // 只获取启用的权限
+                        .orderByAsc(Permission::getSortOrder));
 
         // 转换为VO
         List<PermissionVO> permissionVOs = permissions.stream()
-            .map(this::convertToPermissionVO)
-            .collect(Collectors.toList());
+                .map(this::convertToPermissionVO)
+                .collect(Collectors.toList());
 
         // 构建树形结构
         return buildPermissionTree(permissionVOs);
@@ -275,15 +270,14 @@ public class PermissionServiceImpl implements PermissionService {
     public List<PermissionVO> getMenuTree() {
         // 只获取菜单类型的权限（permission_type = 1）
         List<Permission> permissions = permissionMapper.selectList(
-            new LambdaQueryWrapper<Permission>()
-                .eq(Permission::getPermissionType, 1) // 只获取菜单类型
-                .orderByAsc(Permission::getSortOrder)
-        );
+                new LambdaQueryWrapper<Permission>()
+                        .eq(Permission::getPermissionType, 1) // 只获取菜单类型
+                        .orderByAsc(Permission::getSortOrder));
 
         // 转换为VO
         List<PermissionVO> permissionVOs = permissions.stream()
-            .map(this::convertToPermissionVO)
-            .collect(Collectors.toList());
+                .map(this::convertToPermissionVO)
+                .collect(Collectors.toList());
 
         // 构建树形结构
         return buildPermissionTree(permissionVOs);
@@ -305,6 +299,12 @@ public class PermissionServiceImpl implements PermissionService {
         }
 
         permissionMapper.insert(permission);
+
+        // 自动给管理员角色(id=1)分配权限
+        RolePermission rolePermission = new RolePermission();
+        rolePermission.setRoleId(1); // 系统管理员ID
+        rolePermission.setPermissionId(permission.getId());
+        rolePermissionMapper.insert(rolePermission);
     }
 
     @Override
@@ -321,9 +321,8 @@ public class PermissionServiceImpl implements PermissionService {
     public void deletePermission(Integer id) {
         // 检查是否有子权限
         List<Permission> children = permissionMapper.selectList(
-            new LambdaQueryWrapper<Permission>()
-                .eq(Permission::getParentId, id)
-        );
+                new LambdaQueryWrapper<Permission>()
+                        .eq(Permission::getParentId, id));
 
         if (!children.isEmpty()) {
             throw new ServiceException("存在子权限，无法删除");
@@ -331,9 +330,8 @@ public class PermissionServiceImpl implements PermissionService {
 
         // 检查是否被角色使用
         List<RolePermission> rolePermissions = rolePermissionMapper.selectList(
-            new LambdaQueryWrapper<RolePermission>()
-                .eq(RolePermission::getPermissionId, id)
-        );
+                new LambdaQueryWrapper<RolePermission>()
+                        .eq(RolePermission::getPermissionId, id));
 
         if (!rolePermissions.isEmpty()) {
             throw new ServiceException("权限正在被角色使用，无法删除");
@@ -353,7 +351,7 @@ public class PermissionServiceImpl implements PermissionService {
     public void updatePermissionStatus(List<Integer> permissionIds, Integer status) {
         LambdaUpdateWrapper<Permission> wrapper = new LambdaUpdateWrapper<>();
         wrapper.in(Permission::getId, permissionIds)
-               .set(Permission::getStatus, status);
+                .set(Permission::getStatus, status);
 
         permissionMapper.update(null, wrapper);
     }
@@ -401,23 +399,23 @@ public class PermissionServiceImpl implements PermissionService {
         String statusText = permission.getStatus() != null && permission.getStatus() == 1 ? "正常" : "禁用";
 
         return PermissionVO.builder()
-            .id(permission.getId())
-            .permissionName(permission.getPermissionName())
-            .permissionCode(permission.getPermissionCode())
-            .parentId(permission.getParentId())
-            .permissionType(permission.getPermissionType())
-            .typeText(typeText)
-            .path(permission.getPath())
-            .component(permission.getComponent())
-            .icon(permission.getIcon())
-            .sortOrder(permission.getSortOrder())
-            .description(permission.getDescription())
-            .status(permission.getStatus())
-            .statusText(statusText)
-            .createTime(permission.getCreateTime())
-            .updateTime(permission.getUpdateTime())
-            .children(new ArrayList<>())
-            .build();
+                .id(permission.getId())
+                .permissionName(permission.getPermissionName())
+                .permissionCode(permission.getPermissionCode())
+                .parentId(permission.getParentId())
+                .permissionType(permission.getPermissionType())
+                .typeText(typeText)
+                .path(permission.getPath())
+                .component(permission.getComponent())
+                .icon(permission.getIcon())
+                .sortOrder(permission.getSortOrder())
+                .description(permission.getDescription())
+                .status(permission.getStatus())
+                .statusText(statusText)
+                .createTime(permission.getCreateTime())
+                .updateTime(permission.getUpdateTime())
+                .children(new ArrayList<>())
+                .build();
     }
 
     /**
@@ -459,8 +457,9 @@ public class PermissionServiceImpl implements PermissionService {
      * 对权限树进行排序
      */
     private void sortPermissionTree(List<PermissionVO> permissions) {
-        permissions.sort(Comparator.comparing(PermissionVO::getSortOrder, Comparator.nullsLast(Comparator.naturalOrder()))
-                              .thenComparing(PermissionVO::getId));
+        permissions
+                .sort(Comparator.comparing(PermissionVO::getSortOrder, Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparing(PermissionVO::getId));
 
         for (PermissionVO permission : permissions) {
             if (permission.getChildren() != null && !permission.getChildren().isEmpty()) {

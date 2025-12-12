@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 
@@ -35,8 +36,7 @@ public class TeamMember implements Serializable {
     /**
      * 加入团队时间
      */
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private Date joinTime;
+    private LocalDate joinTime;
 
     /**
      * 创建时间

@@ -1,78 +1,113 @@
 package com.guang.resms.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Date;
 
 /**
- * 收款记录表
+ * <p>
+ * 收退款记录表
+ * </p>
+ *
+ * @author
+ * @since 2024
  */
 @Data
 @TableName("tb_payment")
 public class Payment implements Serializable {
+
     private static final long serialVersionUID = 1L;
 
     /**
      * 收款ID
      */
-    @TableId(type = IdType.AUTO)
+    @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 
     /**
-     * 交易ID（关联tb_transaction表）
+     * 交易ID
      */
+    @TableField("transaction_id")
     private Integer transactionId;
 
     /**
      * 款项类型：1=定金，2=首付款，3=尾款，4=中介费
      */
+    @TableField("payment_type")
     private Integer paymentType;
 
     /**
-     * 收款金额（元）
+     * 资金流向：1=收款，2=退款
      */
+    @TableField("flow_type")
+    private Integer flowType;
+
+    /**
+     * 金额（元）
+     */
+    @TableField("amount")
     private BigDecimal amount;
 
     /**
-     * 收款时间
+     * 状态：0=待确认，1=有效，2=已作废
      */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date paymentTime;
+    @TableField("payment_status")
+    private Integer paymentStatus;
 
     /**
-     * 支付方式（如"微信""银行卡"）
+     * 变动时间
      */
+    @TableField("payment_time")
+    private LocalDateTime paymentTime;
+
+    /**
+     * 支付方式
+     */
+    @TableField("payment_method")
     private String paymentMethod;
 
     /**
      * 收据/发票编号
      */
+    @TableField("receipt_no")
     private String receiptNo;
 
     /**
-     * 财务人员ID（关联tb_user表）
+     * 凭证图片路径
      */
+    @TableField("proof_url")
+    private String proofUrl;
+
+    /**
+     * 付款人备注（如：张三代付）
+     */
+    @TableField("payer_info")
+    private String payerInfo;
+
+    /**
+     * 经办财务ID
+     */
+    @TableField("finance_id")
     private Integer financeId;
 
     /**
-     * 备注（如"客户刷卡支付"）
+     * 备注
      */
+    @TableField("remark")
     private String remark;
 
     /**
      * 创建时间
      */
-    @TableField(fill = FieldFill.INSERT)
+    @TableField(value = "create_time", fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
     /**
      * 更新时间
      */
-    @TableField(fill = FieldFill.INSERT_UPDATE)
+    @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 }

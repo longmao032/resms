@@ -19,12 +19,12 @@
       </template>
 
       <!-- 图片轮播 -->
-      <div class="image-section" v-if="houseDetail.images && houseDetail.images.length > 0">
+      <div class="image-section" v-if="formattedImages.length > 0">
         <el-carousel :interval="4000" type="card" height="400px" indicator-position="outside">
-          <el-carousel-item v-for="(image, index) in houseDetail.images" :key="index">
+          <el-carousel-item v-for="(image, index) in formattedImages" :key="index">
             <el-image 
               :src="image" 
-              :preview-src-list="houseDetail.images"
+              :preview-src-list="formattedImages"
               :initial-index="index"
               fit="cover"
               class="carousel-image"
@@ -38,7 +38,7 @@
             </el-image>
           </el-carousel-item>
         </el-carousel>
-        <div class="image-count">共 {{ houseDetail.images.length }} 张图片</div>
+        <div class="image-count">共 {{ formattedImages.length }} 张图片</div>
       </div>
       <el-empty v-else description="暂无房源图片" :image-size="200" />
 
@@ -269,6 +269,24 @@ const getFullProjectAddress = (project: ProjectInfo): string => {
   ].filter(Boolean)
   return parts.join('') || '-'
 }
+
+const getImageUrl = (url: string) => {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  // 处理已包含 /uploads 的情况
+  if (url.startsWith('/uploads')) return `http://localhost:8080${url}`
+  // 处理以 / 开头的情况 (如 /project/1.jpg)
+  if (url.startsWith('/')) return `http://localhost:8080/uploads${url}`
+  // 处理相对路径 (如 temp_...)
+  return `http://localhost:8080/uploads/${url}`
+}
+
+import { computed } from 'vue'
+
+const formattedImages = computed(() => {
+  if (!houseDetail.value.images) return []
+  return houseDetail.value.images.map(img => getImageUrl(img))
+})
 
 onMounted(() => {
   fetchHouseDetail()

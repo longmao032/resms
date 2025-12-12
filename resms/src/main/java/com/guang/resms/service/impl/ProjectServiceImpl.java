@@ -6,14 +6,17 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.guang.resms.common.exception.ServiceException;
+import com.guang.resms.common.utils.SecurityUtils;
 import com.guang.resms.entity.Project;
 import com.guang.resms.entity.dto.ProjectQueryDTO;
 import com.guang.resms.entity.dto.QueryDTO;
 import com.guang.resms.entity.vo.ProjectHouseStatVO;
 import com.guang.resms.mapper.ProjectMapper;
+import com.guang.resms.service.NotificationService;
 import com.guang.resms.service.ProjectService;
-import com.guang.resms.utils.PinyinUtils;
-import com.guang.resms.utils.FileUploadUtils;
+import com.guang.resms.common.utils.PinyinUtils;
+import com.guang.resms.common.utils.FileUploadUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +34,9 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 
     @Autowired
     private ProjectMapper projectMapper;
+
+    @Autowired
+    private NotificationService notificationService;
 
     @Override
     public HashMap<String, ArrayList<String>> getAllCity() {
@@ -185,14 +191,19 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         // 自动生成项目编号
         String projectNo = generateProjectNo();
         project.setProjectNo(projectNo);
-        
+
+        // 获取当前用户ID作为创建人
+        Integer creatorId = SecurityUtils.getUserId();
+        project.setCreatorId(creatorId);
+        project.setStatus(4); // 默认待审核
+
         // 处理封面图片上传
         if (coverImage != null && !coverImage.isEmpty()) {
             // 验证图片文件
             if (!FileUploadUtils.isValidImage(coverImage)) {
                 throw new RuntimeException("图片格式不正确或文件过大，最大允许" + FileUploadUtils.getMaxFileSizeFormatted());
             }
-            
+
             try {
                 // 使用项目编号作为文件名
                 String coverUrl = FileUploadUtils.saveFile(coverImage, "project", projectNo);
@@ -201,31 +212,39 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
                 throw new RuntimeException("图片上传失败：" + e.getMessage(), e);
             }
         }
-        
+
         // 保存项目
         projectMapper.insert(project);
+
+        // 发送自动通知给管理员
+        notificationService.notifyProjectCreated(
+                project.getId(),
+                project.getProjectName(),
+                creatorId);
+
         return project;
     }
-    
+
     /**
      * 生成唯一的项目编号
      * 格式：XM + 年月日 + 4位序列号
      * 例如：XM202412070001
+     * 
      * @return 项目编号
      */
     private String generateProjectNo() {
         // 获取当前日期（格式：yyyyMMdd）
         String datePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String prefix = "XM" + datePart;
-        
+
         // 查询今天已有的最大编号
         LambdaQueryWrapper<Project> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.likeRight(Project::getProjectNo, prefix)
-                   .orderByDesc(Project::getProjectNo)
-                   .last("LIMIT 1");
-        
+                .orderByDesc(Project::getProjectNo)
+                .last("LIMIT 1");
+
         Project lastProject = projectMapper.selectOne(queryWrapper);
-        
+
         int sequenceNum = 1;
         if (lastProject != null && lastProject.getProjectNo() != null) {
             // 提取最后4位序列号并加一
@@ -240,7 +259,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
                 }
             }
         }
-        
+
         // 生成完整的项目编号（序列号填充4位）
         return String.format("%s%04d", prefix, sequenceNum);
     }
@@ -252,25 +271,25 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         if (project.getId() == null) {
             throw new RuntimeException("项目ID不能为空");
         }
-        
+
         Project existingProject = projectMapper.selectById(project.getId());
         if (existingProject == null) {
             throw new RuntimeException("项目不存在");
         }
-        
+
         // 处理封面图片上传
         if (coverImage != null && !coverImage.isEmpty()) {
             // 验证图片文件
             if (!FileUploadUtils.isValidImage(coverImage)) {
                 throw new RuntimeException("图片格式不正确或文件过大，最大允许" + FileUploadUtils.getMaxFileSizeFormatted());
             }
-            
+
             try {
                 // 删除旧图片（如果存在）
                 if (existingProject.getCoverUrl() != null && !existingProject.getCoverUrl().isEmpty()) {
                     FileUploadUtils.deleteFile(existingProject.getCoverUrl());
                 }
-                
+
                 // 上传新图片（使用项目编号作为文件名）
                 String coverUrl = FileUploadUtils.saveFile(coverImage, "project", existingProject.getProjectNo());
                 project.setCoverUrl(coverUrl);
@@ -278,9 +297,39 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
                 throw new RuntimeException("图片上传失败：" + e.getMessage(), e);
             }
         }
-        
+
         // 更新项目
         projectMapper.updateById(project);
         return projectMapper.selectById(project.getId());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void auditProject(Integer id, Integer status, String reason) {
+        Project project = projectMapper.selectById(id);
+        if (project == null) {
+            throw new ServiceException("项目不存在");
+        }
+
+        if (project.getStatus() != 4) {
+            throw new ServiceException("该项目不是待审核状态");
+        }
+
+        // 更新状态
+        project.setStatus(status);
+        projectMapper.updateById(project);
+
+        // 发送审核结果通知给创建人
+        // 1=在售，2=售罄，3=待售 都视为通过，4=待审核，5=驳回（假设5为驳回状态，或者其他逻辑）
+        // 这里根据传入的status判断通过与否，status=1,2,3都算通过
+        boolean approved = (status == 1 || status == 2 || status == 3);
+
+        notificationService.notifyProjectAudited(
+                id,
+                project.getProjectName(),
+                project.getCreatorId(),
+                approved,
+                status,
+                reason);
     }
 }

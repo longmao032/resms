@@ -128,3 +128,14 @@ export function auditHouse(id: number, approved: boolean, reason?: string) {
     params: { approved, reason }
   })
 }
+
+/**
+ * 分页查询房源（用于下拉选择器）
+ */
+export function reqHousePage(params: any) {
+  return request<ApiResponse<PageResult<HouseDetail>>>({
+    url: '/house/list',
+    method: 'get',
+    params
+  })
+}

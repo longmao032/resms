@@ -1,13 +1,11 @@
 package com.guang.resms.controller;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.guang.resms.entity.Project;
 import com.guang.resms.entity.dto.ProjectQueryDTO;
 import com.guang.resms.entity.dto.QueryDTO;
-import com.guang.resms.entity.vo.ProjectHouseStatVO;
 import com.guang.resms.service.ProjectService;
-import com.guang.resms.utils.exception.HttpEnums;
-import com.guang.resms.utils.exception.ResponseResult;
+import com.guang.resms.common.exception.HttpEnums;
+import com.guang.resms.common.exception.ResponseResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -36,7 +34,6 @@ public class ProjectController {
         return ResponseResult.success(projectList);
     }
 
-
     /**
      * 获取项目不重复的城市
      *
@@ -59,7 +56,6 @@ public class ProjectController {
         return ResponseResult.success(allDistrict);
     }
 
-
     /**
      * 接口：分页查询符合筛选条件的项目房源统计信息
      *
@@ -80,18 +76,18 @@ public class ProjectController {
      */
     @GetMapping("/filtered")
     public ResponseResult getProjectHouseStatList(@RequestParam(defaultValue = "1") Integer pageNum,
-                                                  @RequestParam(required = true) String city,
-                                                  @RequestParam(required = false) String district,
-                                                  @RequestParam(required = false) String keyword,
-                                                  @RequestParam(required = false) Integer minPrice,
-                                                  @RequestParam(required = false) Integer maxPrice,
-                                                  @RequestParam(required = false) BigDecimal minArea,
-                                                  @RequestParam(required = false) BigDecimal maxArea,
-                                                  @RequestParam(required = false) BigDecimal minUnitPrice,
-                                                  @RequestParam(required = false) BigDecimal maxUnitPrice,
-                                                  @RequestParam(required = false) String layout,
-                                                  @RequestParam(required = false) String sortField,
-                                                  @RequestParam(required = false) String sortOrder) {
+            @RequestParam(required = true) String city,
+            @RequestParam(required = false) String district,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer minPrice,
+            @RequestParam(required = false) Integer maxPrice,
+            @RequestParam(required = false) BigDecimal minArea,
+            @RequestParam(required = false) BigDecimal maxArea,
+            @RequestParam(required = false) BigDecimal minUnitPrice,
+            @RequestParam(required = false) BigDecimal maxUnitPrice,
+            @RequestParam(required = false) String layout,
+            @RequestParam(required = false) String sortField,
+            @RequestParam(required = false) String sortOrder) {
 
         QueryDTO queryDTO = new QueryDTO();
         queryDTO.setPageNum(pageNum);
@@ -163,5 +159,21 @@ public class ProjectController {
             return ResponseResult.success(HttpEnums.SUCCESS);
         }
         return ResponseResult.fail("删除失败");
+    }
+
+    /**
+     * 审核项目
+     * 
+     * @param id     项目ID
+     * @param status 审核状态：1=在售，2=售罄，3=待售（通过），其他值为驳回
+     * @param reason 审核原因（驳回时使用）
+     */
+    @PostMapping("/audit/{id}")
+    public ResponseResult<Void> auditProject(
+            @PathVariable Integer id,
+            @RequestParam Integer status,
+            @RequestParam(required = false) String reason) {
+        projectService.auditProject(id, status, reason);
+        return ResponseResult.success(HttpEnums.SUCCESS);
     }
 }

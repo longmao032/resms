@@ -1,20 +1,15 @@
 package com.guang.resms.controller;
 
-
-
 import com.guang.resms.entity.vo.LoginResponseVo;
 import com.guang.resms.service.AuthService;
-import com.guang.resms.utils.exception.HttpEnums;
-import com.guang.resms.utils.exception.ResponseResult;
-import com.guang.resms.utils.exception.ServiceException;
+import com.guang.resms.common.exception.HttpEnums;
+import com.guang.resms.common.exception.ResponseResult;
+import com.guang.resms.common.exception.ServiceException;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
 @RestController
@@ -27,7 +22,8 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseResult<LoginResponseVo> login(@RequestBody Map<String, Object> loginRequest, HttpServletRequest request) {
+    public ResponseResult<LoginResponseVo> login(@RequestBody Map<String, Object> loginRequest,
+            HttpServletRequest request) {
         try {
             // 1. 基础输入验证
             if (loginRequest == null) {
@@ -45,7 +41,8 @@ public class AuthController {
 
             // 4. 执行登录逻辑
             LoginResponseVo loginResponse = authService.login(username, password);
-
+            System.out.println(
+                    "===================================================================" + loginResponse.getToken());
             // 5. 返回登录成功响应
             return ResponseResult.success("登录成功", loginResponse);
 
@@ -64,7 +61,6 @@ public class AuthController {
             return ResponseResult.<LoginResponseVo>fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(), "系统异常，请稍后重试");
         }
     }
-
 
     /**
      * 验证登录输入参数
@@ -99,12 +95,12 @@ public class AuthController {
     private boolean containsSqlInjectionChars(String input) {
         // 常见的SQL注入字符模式
         String[] dangerousPatterns = {
-            ".*([';]+|(--)+).*",      // 单引号、分号、注释符
-            ".*(\\b(union|select|insert|delete|update|drop|create|alter)\\b).*", // SQL关键字
-            ".*(\\b(or|and)\\b.*(=|<|>)).*", // 逻辑运算符
-            ".*(\\b(exec|execute)\\b).*", // 执行关键字
-            ".*(\\b(script|javascript|vbscript|onload|onerror)\\b).*", // XSS关键字
-            ".*(<.*>).*", // HTML标签
+                ".*([';]+|(--)+).*", // 单引号、分号、注释符
+                ".*(\\b(union|select|insert|delete|update|drop|create|alter)\\b).*", // SQL关键字
+                ".*(\\b(or|and)\\b.*(=|<|>)).*", // 逻辑运算符
+                ".*(\\b(exec|execute)\\b).*", // 执行关键字
+                ".*(\\b(script|javascript|vbscript|onload|onerror)\\b).*", // XSS关键字
+                ".*(<.*>).*", // HTML标签
         };
 
         for (String pattern : dangerousPatterns) {
