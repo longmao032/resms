@@ -10,10 +10,10 @@ enum API {
 
 export const reqPaymentList = (params: PaymentQuery) => {
   // 处理日期范围
-  const query = { ...params };
+  const query: any = { ...params };
   if (params.dateRange && params.dateRange.length === 2) {
-    query['startDate'] = params.dateRange[0];
-    query['endDate'] = params.dateRange[1];
+    query.startDate = params.dateRange[0];
+    query.endDate = params.dateRange[1];
     delete query.dateRange;
   }
   return request.get<any, { records: PaymentVO[]; total: number }>(API.LIST, { params: query });

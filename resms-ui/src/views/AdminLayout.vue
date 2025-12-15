@@ -7,52 +7,92 @@
           <h2>后台管理系统</h2>
         </div>
         <div class="user-info">
-          <el-popover
-            placement="bottom"
-            :width="300"
-            trigger="hover"
-            popper-class="notice-popover"
-          >
+          <el-popover v-if="userStore.isLoggedIn" placement="bottom" :width="360" trigger="hover" popper-class="notice-popover">
             <template #reference>
-              <div class="header-icon" @click="goToNoticeList">
-                <el-badge :value="noticeStore.unreadCount" :max="99" :hidden="noticeStore.unreadCount === 0" class="notice-badge">
-                  <el-icon :size="20"><Bell /></el-icon>
+              <div class="header-icon">
+                <el-badge :value="totalUnread" :max="99" :hidden="totalUnread === 0" class="notice-badge">
+                  <el-icon :size="20">
+                    <Bell />
+                  </el-icon>
                 </el-badge>
               </div>
             </template>
-            <div class="notice-list">
-              <div class="notice-header">
-                <span>未读通知 ({{ noticeStore.unreadCount }})</span>
-                <el-button link type="primary" size="small" @click="goToNoticeList">查看全部</el-button>
-              </div>
-              <div v-if="noticeStore.unreadList.length > 0" class="notice-items">
-                <div 
-                  v-for="item in noticeStore.unreadList" 
-                  :key="item.id" 
-                  class="notice-item"
-                  @click="goToNoticeList"
-                >
-                  <div class="notice-title">{{ item.noticeTitle }}</div>
-                  <div class="notice-time">{{ item.sendTime }}</div>
-                </div>
-              </div>
-              <el-empty v-else description="暂无未读通知" :image-size="60" />
+            <div class="message-center">
+              <el-tabs v-model="activeMessageTab" class="message-tabs">
+                <el-tab-pane name="notice">
+                  <template #label>
+                    <span>系统通知</span>
+                    <el-badge :value="noticeStore.unreadCount" :max="99" :hidden="noticeStore.unreadCount === 0"
+                      class="tab-badge" />
+                  </template>
+                  <div class="notice-list">
+                    <div class="notice-header">
+                      <span>未读通知 ({{ noticeStore.unreadCount }})</span>
+                      <el-button link type="primary" size="small" @click="goToNoticeList"
+                        class="text-link-btn">查看全部</el-button>
+                    </div>
+                    <div v-if="noticeStore.unreadList.length > 0" class="notice-items">
+                      <div v-for="item in noticeStore.unreadList" :key="item.id" class="notice-item"
+                        @click="handleNoticeClick(item)">
+                        <div class="notice-title">{{ item.noticeTitle }}</div>
+                        <div class="notice-time">{{ item.sendTime }}</div>
+                      </div>
+                    </div>
+                    <el-empty v-else description="暂无未读通知" :image-size="60" />
+                  </div>
+                </el-tab-pane>
+                <el-tab-pane name="chat">
+                  <template #label>
+                    <span>我的消息</span>
+                    <el-badge :value="chatStore.unreadTotal" :max="99" :hidden="chatStore.unreadTotal === 0"
+                      class="tab-badge" />
+                  </template>
+                  <div class="notice-list">
+                    <div class="notice-header">
+                      <span>消息列表</span>
+                      <el-button link type="primary" size="small" @click="goToChat"
+                        class="text-link-btn">进入聊天室</el-button>
+                    </div>
+                    <div v-if="chatStore.sessionList.length > 0" class="notice-items">
+                      <div v-for="session in chatStore.sessionList" :key="session.id" class="notice-item"
+                        @click="handleChatSessionClick(session)">
+                        <div style="display: flex; align-items: center;">
+                          <el-avatar :size="36"
+                            :src="getImageUrl(session.targetAvatar) || defaultAvatar"
+                            style="margin-right: 10px; flex-shrink: 0;" />
+                          <div style="flex: 1; overflow: hidden;">
+                            <div class="notice-title" style="display: flex; justify-content: space-between;">
+                              <span>{{ session.sessionName || session.targetUserName || '未知用户' }}</span>
+                              <span class="notice-time">{{ formatTime(session.lastMessageTime) }}</span>
+                            </div>
+                            <div class="notice-time"
+                              style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                              {{ session.lastMessageContent || '暂无消息' }}
+                            </div>
+                          </div>
+                          <el-badge :value="session.unreadCount" :max="99" :hidden="!session.unreadCount"
+                            class="item-badge" style="margin-left: 5px;" />
+                        </div>
+                      </div>
+                    </div>
+                    <el-empty v-else description="暂无消息" :image-size="60" />
+                  </div>
+                </el-tab-pane>
+              </el-tabs>
             </div>
           </el-popover>
-          <el-avatar
-            :src="getImageUrl(userStore.currentUser?.avatar)"
-            :alt="userStore.currentUser?.realName"
-            class="user-avatar"
-          >
+          <el-avatar :src="getImageUrl(userStore.currentUser?.avatar) || defaultAvatar" :alt="userStore.currentUser?.realName"
+            class="user-avatar">
             {{ userStore.currentUser?.realName?.charAt(0) }}
           </el-avatar>
           <div class="user-details">
             <span class="username">{{ userStore.currentUser?.realName }}</span>
-            <span class="role">管理员</span>
           </div>
           <el-dropdown @command="handleCommand">
             <span class="el-dropdown-link">
-              <el-icon><ArrowDown /></el-icon>
+              <el-icon>
+                <ArrowDown />
+              </el-icon>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
@@ -71,22 +111,11 @@
       <!-- 左侧菜单 -->
       <el-aside :width="sidebarCollapsed ? '64px' : '200px'" class="sidebar">
         <div class="sidebar-header">
-          <el-button
-            type="link"
-            @click="toggleSidebar"
-            class="collapse-btn"
-            :icon="sidebarCollapsed ? Expand : Fold"
-          />
+          <el-button link @click="toggleSidebar" class="collapse-btn" :icon="sidebarCollapsed ? Expand : Fold" />
         </div>
 
-        <el-menu
-          :default-active="activeMenu"
-          :collapse="sidebarCollapsed"
-          :unique-opened="true"
-          router
-          class="menu"
-          @select="handleMenuSelect"
-        >
+        <el-menu :default-active="activeMenu" :collapse="sidebarCollapsed" :unique-opened="true" router class="menu"
+          @select="handleMenuSelect">
           <template v-for="menu in filteredMenus" :key="menu.id">
             <!-- 有子菜单的项目 -->
             <el-sub-menu v-if="menu.children && menu.children.length > 0" :index="menu.path">
@@ -96,12 +125,8 @@
                 </el-icon>
                 <span>{{ menu.name }}</span>
               </template>
-              <el-menu-item
-                v-for="child in menu.children"
-                :key="child.id"
-                :index="child.path"
-                v-show="hasPermission(child.code)"
-              >
+              <el-menu-item v-for="child in menu.children" :key="child.id" :index="child.path"
+                v-show="hasPermission(child.code)">
                 <el-icon>
                   <component :is="getIconComponent(child.icon)" />
                 </el-icon>
@@ -110,11 +135,7 @@
             </el-sub-menu>
 
             <!-- 无子菜单的项目 -->
-            <el-menu-item
-              v-else
-              :index="menu.path"
-              v-show="hasPermission(menu.code)"
-            >
+            <el-menu-item v-else :index="menu.path" v-show="hasPermission(menu.code)">
               <el-icon>
                 <component :is="getIconComponent(menu.icon)" />
               </el-icon>
@@ -172,35 +193,80 @@ import {
   Trophy,
   Bell
 } from '@element-plus/icons-vue'
+import dayjs from 'dayjs'
 import { useUserStore } from '@/stores/userStore'
 import { useNoticeStore } from '@/stores/noticeStore'
+import { useChatStore } from '@/stores/chatStore'
+import { useSettingsStore } from '@/stores/settingsStore'
 import type { Menu } from '@/api/user/type'
+import { getImageUrl } from '@/utils/image'
+import { getNoticeLocation } from '@/utils/noticeNavigate'
+import { readNotice } from '@/api/notice'
+
+const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
 
 const router = useRouter()
 const route = useRoute()
 
-const getImageUrl = (url: string | undefined) => {
-  if (!url) return ''
-  // 如果是完整 URL，直接返回
-  if (url.startsWith('http')) return url
-  // 如果以 /upload 开头，说明已经包含前缀（兼容旧数据）
-  if (url.startsWith('/uploads')) return `http://localhost:8080${url}`
-  // 否则补全 /uploads 前缀
-  return `http://localhost:8080/uploads${url}`
-}
-
 // Store
 const userStore = useUserStore()
 const noticeStore = useNoticeStore() // 使用 store
+const chatStore = useChatStore()
+const settingsStore = useSettingsStore()
 
 // 状态管理
 const sidebarCollapsed = ref(false)
 const activeMenu = ref('')
 const breadcrumbList = ref<Menu[]>([])
+const activeMessageTab = ref('notice') // 消息中心默认选项卡
+
+// 计算总未读数
+const totalUnread = computed(() => {
+  return (noticeStore.unreadCount || 0) + (chatStore.unreadTotal || 0)
+})
 
 // 跳转到通知列表
 const goToNoticeList = () => {
   router.push('/work-notice/list')
+}
+
+const handleNoticeClick = (item: any) => {
+  if (item?.id) {
+    readNotice(item.id)
+      .then(() => noticeStore.fetchUnread())
+      .catch(() => {})
+  }
+  const loc = getNoticeLocation(item)
+  if (loc) {
+    router.push(loc)
+  } else {
+    router.push('/work-notice/list')
+  }
+}
+
+// 跳转到聊天
+const goToChat = () => {
+  router.push('/chat')
+}
+
+// 点击会话跳转
+const handleChatSessionClick = (session: any) => {
+  chatStore.selectSession(session)
+  router.push('/chat')
+}
+
+// 时间格式化
+const formatTime = (time: string) => {
+  if (!time) return ''
+  const date = dayjs(time)
+  const now = dayjs()
+  if (date.isSame(now, 'day')) {
+    return date.format('HH:mm')
+  } else if (date.isSame(now.subtract(1, 'day'), 'day')) {
+    return '昨天'
+  } else {
+    return date.format('MM-DD')
+  }
 }
 
 // 图标映射
@@ -279,7 +345,7 @@ const handleCommand = (command: string) => {
       router.push('/profile')
       break
     case 'settings':
-      ElMessage.info('系统设置功能开发中')
+      router.push('/settings')
       break
     case 'logout':
       handleLogout()
@@ -311,12 +377,16 @@ watch(
 )
 
 // 组件挂载时初始化
-onMounted(() => {
+onMounted(async () => {
   // 如果用户未登录，重定向到登录页
   if (!userStore.isLoggedIn) {
     router.push('/login')
     return
   }
+
+  // 初始化系统设置（应用已保存的主题和字体大小）
+  settingsStore.initSettings()
+
   // 尝试将后端返回的子菜单注册为路由（如果对应视图存在）
   // 使用 Vite 的 import.meta.glob 列出所有视图文件作为候选
   const modules = import.meta.glob('/src/views/**/*.vue') as Record<string, () => Promise<any>>
@@ -396,12 +466,14 @@ onMounted(() => {
   activeMenu.value = route.path
   updateBreadcrumb(route.path)
 
-  // 开启消息轮询
-  noticeStore.startPolling()
+  // 禁用消息/聊天轮询：避免持续请求影响日志查看
+  await noticeStore.fetchUnread()
+  await chatStore.fetchSessionList()
 })
 
 onUnmounted(() => {
   noticeStore.stopPolling()
+  chatStore.stopPolling()
 })
 </script>
 
@@ -413,11 +485,12 @@ onUnmounted(() => {
 }
 
 .header {
-  background-color: #001529;
-  color: #fff;
+  background-color: #ffffff;
+  color: #1f1f1f;
   padding: 0;
   height: 64px;
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  box-shadow: none;
+  border-bottom: 1px solid #e0e2e0;
 
   .header-content {
     height: 100%;
@@ -429,9 +502,10 @@ onUnmounted(() => {
     .logo {
       h2 {
         margin: 0;
-        color: #fff;
-        font-size: 18px;
-        font-weight: 600;
+        color: #1f1f1f;
+        font-size: 20px;
+        font-weight: 400;
+        font-family: 'Google Sans', sans-serif;
       }
     }
 
@@ -441,15 +515,19 @@ onUnmounted(() => {
       gap: 12px;
 
       .header-icon {
-        color: #fff;
+        color: #444746;
         cursor: pointer;
         display: flex;
         align-items: center;
-        padding: 0 4px;
+        padding: 8px;
+        border-radius: 50%;
         margin-right: 4px;
+        transition: background-color 0.2s;
 
         &:hover {
-          color: #40a9ff;
+          background-color: rgba(0, 0, 0, 0.08);
+          /* Ripple effect */
+          color: #1f1f1f;
         }
       }
 
@@ -466,25 +544,25 @@ onUnmounted(() => {
         .username {
           font-size: 14px;
           font-weight: 500;
-          color: #fff;
+          color: #1f1f1f;
           line-height: 1.2;
         }
 
         .role {
           font-size: 12px;
-          color: rgba(255, 255, 255, 0.65);
+          color: #444746;
           line-height: 1.2;
         }
       }
 
       .el-dropdown-link {
-        color: #fff;
+        color: #444746;
         cursor: pointer;
         display: flex;
         align-items: center;
 
         &:hover {
-          color: #40a9ff;
+          color: #1f1f1f;
         }
       }
     }
@@ -494,11 +572,15 @@ onUnmounted(() => {
 .main-container {
   flex: 1;
   overflow: hidden;
+  background-color: #f8f9fa;
+  /* M3 Surface */
 }
 
 .sidebar {
-  background-color: #fff;
-  border-right: 1px solid #e6e6e6;
+  background-color: #f8f9fa;
+  /* Sidebar matches bg or slight contrast */
+  border-right: none;
+  /* No border in M3 usually */
   transition: width 0.2s;
 
   .sidebar-header {
@@ -507,11 +589,16 @@ onUnmounted(() => {
     align-items: center;
     justify-content: flex-end;
     padding: 0 16px;
-    border-bottom: 1px solid #e6e6e6;
+    border-bottom: none;
 
     .collapse-btn {
-      color: #666;
+      color: #444746;
       padding: 8px;
+      border-radius: 50%;
+
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.08);
+      }
     }
   }
 
@@ -519,25 +606,43 @@ onUnmounted(() => {
     border-right: none;
     height: calc(100vh - 128px);
     overflow-y: auto;
+    background-color: transparent;
+
+    // 隐藏滚动条但保留滚动功能
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+
+    /* IE/Edge */
+    &::-webkit-scrollbar {
+      display: none;
+    }
 
     :deep(.el-menu-item),
     :deep(.el-sub-menu__title) {
       height: 48px;
       line-height: 48px;
-      margin: 4px 8px;
-      border-radius: 6px;
+      margin: 4px 12px;
+      border-radius: 24px;
       font-size: 14px;
+      color: #444746;
+      /* M3 On Surface Variant */
 
       &:hover {
-        background-color: #f5f5f5;
+        background-color: #f0f4f9;
+        /* M3 Hover State */
       }
 
       &.is-active {
-        background-color: #e6f7ff;
-        color: #1890ff;
+        background-color: #c2e7ff;
+        /* M3 Primary Container */
+        color: #001d35;
+        /* M3 On Primary Container */
+        font-weight: 600;
 
         &:hover {
-          background-color: #dcf4ff;
+          background-color: #c2e7ff;
+          /* Keep active color on hover */
         }
       }
     }
@@ -572,6 +677,16 @@ onUnmounted(() => {
   background-color: #f5f5f5;
   padding: 24px;
   overflow-y: auto;
+
+  // 隐藏滚动条但保留滚动功能
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+
+  /* IE/Edge */
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 // 响应式设计
@@ -626,10 +741,18 @@ onUnmounted(() => {
       align-items: center;
       padding: 12px 16px;
       border-bottom: 1px solid #EBEEF5;
-      
+
       span {
         font-weight: 600;
         color: #303133;
+      }
+
+      .text-link-btn {
+        width: auto !important;
+        height: auto !important;
+        padding: 0 4px !important;
+        border-radius: 4px !important;
+        color: #409EFF !important;
       }
     }
 
@@ -665,6 +788,37 @@ onUnmounted(() => {
           color: #909399;
         }
       }
+    }
+  }
+
+  .message-center {
+    .message-tabs {
+      .el-tabs__header {
+        margin-bottom: 0;
+        border-bottom: 1px solid #EBEEF5;
+      }
+
+      .el-tabs__nav-wrap::after {
+        display: none;
+      }
+
+      .el-tabs__item {
+        padding: 0 16px;
+        height: 44px;
+        line-height: 44px;
+      }
+    }
+  }
+
+  .tab-badge {
+    margin-left: 6px;
+    vertical-align: top;
+
+    :deep(.el-badge__content) {
+      font-size: 10px;
+      padding: 0 4px;
+      height: 16px;
+      line-height: 16px;
     }
   }
 }

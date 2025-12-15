@@ -13,7 +13,7 @@
             <div class="box-center">
               <el-avatar 
                 :size="100" 
-                :src="getImageUrl(userStore.userInfo?.avatar)" 
+                :src="getImageUrl(userStore.userInfo?.avatar) || defaultAvatar" 
                 class="user-avatar"
               >
                 {{ userStore.userInfo?.realName?.charAt(0) || userStore.userInfo?.username?.charAt(0) }}
@@ -91,9 +91,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { User, Phone, Message, Collection } from '@element-plus/icons-vue'
+import { getImageUrl } from '@/utils/image'
+
+const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
 import { useUserStore } from '@/stores/userStore'
 import UserInfo from './components/UserInfo.vue'
 import ChangePassword from './components/ChangePassword.vue'
@@ -101,6 +104,10 @@ import ChangePassword from './components/ChangePassword.vue'
 const route = useRoute()
 const userStore = useUserStore()
 const activeTab = ref('userinfo')
+
+onMounted(() => {
+  userStore.fetchUserInfo()
+})
 
 // 根据路由设置活动标签
 const updateTabFromRoute = () => {
@@ -115,14 +122,7 @@ const updateTabFromRoute = () => {
 updateTabFromRoute()
 watch(() => route.path, updateTabFromRoute)
 
-// 图片 URL 处理
-const getImageUrl = (url: string | undefined) => {
-  if (!url) return ''
-  if (url.startsWith('http')) return url
-  if (url.startsWith('/uploads')) return `http://localhost:8080${url}`
-  if (url.startsWith('/')) return `http://localhost:8080/uploads${url}`
-  return `http://localhost:8080/uploads/${url}`
-}
+// 统一使用 utils 的 getImageUrl
 
 // 角色名称映射
 const getRoleName = (roleType: number | undefined) => {

@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guang.resms.module.team.mapper.TeamMapper">
+    <select id="selectTeamPage" resultType="com.guang.resms.module.team.entity.vo.TeamVO">
+        SELECT t.*, u.real_name AS manager_name, u.phone AS manager_phone,
+        (SELECT COUNT(*) FROM tb_team_member tm WHERE tm.team_id = t.id) AS member_count
+        FROM tb_team t
+        LEFT JOIN tb_user u ON t.manager_id = u.id
+        WHERE 1=1
+        <if test="query.teamName != null and query.teamName != ''">
+          AND t.team_name LIKE CONCAT('%', #{query.teamName}, '%')
+        </if>
+        <if test="query.teamId != null">
+          AND t.id = #{query.teamId}
+        </if>
+        ORDER BY t.create_time DESC
+    </select>
+
+    <select id="selectTeamDetailById" resultType="com.guang.resms.module.team.entity.vo.TeamVO">
+        SELECT t.*, u.real_name AS manager_name, u.phone AS manager_phone,
+        (SELECT COUNT(*) FROM tb_team_member tm WHERE tm.team_id = t.id) AS member_count
+        FROM tb_team t
+        LEFT JOIN tb_user u ON t.manager_id = u.id
+        WHERE t.id = #{id}
+    </select>
+
+    <select id="selectTeamPerformance" resultType="com.guang.resms.module.team.entity.vo.TeamPerformanceVO">
+        SELECT t.id as team_id, t.team_name, t.performance_target,
+        u.real_name as manager_name,
+        (SELECT COUNT(*) FROM tb_team_member tm WHERE tm.team_id = t.id) as member_count,
+        IFNULL(SUM(tr.deal_price), 0) as actual_performance,
+        COUNT(tr.id) as transaction_count
+        FROM tb_team t
+        LEFT JOIN tb_user u ON t.manager_id = u.id
+        LEFT JOIN tb_team_member tm ON t.id = tm.team_id
+        LEFT JOIN tb_transaction tr ON tm.user_id = tr.sales_id
+        AND tr.status IN (3, 4)
+        <if test="query.startTime != null"> AND tr.create_time &gt;= #{query.startTime} </if>
+        <if test="query.endTime != null"> AND tr.create_time &lt;= #{query.endTime} </if>
+        WHERE 1=1
+        <if test="query.teamName != null and query.teamName != ''"> AND t.team_name LIKE CONCAT('%', #{query.teamName}, '%') </if>
+        <if test="query.teamId != null"> AND t.id = #{query.teamId} </if>
+        GROUP BY t.id
+        ORDER BY actual_performance DESC
+    </select>
+
+    <select id="selectTeamIdByManagerId" resultType="java.lang.Integer">
+        SELECT id
+        FROM tb_team
+        WHERE manager_id = #{managerId}
+        LIMIT 1
+    </select>
+</mapper>
+

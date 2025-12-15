@@ -237,6 +237,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Refresh } from '@element-plus/icons-vue'
 import type { FormInstance } from 'element-plus'
+import { useUserStore } from '@/stores/userStore'
 import {
   reqRolePage,
   reqRoleDetail,
@@ -257,6 +258,8 @@ import type {
   DataScopeOption
 } from '@/api/role/type'
 import type { PermissionVO } from '@/api/permission/type'
+
+const userStore = useUserStore()
 
 // 响应式数据
 const loading = ref(false)
@@ -541,6 +544,10 @@ const handleSavePermissions = async () => {
     if (response.code === 200) {
       ElMessage.success('权限配置成功')
       permissionDialogVisible.value = false
+
+      if (userStore.currentUser?.roleType === currentRole.value.id) {
+        await userStore.fetchUserInfo()
+      }
     } else {
       ElMessage.error(response.message || '权限配置失败')
     }

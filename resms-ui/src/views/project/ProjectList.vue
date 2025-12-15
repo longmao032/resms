@@ -4,37 +4,17 @@
     <el-card shadow="never" class="search-card">
       <el-form :model="queryParams" :inline="true">
         <el-form-item label="项目名称">
-          <el-input
-            v-model="queryParams.projectName"
-            placeholder="请输入项目名称"
-            clearable
-            style="width: 200px"
-            @keyup.enter="handleQuery"
-          />
+          <el-input v-model="queryParams.projectName" placeholder="请输入项目名称" clearable style="width: 200px"
+            @keyup.enter="handleQuery" />
         </el-form-item>
         <el-form-item label="城市">
-          <el-input
-            v-model="queryParams.city"
-            placeholder="请输入城市"
-            clearable
-            style="width: 150px"
-          />
+          <el-input v-model="queryParams.city" placeholder="请输入城市" clearable style="width: 150px" />
         </el-form-item>
         <el-form-item label="区县">
-          <el-input
-            v-model="queryParams.district"
-            placeholder="请输入区县"
-            clearable
-            style="width: 150px"
-          />
+          <el-input v-model="queryParams.district" placeholder="请输入区县" clearable style="width: 150px" />
         </el-form-item>
         <el-form-item label="开发商">
-          <el-input
-            v-model="queryParams.developer"
-            placeholder="请输入开发商"
-            clearable
-            style="width: 150px"
-          />
+          <el-input v-model="queryParams.developer" placeholder="请输入开发商" clearable style="width: 150px" />
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="queryParams.status" placeholder="请选择状态" clearable style="width: 120px">
@@ -55,11 +35,15 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleQuery">
-            <el-icon><Search /></el-icon>
+            <el-icon>
+              <Search />
+            </el-icon>
             搜索
           </el-button>
           <el-button @click="handleReset">
-            <el-icon><Refresh /></el-icon>
+            <el-icon>
+              <Refresh />
+            </el-icon>
             重置
           </el-button>
         </el-form-item>
@@ -70,31 +54,25 @@
     <el-card shadow="never" style="margin-top: 20px">
       <!-- 操作按钮区 -->
       <div style="margin-bottom: 16px">
-        <el-button type="primary" @click="handleAdd">
-          <el-icon><Plus /></el-icon>
+        <el-button type="primary" @click="handleAdd" v-if="canAdd">
+          <el-icon>
+            <Plus />
+          </el-icon>
           新增项目
         </el-button>
       </div>
 
-      <el-table
-        v-loading="loading"
-        :data="projectList"
-        stripe
-        style="width: 100%"
-      >
+      <el-table v-loading="loading" :data="projectList" stripe style="width: 100%">
         <el-table-column prop="projectNo" label="项目编号" width="120" />
         <el-table-column label="封面图" width="100" align="center">
           <template #default="{ row }">
-            <el-image 
-              v-if="row.coverUrl" 
-              :src="getImageUrl(row.coverUrl)" 
-              :preview-src-list="[getImageUrl(row.coverUrl)]"
-              fit="cover"
-              style="width: 60px; height: 60px; border-radius: 4px; cursor: pointer;"
-              preview-teleported
-            />
+            <el-image v-if="row.coverUrl" :src="getImageUrl(row.coverUrl)"
+              :preview-src-list="[getImageUrl(row.coverUrl)]" fit="cover"
+              style="width: 60px; height: 60px; border-radius: 4px; cursor: pointer;" preview-teleported />
             <div v-else class="no-cover">
-              <el-icon :size="24" color="#c0c4cc"><Picture /></el-icon>
+              <el-icon :size="24" color="#c0c4cc">
+                <Picture />
+              </el-icon>
             </div>
           </template>
         </el-table-column>
@@ -126,45 +104,35 @@
             {{ row.openingTime || '-' }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
-            <el-button v-if="row.status === 4" link type="success" @click="handleAudit(row)">
-              <el-icon><Check /></el-icon>
-              审核
-            </el-button>
-            <el-button link type="primary" @click="handleView(row)">
-              <el-icon><View /></el-icon>
-              查看
-            </el-button>
-            <el-button link type="primary" @click="handleEdit(row)">
-              <el-icon><Edit /></el-icon>
-              编辑
-            </el-button>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <el-tooltip content="详情" placement="top" v-if="canView">
+                <el-button link type="primary" :icon="View" @click="handleView(row)" />
+              </el-tooltip>
+              <el-tooltip content="编辑" placement="top" v-if="canEdit">
+                <el-button link type="primary" :icon="Edit" @click="handleEdit(row)" />
+              </el-tooltip>
+              <el-tooltip content="删除" placement="top" v-if="canDelete">
+                <el-button link type="danger" :icon="Delete" @click="handleDelete(row)" />
+              </el-tooltip>
+              <el-tooltip content="审核" placement="top" v-if="row.status === 4 && canAudit">
+                <el-button link type="success" :icon="Check" @click="handleAudit(row)" />
+              </el-tooltip>
+            </div>
           </template>
         </el-table-column>
       </el-table>
 
       <!-- 分页 -->
-      <el-pagination
-        v-model:current-page="queryParams.pageNum"
-        v-model:page-size="queryParams.pageSize"
-        :total="total"
-        :page-sizes="[10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next, jumper"
-        style="margin-top: 20px; justify-content: flex-end"
-        @size-change="handleSizeChange"
-        @current-change="handlePageChange"
-      />
+      <el-pagination v-model:current-page="queryParams.pageNum" v-model:page-size="queryParams.pageSize" :total="total"
+        :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper"
+        style="margin-top: 20px; justify-content: flex-end" @size-change="handleSizeChange"
+        @current-change="handlePageChange" />
     </el-card>
 
     <!-- 审核弹窗 -->
-    <el-dialog
-      v-model="auditVisible"
-      title="项目审核"
-      width="600px"
-      append-to-body
-      destroy-on-close
-    >
+    <el-dialog v-model="auditVisible" title="项目审核" width="600px" append-to-body destroy-on-close>
       <div v-loading="auditLoading" class="audit-container">
         <div v-if="auditData" class="project-info">
           <div v-if="auditData.coverUrl" class="cover-image">
@@ -190,7 +158,7 @@
             </el-radio-group>
           </el-form-item>
           <el-form-item label="审核备注" v-if="auditForm.status === 5" required>
-             <el-input v-model="auditForm.reason" type="textarea" placeholder="请输入驳回原因" />
+            <el-input v-model="auditForm.reason" type="textarea" placeholder="请输入驳回原因" />
           </el-form-item>
         </el-form>
       </div>
@@ -205,13 +173,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Refresh, View, Edit, Plus, Check, Picture } from '@element-plus/icons-vue'
+import { Search, Refresh, View, Edit, Plus, Check, Picture, Delete } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { getProjectPage, getProjectById, auditProject } from '@/api/project'
+import { getProjectPage, getProjectById, auditProject, deleteProject } from '@/api/project'
+import { useUserStore } from '@/stores/userStore'
+import { getImageUrl } from '@/utils/image'
 
 const router = useRouter()
+const userStore = useUserStore()
+
+const roleType = computed(() => userStore.userInfo?.roleType)
+const isAdmin = computed(() => roleType.value === 1)
+const isManager = computed(() => roleType.value === 3)
+const isConsultant = computed(() => roleType.value === 2)
+
+const canAdd = computed(() => isAdmin.value || isManager.value)
+const canEdit = computed(() => isAdmin.value || isManager.value)
+const canDelete = computed(() => isAdmin.value)
+const canAudit = computed(() => isAdmin.value)
+const canView = computed(() => isAdmin.value || isConsultant.value)
 
 // 查询参数
 const queryParams = reactive({
@@ -298,9 +280,25 @@ const handleView = (row: any) => {
   router.push(`/project/detail/${row.id}`)
 }
 
-// 编辑
 const handleEdit = (row: any) => {
   router.push(`/project/edit/${row.id}`)
+}
+
+// 删除
+const handleDelete = (row: any) => {
+  ElMessageBox.confirm('确认要删除该项目吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      await deleteProject(row.id)
+      ElMessage.success('删除成功')
+      loadProjectList()
+    } catch (error: any) {
+      console.error('删除失败', error)
+    }
+  }).catch(() => { })
 }
 
 // 新增
@@ -353,11 +351,6 @@ const submitAudit = async () => {
   }
 }
 
-const getImageUrl = (url: string) => {
-    if (!url) return ''
-    return `http://localhost:8080/uploads${url}`
-}
-
 // 组件挂载时加载数据
 onMounted(() => {
   loadProjectList()
@@ -390,20 +383,20 @@ onMounted(() => {
 }
 
 .audit-container {
-    .project-info {
-        margin-bottom: 20px;
-        
-        .cover-image {
-            text-align: center;
-            margin-bottom: 15px;
-            
-            img {
-                max-width: 100%;
-                max-height: 200px;
-                object-fit: cover;
-                border-radius: 4px;
-            }
-        }
+  .project-info {
+    margin-bottom: 20px;
+
+    .cover-image {
+      text-align: center;
+      margin-bottom: 15px;
+
+      img {
+        max-width: 100%;
+        max-height: 200px;
+        object-fit: cover;
+        border-radius: 4px;
+      }
     }
+  }
 }
 </style>

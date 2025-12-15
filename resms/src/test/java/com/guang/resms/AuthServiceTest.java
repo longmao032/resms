@@ -1,13 +1,20 @@
 package com.guang.resms;
 
-import com.guang.resms.entity.User;
-import com.guang.resms.entity.vo.LoginResponseVo;
-import com.guang.resms.service.AuthService;
+
 import com.guang.resms.common.exception.ServiceException;
+import com.guang.resms.module.auth.entity.vo.LoginResponseVo;
+import com.guang.resms.module.auth.service.AuthService;
+import com.guang.resms.module.user.entity.User;
+import com.guang.resms.module.user.entity.UserRole;
+import com.guang.resms.module.user.mapper.UserMapper;
+import com.guang.resms.module.user.mapper.UserRoleMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -23,13 +30,20 @@ public class AuthServiceTest {
     @Autowired
     private AuthService authService;
 
+    @Autowired
+    private UserMapper userMapper;
+
+    @Autowired
+    private UserRoleMapper userRoleMapper;
+
+    private String testUsername;
+
     /**
      * 测试成功的登录场景
      */
     @Test
     public void testSuccessfulLogin() {
-        // 假设数据库中存在一个测试用户 (username: admin, password: 123456)
-        LoginResponseVo response = authService.login("admin", "123456");
+        LoginResponseVo response = authService.login(testUsername, "123456");
 
         // 验证返回结果
         assertNotNull(response, "登录成功应该返回LoginResponseVo对象");
@@ -74,7 +88,7 @@ public class AuthServiceTest {
     @Test
     public void testEmptyPassword() {
         ServiceException exception = assertThrows(ServiceException.class, () -> {
-            authService.login("admin", "");
+            authService.login(testUsername, "");
         });
 
         assertNotNull(exception.getMessage(), "应该抛出异常并包含错误信息");
@@ -100,7 +114,7 @@ public class AuthServiceTest {
     @Test
     public void testWrongPassword() {
         ServiceException exception = assertThrows(ServiceException.class, () -> {
-            authService.login("admin", "wrongpassword");
+            authService.login(testUsername, "wrongpassword");
         });
 
         assertTrue(exception.getMessage().contains("用户名或密码"), "应该提示用户名或密码错误");
@@ -173,5 +187,30 @@ public class AuthServiceTest {
             }
         }
         return false;
+    }
+
+    @BeforeEach
+    public void setupTestUser() {
+        testUsername = "test_admin_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        String uuidDigits = UUID.randomUUID().toString().replace("-", "");
+
+        User user = new User();
+        user.setUsername(testUsername);
+        user.setPassword("123456");
+        user.setRealName("测试管理员");
+        user.setPhone("199" + uuidDigits.substring(0, 8));
+        user.setEmail(testUsername + "@example.com");
+        user.setAvatar("/uploads/avatars/default.jpg");
+        user.setStatus(1);
+
+        int inserted = userMapper.insert(user);
+        if (inserted <= 0 || user.getId() == null) {
+            throw new RuntimeException("插入测试用户失败");
+        }
+
+        UserRole userRole = new UserRole();
+        userRole.setUserId(user.getId());
+        userRole.setRoleId(1);
+        userRoleMapper.insert(userRole);
     }
 }

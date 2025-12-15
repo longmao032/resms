@@ -9,13 +9,14 @@
     <el-form-item label="用户头像" prop="avatar">
       <el-upload
         class="avatar-uploader"
-        action="http://localhost:8080/common/upload"
+        :action="uploadUrl"
+        :headers="uploadHeaders"
         :show-file-list="false"
         :on-success="handleAvatarSuccess"
         :before-upload="beforeAvatarUpload"
         name="file"
       >
-        <img v-if="form.avatar" :src="getImageUrl(form.avatar)" class="avatar" />
+        <img v-if="form.avatar" :src="getImageUrl(form.avatar) || defaultAvatar" class="avatar" />
         <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
       </el-upload>
       <div class="upload-tip">支持 jpg、png 格式，大小不超过 2MB</div>
@@ -63,11 +64,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, watch } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
+import { getImageUrl } from '@/utils/image'
+const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
 import { ElMessage, type FormInstance, type FormRules, type UploadProps } from 'element-plus'
 import { useUserStore } from '@/stores/userStore'
-import { reqUserUpdate } from '@/api/user'
+import { reqUserProfileUpdate } from '@/api/user'
 
 const userStore = useUserStore()
 const formRef = ref<FormInstance>()
@@ -98,34 +101,37 @@ const rules = reactive<FormRules>({
   ]
 })
 
-// 图片 URL 处理
-const getImageUrl = (url: string) => {
-  if (!url) return ''
-  if (url.startsWith('http')) return url
-  if (url.startsWith('/uploads')) return `http://localhost:8080${url}`
-  if (url.startsWith('/')) return `http://localhost:8080/uploads${url}`
-  return `http://localhost:8080/uploads/${url}`
-}
+// 使用通用图片处理工具 getImageUrl
 
-onMounted(() => {
-  initForm()
+const uploadUrl = '/api/common/upload'
+const uploadHeaders = reactive<Record<string, string>>({
+  Authorization: `Bearer ${localStorage.getItem('token') || ''}`
 })
 
 const initForm = () => {
   const userInfo = userStore.userInfo
   if (userInfo) {
     Object.assign(form, {
-      id: userInfo.id,
+      id: (userInfo as any).userId ?? userInfo.id,
       username: userInfo.username,
       realName: userInfo.realName,
       phone: userInfo.phone,
       email: userInfo.email,
-      sex: userInfo.sex || 0,
+      sex: userInfo.sex ?? 0,
       avatar: userInfo.avatar,
-      remark: userInfo.remark
+      remark: userInfo.remark ?? ''
     })
   }
 }
+
+watch(
+  () => userStore.userInfo,
+  () => {
+    initForm()
+    uploadHeaders.Authorization = `Bearer ${localStorage.getItem('token') || ''}`
+  },
+  { immediate: true }
+)
 
 const handleAvatarSuccess: UploadProps['onSuccess'] = (response) => {
   if (response.status) {
@@ -153,29 +159,31 @@ const beforeAvatarUpload: UploadProps['beforeUpload'] = (rawFile) => {
 
 const handleSubmit = async () => {
   if (!formRef.value) return
-  
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
-      loading.value = true
-      try {
-        const res: any = await reqUserUpdate(form)
-        const apiResp = res.data ?? res
-        
-        if (apiResp.status) {
-          ElMessage.success('个人资料更新成功')
-          // 更新 store 中的用户信息
-          await userStore.getUserInfo()
-        } else {
-          ElMessage.error(apiResp.message || '更新失败')
-        }
-      } catch (error) {
-        console.error('更新失败:', error)
-        ElMessage.error('更新失败，请稍后重试')
-      } finally {
-        loading.value = false
-      }
-    }
-  })
+
+  try {
+    await formRef.value.validate()
+  } catch (err) {
+    return
+  }
+
+  loading.value = true
+  try {
+    await reqUserProfileUpdate({
+      realName: form.realName,
+      phone: form.phone,
+      email: form.email,
+      sex: form.sex,
+      remark: form.remark,
+      avatar: form.avatar
+    })
+    ElMessage.success('个人资料更新成功')
+    await userStore.fetchUserInfo()
+  } catch (error) {
+    console.error('更新失败:', error)
+    ElMessage.error('更新失败，请稍后重试')
+  } finally {
+    loading.value = false
+  }
 }
 
 const resetForm = () => {

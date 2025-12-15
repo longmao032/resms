@@ -1,7 +1,7 @@
 <template>
   <div class="house-detail-container">
     <el-page-header @back="goBack" content="房源详情" />
-    
+
     <el-card v-loading="loading" class="detail-card">
       <!-- 房源基础信息 -->
       <template #header>
@@ -22,16 +22,13 @@
       <div class="image-section" v-if="formattedImages.length > 0">
         <el-carousel :interval="4000" type="card" height="400px" indicator-position="outside">
           <el-carousel-item v-for="(image, index) in formattedImages" :key="index">
-            <el-image 
-              :src="image" 
-              :preview-src-list="formattedImages"
-              :initial-index="index"
-              fit="cover"
-              class="carousel-image"
-            >
+            <el-image :src="image" :preview-src-list="formattedImages" :initial-index="index" fit="cover"
+              class="carousel-image">
               <template #error>
                 <div class="image-error">
-                  <el-icon><Picture /></el-icon>
+                  <el-icon>
+                    <Picture />
+                  </el-icon>
                   <span>加载失败</span>
                 </div>
               </template>
@@ -44,7 +41,9 @@
 
       <!-- 基本信息 -->
       <el-divider content-position="left">
-        <el-icon><House /></el-icon>
+        <el-icon>
+          <House />
+        </el-icon>
         <span class="divider-text">基本信息</span>
       </el-divider>
       <el-descriptions :column="3" border>
@@ -64,7 +63,9 @@
         </el-descriptions-item>
         <el-descriptions-item label="负责销售">{{ houseDetail.salesName || '暂无' }}</el-descriptions-item>
         <el-descriptions-item label="房源位置" :span="3">
-          <el-icon><Location /></el-icon>
+          <el-icon>
+            <Location />
+          </el-icon>
           {{ houseDetail.fullAddress || '-' }}
         </el-descriptions-item>
         <el-descriptions-item label="房源描述" :span="3">
@@ -75,20 +76,29 @@
       <!-- 新房扩展信息 -->
       <template v-if="houseDetail.houseType === 2 && houseDetail.newHouseInfo">
         <el-divider content-position="left">
-          <el-icon><OfficeBuilding /></el-icon>
+          <el-icon>
+            <OfficeBuilding />
+          </el-icon>
           <span class="divider-text">新房信息</span>
         </el-divider>
         <el-descriptions :column="3" border>
-          <el-descriptions-item label="楼盘名称">{{ houseDetail.newHouseInfo.estateName || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="开盘时间">{{ houseDetail.newHouseInfo.openingDate || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="交房时间">{{ houseDetail.newHouseInfo.deliveryDate || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="销售状态">
-            <el-tag :type="getSaleStatusTagType(houseDetail.newHouseInfo.saleStatus)" size="small">
-              {{ houseDetail.newHouseInfo.saleStatusText }}
-            </el-tag>
+          <el-descriptions-item label="预售证号">{{ houseDetail.newHouseInfo.preSaleLicenseNo || '-'
+          }}</el-descriptions-item>
+          <el-descriptions-item label="备案价">
+            <span v-if="houseDetail.newHouseInfo.recordPrice" class="price-text">¥ {{
+              formatPrice(houseDetail.newHouseInfo.recordPrice) }}</span>
+            <span v-else>-</span>
           </el-descriptions-item>
-          <el-descriptions-item label="备注" :span="2">
-            {{ houseDetail.newHouseInfo.remark || '-' }}
+          <el-descriptions-item label="产权年限">{{ houseDetail.newHouseInfo.propertyRightYears || '-' }}
+            年</el-descriptions-item>
+          <el-descriptions-item label="预计交房时间">{{ houseDetail.newHouseInfo.estimatedDeliveryTime || '-'
+          }}</el-descriptions-item>
+          <el-descriptions-item label="交付标准">{{ houseDetail.newHouseInfo.deliveryStandard || '-'
+          }}</el-descriptions-item>
+          <el-descriptions-item label="梯户比">{{ houseDetail.newHouseInfo.elevatorRatio || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="得房率" :span="3">
+            <span v-if="houseDetail.newHouseInfo.actualAreaRate">{{ houseDetail.newHouseInfo.actualAreaRate }}%</span>
+            <span v-else>-</span>
           </el-descriptions-item>
         </el-descriptions>
       </template>
@@ -96,14 +106,19 @@
       <!-- 二手房扩展信息 -->
       <template v-if="houseDetail.houseType === 1 && houseDetail.secondHouseInfo">
         <el-divider content-position="left">
-          <el-icon><House /></el-icon>
+          <el-icon>
+            <House />
+          </el-icon>
           <span class="divider-text">二手房信息</span>
         </el-divider>
         <el-descriptions :column="3" border>
-          <el-descriptions-item label="小区名称">{{ houseDetail.secondHouseInfo.communityName || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="小区名称">{{ houseDetail.secondHouseInfo.communityName || '-'
+          }}</el-descriptions-item>
           <el-descriptions-item label="房龄">{{ houseDetail.secondHouseInfo.houseAge || '-' }} 年</el-descriptions-item>
-          <el-descriptions-item label="产权年限">{{ houseDetail.secondHouseInfo.propertyRight || '-' }} 年</el-descriptions-item>
-          <el-descriptions-item label="上次交易时间">{{ houseDetail.secondHouseInfo.lastTradeDate || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="产权年限">{{ houseDetail.secondHouseInfo.propertyRight || '-' }}
+            年</el-descriptions-item>
+          <el-descriptions-item label="上次交易时间">{{ houseDetail.secondHouseInfo.lastTradeDate || '-'
+          }}</el-descriptions-item>
           <el-descriptions-item label="抵押状态">
             <el-tag :type="houseDetail.secondHouseInfo.mortgageStatus === 1 ? 'warning' : 'success'" size="small">
               {{ houseDetail.secondHouseInfo.mortgageStatusText }}
@@ -123,7 +138,9 @@
       <!-- 项目/小区信息 -->
       <template v-if="houseDetail.projectInfo">
         <el-divider content-position="left">
-          <el-icon><School /></el-icon>
+          <el-icon>
+            <School />
+          </el-icon>
           <span class="divider-text">项目/小区信息</span>
         </el-divider>
         <el-descriptions :column="2" border>
@@ -132,15 +149,19 @@
           <el-descriptions-item label="开发商">{{ houseDetail.projectInfo.developer || '-' }}</el-descriptions-item>
           <el-descriptions-item label="物业公司">{{ houseDetail.projectInfo.propertyCompany || '-' }}</el-descriptions-item>
           <el-descriptions-item label="项目地址" :span="2">
-            <el-icon><Location /></el-icon>
+            <el-icon>
+              <Location />
+            </el-icon>
             {{ getFullProjectAddress(houseDetail.projectInfo) }}
           </el-descriptions-item>
           <el-descriptions-item label="占地面积">{{ houseDetail.projectInfo.landArea || '-' }} ㎡</el-descriptions-item>
           <el-descriptions-item label="容积率">{{ houseDetail.projectInfo.plotRatio || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="绿化率">{{ houseDetail.projectInfo.greeningRate ? houseDetail.projectInfo.greeningRate + '%' : '-' }}</el-descriptions-item>
+          <el-descriptions-item label="绿化率">{{ houseDetail.projectInfo.greeningRate ?
+            houseDetail.projectInfo.greeningRate + '%' : '-' }}</el-descriptions-item>
           <el-descriptions-item label="车位配比">{{ houseDetail.projectInfo.parkingRatio || '-' }}</el-descriptions-item>
           <el-descriptions-item label="总户数">{{ houseDetail.projectInfo.totalHouses || '-' }} 户</el-descriptions-item>
-          <el-descriptions-item label="物业费">{{ houseDetail.projectInfo.propertyFee ? '¥' + houseDetail.projectInfo.propertyFee + '/㎡/月' : '-' }}</el-descriptions-item>
+          <el-descriptions-item label="物业费">{{ houseDetail.projectInfo.propertyFee ? '¥' +
+            houseDetail.projectInfo.propertyFee + '/㎡/月' : '-' }}</el-descriptions-item>
           <el-descriptions-item label="建筑类型">{{ houseDetail.projectInfo.buildingType || '-' }}</el-descriptions-item>
           <el-descriptions-item label="开盘时间">{{ houseDetail.projectInfo.openingDate || '-' }}</el-descriptions-item>
           <el-descriptions-item label="交房时间">{{ houseDetail.projectInfo.deliveryDate || '-' }}</el-descriptions-item>
@@ -150,15 +171,20 @@
               （距离约 {{ houseDetail.projectInfo.metroDistance }}米）
             </span>
           </el-descriptions-item>
-          <el-descriptions-item label="学区信息" :span="2">{{ houseDetail.projectInfo.schoolDistrict || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="商圈信息" :span="2">{{ houseDetail.projectInfo.businessCircle || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="项目描述" :span="2">{{ houseDetail.projectInfo.description || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="学区信息" :span="2">{{ houseDetail.projectInfo.schoolDistrict || '-'
+          }}</el-descriptions-item>
+          <el-descriptions-item label="商圈信息" :span="2">{{ houseDetail.projectInfo.businessCircle || '-'
+          }}</el-descriptions-item>
+          <el-descriptions-item label="项目描述" :span="2">{{ houseDetail.projectInfo.description || '-'
+          }}</el-descriptions-item>
         </el-descriptions>
       </template>
 
       <!-- 操作记录 -->
       <el-divider content-position="left">
-        <el-icon><Clock /></el-icon>
+        <el-icon>
+          <Clock />
+        </el-icon>
         <span class="divider-text">操作记录</span>
       </el-divider>
       <el-descriptions :column="2" border>
@@ -175,13 +201,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getHouseDetail } from '@/api/house'
 import type { HouseDetail, ProjectInfo } from '@/api/house/type'
-import { 
-  House, 
-  Picture, 
-  Location, 
-  OfficeBuilding, 
-  School, 
-  Clock 
+import {
+  House,
+  Picture,
+  Location,
+  OfficeBuilding,
+  School,
+  Clock
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -202,10 +228,25 @@ const fetchHouseDetail = async () => {
   loading.value = true
   try {
     const res = await getHouseDetail(Number(id))
-    houseDetail.value = res.data
+    const anyRes: any = res
+
+    // request.ts 返回 ResponseResult（含 status/data）；也兼容极少数情况下直接返回对象
+    if (anyRes && typeof anyRes.status === 'boolean') {
+      if (!anyRes.status) {
+        ElMessage.error(anyRes.message || '获取房源详情失败')
+        return
+      }
+      houseDetail.value = anyRes.data
+      return
+    }
+
+    // fallback: treat as direct object
+    houseDetail.value = anyRes
   } catch (error) {
+    const anyErr: any = error
+    const message = anyErr?.response?.data?.message || anyErr?.message || '获取房源详情失败'
     console.error('获取房源详情失败:', error)
-    ElMessage.error('获取房源详情失败')
+    ElMessage.error(message)
   } finally {
     loading.value = false
   }
@@ -243,7 +284,8 @@ const getStatusTagType = (status: number | undefined): string => {
     0: 'info',
     1: 'success',
     2: 'warning',
-    3: 'danger'
+    3: 'info',
+    4: 'danger'
   }
   return statusMap[status] || 'info'
 }
@@ -270,16 +312,7 @@ const getFullProjectAddress = (project: ProjectInfo): string => {
   return parts.join('') || '-'
 }
 
-const getImageUrl = (url: string) => {
-  if (!url) return ''
-  if (url.startsWith('http')) return url
-  // 处理已包含 /uploads 的情况
-  if (url.startsWith('/uploads')) return `http://localhost:8080${url}`
-  // 处理以 / 开头的情况 (如 /project/1.jpg)
-  if (url.startsWith('/')) return `http://localhost:8080/uploads${url}`
-  // 处理相对路径 (如 temp_...)
-  return `http://localhost:8080/uploads/${url}`
-}
+import { getImageUrl } from '@/utils/image'
 
 import { computed } from 'vue'
 

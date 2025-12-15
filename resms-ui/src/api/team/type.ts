@@ -24,6 +24,7 @@ export interface TeamDetail {
   managerName?: string
   managerPhone?: string
   memberCount: number
+  performanceTarget?: number
   members?: TeamMember[] // 详情时返回
   createTime: string
   updateTime: string
@@ -34,6 +35,7 @@ export interface TeamFormData {
   id?: number
   teamName: string
   managerId?: number
+  performanceTarget?: number
   memberIds: number[] // 穿梭框绑定的成员ID集合
 }
 

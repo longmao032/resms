@@ -6,7 +6,7 @@ import request from '@/utils/request';
  */
 export function getSaleReport(params: any) {
     return request({
-        url: '/api/report/sale',
+        url: '/report/sale',
         method: 'get',
         params
     });
@@ -18,7 +18,7 @@ export function getSaleReport(params: any) {
  */
 export function getFinancialReport(params: any) {
     return request({
-        url: '/api/report/financial',
+        url: '/report/financial',
         method: 'get',
         params
     });
@@ -30,8 +30,35 @@ export function getFinancialReport(params: any) {
  */
 export function getCustomerReport(params: any) {
     return request({
-        url: '/api/report/customer',
+        url: '/report/customer',
         method: 'get',
         params
+    });
+}
+
+export function exportSaleReport(params: any) {
+    return request({
+        url: '/report/sale/export',
+        method: 'get',
+        params,
+        responseType: 'blob'
+    });
+}
+
+export function exportFinancialReport(params: any) {
+    return request({
+        url: '/report/financial/export',
+        method: 'get',
+        params,
+        responseType: 'blob'
+    });
+}
+
+export function exportCustomerReport(params: any) {
+    return request({
+        url: '/report/customer/export',
+        method: 'get',
+        params,
+        responseType: 'blob'
     });
 }

@@ -48,13 +48,13 @@
         <el-table-column label="操作" width="150" fixed="right" align="center">
           <template #default="{ row }">
             <el-button 
-              v-if="row.status === 0" 
+              v-if="canOperate && row.status === 0" 
               link type="primary" 
               icon="Calculator" 
               @click="handleCalculate(row)"
             >核算</el-button>
             <el-button 
-              v-if="row.status === 1" 
+              v-if="canOperate && row.status === 1" 
               link type="success" 
               icon="Wallet" 
               @click="handleIssue(row)"
@@ -84,11 +84,17 @@ import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { reqCommissionList, reqCalculateCommission, reqIssueCommission } from '@/api/commission';
 import type { CommissionQuery, CommissionVO } from '@/api/commission/type';
+import { useUserStore } from '@/stores/userStore'
+import { computed } from 'vue'
 
 const loading = ref(false);
 const total = ref(0);
 const tableData = ref<CommissionVO[]>([]);
 const queryFormRef = ref();
+
+const userStore = useUserStore()
+const roleType = computed(() => userStore.userInfo?.roleType)
+const canOperate = computed(() => roleType.value === 1 || roleType.value === 4)
 
 const queryParams = reactive<CommissionQuery>({
   pageNum: 1,
@@ -125,6 +131,7 @@ const resetQuery = () => {
 
 // 业务操作：核算
 const handleCalculate = (row: CommissionVO) => {
+  if (!canOperate.value) return
   ElMessageBox.confirm(`确认对交易 [${row.transactionNo}] 进行佣金核算吗？`, '核算确认', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
@@ -142,6 +149,7 @@ const handleCalculate = (row: CommissionVO) => {
 
 // 业务操作：发放
 const handleIssue = (row: CommissionVO) => {
+  if (!canOperate.value) return
   ElMessageBox.confirm(`确认发放佣金 ${row.amount} 元给 [${row.salesName}] 吗？`, '发放确认', {
     confirmButtonText: '确定发放',
     cancelButtonText: '取消',

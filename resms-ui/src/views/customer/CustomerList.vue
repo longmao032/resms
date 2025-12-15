@@ -27,12 +27,7 @@
         <el-button type="primary" :icon="Plus" @click="handleAdd">新增客户</el-button>
       </div>
 
-      <el-table
-        v-loading="loading"
-        :data="tableData"
-        border
-        style="width: 100%"
-      >
+      <el-table v-loading="loading" :data="tableData" border style="width: 100%">
         <el-table-column prop="customerNo" label="客户编号" width="140" />
         <el-table-column prop="realName" label="姓名" width="120" />
         <el-table-column prop="phone" label="手机号" width="130" />
@@ -46,43 +41,38 @@
         <el-table-column prop="demandAreaRegion" label="意向区域" />
         <el-table-column prop="demandLayout" label="意向户型" width="120" />
         <el-table-column prop="demandPrice" label="预算(元)" width="120">
-           <template #default="{ row }">
-             {{ row.demandPrice ? Number(row.demandPrice).toLocaleString() : '-' }}
-           </template>
+          <template #default="{ row }">
+            {{ row.demandPrice ? Number(row.demandPrice).toLocaleString() : '-' }}
+          </template>
         </el-table-column>
         <el-table-column prop="source" label="来源" width="120" />
         <el-table-column prop="createTime" label="创建时间" width="180">
-           <template #default="{ row }">
-             {{ formatTime(row.createTime) }}
-           </template>
-        </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-            <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+            {{ formatTime(row.createTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="160" fixed="right" align="center">
+          <template #default="{ row }">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <el-tooltip content="编辑" placement="top">
+                <el-button link type="primary" :icon="Edit" @click="handleEdit(row)" />
+              </el-tooltip>
+              <el-tooltip content="删除" placement="top" v-if="canDelete">
+                <el-button link type="danger" :icon="Delete" @click="handleDelete(row)" />
+              </el-tooltip>
+            </div>
           </template>
         </el-table-column>
       </el-table>
 
       <div class="pagination-container">
-        <el-pagination
-          v-model:current-page="queryParams.pageNum"
-          v-model:page-size="queryParams.pageSize"
-          :page-sizes="[10, 20, 50, 100]"
-          :total="total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSearch"
-          @current-change="loadData"
-        />
+        <el-pagination v-model:current-page="queryParams.pageNum" v-model:page-size="queryParams.pageSize"
+          :page-sizes="[10, 20, 50, 100]" :total="total" layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSearch" @current-change="loadData" />
       </div>
     </el-card>
 
-    <el-dialog
-      v-model="dialogVisible"
-      :title="dialogType === 'add' ? '新增客户' : '编辑客户'"
-      width="600px"
-      @close="resetForm"
-    >
+    <el-dialog v-model="dialogVisible" :title="dialogType === 'add' ? '新增客户' : '编辑客户'" width="600px" @close="resetForm">
       <el-form ref="formRef" :model="formData" :rules="rules" label-width="100px">
         <el-form-item label="客户姓名" prop="realName">
           <el-input v-model="formData.realName" placeholder="请输入真实姓名" />
@@ -112,15 +102,17 @@
         <el-row>
           <el-col :span="12">
             <el-form-item label="意向面积" prop="demandArea">
-              <el-input-number v-model="formData.demandArea" :min="0" :precision="2" controls-position="right" style="width: 100%">
-                 <template #suffix>㎡</template>
+              <el-input-number v-model="formData.demandArea" :min="0" :precision="2" controls-position="right"
+                style="width: 100%">
+                <template #suffix>㎡</template>
               </el-input-number>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="意向价格" prop="demandPrice">
-              <el-input-number v-model="formData.demandPrice" :min="0" :step="10000" controls-position="right" style="width: 100%">
-                 <template #suffix>元</template>
+              <el-input-number v-model="formData.demandPrice" :min="0" :step="10000" controls-position="right"
+                style="width: 100%">
+                <template #suffix>元</template>
               </el-input-number>
             </el-form-item>
           </el-col>
@@ -148,12 +140,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
-import { Search, Refresh, Plus } from '@element-plus/icons-vue';
+import { ref, reactive, onMounted, computed } from 'vue';
+import { Search, Refresh, Plus, Edit, Delete } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import type { FormInstance, FormRules } from 'element-plus';
 import { reqCustomerPage, reqSaveOrUpdateCustomer, reqDeleteCustomer } from '@/api/customer';
 import type { Customer, CustomerQuery } from '@/api/customer/type';
+import { useUserStore } from '@/stores/userStore';
+
+// User Store
+const userStore = useUserStore();
+const roleType = computed(() => userStore.userInfo?.roleType);
+// 权限计算属性: 销售顾问(roleType=3)不能删除
+const canDelete = computed(() => roleType.value !== 2);
 
 // --- 状态定义 ---
 const loading = ref(false);
@@ -205,10 +204,13 @@ const loadData = async () => {
       ...queryParams,
       intentionLevel: queryParams.intentionLevel === '' ? undefined : queryParams.intentionLevel
     };
-    const res = await reqCustomerPage(params);
-    if (res && res.data) {
-      tableData.value = res.data.records;
-      total.value = res.data.total;
+    const res: any = await reqCustomerPage(params);
+    if (res && res.status && res.data) {
+      tableData.value = res.data.records || [];
+      total.value = res.data.total || 0;
+    } else {
+      tableData.value = [];
+      total.value = 0;
     }
   } catch (error) {
     console.error('加载客户列表失败:', error);
@@ -274,24 +276,26 @@ const resetForm = () => {
 // 提交表单
 const submitForm = async () => {
   if (!formRef.value) return;
-  
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
-      submitLoading.value = true;
-      try {
-        const res = await reqSaveOrUpdateCustomer(formData);
-        if (res && res.status) {
-          ElMessage.success(dialogType.value === 'add' ? '添加成功' : '修改成功');
-          dialogVisible.value = false;
-          loadData();
-        }
-      } catch (error) {
-        console.error('保存客户信息失败:', error);
-      } finally {
-        submitLoading.value = false;
-      }
+  try {
+    await formRef.value.validate()
+  } catch (err) {
+    return
+  }
+
+  submitLoading.value = true;
+  try {
+    const resAny: any = await reqSaveOrUpdateCustomer(formData)
+    const apiResp = resAny.data ?? resAny
+    if (apiResp === true || apiResp && (apiResp.status || apiResp.code === 200)) {
+      ElMessage.success(dialogType.value === 'add' ? '添加成功' : '修改成功');
+      dialogVisible.value = false;
+      loadData();
     }
-  });
+  } catch (error) {
+    console.error('保存客户信息失败:', error);
+  } finally {
+    submitLoading.value = false;
+  }
 };
 
 // 删除客户
@@ -304,7 +308,7 @@ const handleDelete = (row: Customer) => {
     try {
       if (row.id) {
         const res = await reqDeleteCustomer(row.id);
-        if (res && res.status) {
+        if (res) {
           ElMessage.success('删除成功');
           loadData();
         }
@@ -312,7 +316,7 @@ const handleDelete = (row: Customer) => {
     } catch (error) {
       console.error('删除客户失败:', error);
     }
-  }).catch(() => {});
+  }).catch(() => { });
 };
 
 // --- 工具函数 ---
@@ -352,9 +356,10 @@ onMounted(() => {
 <style scoped lang="scss">
 .page-container {
   padding: 20px;
-  
+
   .search-card {
     margin-bottom: 20px;
+
     .search-form {
       .el-form-item {
         margin-bottom: 0;
@@ -367,7 +372,7 @@ onMounted(() => {
     .operation-bar {
       margin-bottom: 15px;
     }
-    
+
     .pagination-container {
       margin-top: 20px;
       display: flex;
@@ -376,5 +381,3 @@ onMounted(() => {
   }
 }
 </style>
-
-

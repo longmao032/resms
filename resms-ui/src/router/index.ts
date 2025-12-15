@@ -47,6 +47,12 @@ const router = createRouter({
           component: () => import('@/views/system/MenuManage.vue'),
           meta: { title: '菜单管理', permission: 'menu:manage' }
         },
+        {
+          path: '/settings',
+          name: 'SystemSettings',
+          component: () => import('@/views/system/SystemSettings.vue'),
+          meta: { title: '系统设置' }
+        },
         // 房源管理
         {
           path: '/house/list',
@@ -54,17 +60,14 @@ const router = createRouter({
           component: () => import('@/views/house/HouseList.vue'),
           meta: { title: '房源列表', permission: 'house:list:manage' }
         },
-        // 注释掉独立的"新增房源"菜单路由
-        // 根据权限优化方案，新增房源改为仅在房源列表页通过按钮访问
-        // 如需恢复独立菜单，请取消注释并在数据库中启用 house:add:page 权限
-        /*
+        // 新增房源（从列表页按钮访问）
         {
           path: '/house/add',
           name: 'HouseAdd',
           component: () => import('@/views/house/HouseAdd.vue'),
           meta: { title: '新增房源', permission: 'house:add:page' }
         },
-        */
+
         {
           path: '/house/edit/:id',
           name: 'HouseEdit',
@@ -192,7 +195,7 @@ const router = createRouter({
         {
           path: '/commission/statistics',
           name: 'CommissionStatistics',
-          component: () => import('@/views/commission/CommissionStatistics.vue'),
+          component: () => import('@/views/commission/CommissionStatisticsPage.vue'),
           meta: { title: '佣金统计', permission: 'commission:statistics:manage' }
         },
         // 团队管理
@@ -225,7 +228,7 @@ const router = createRouter({
         {
           path: '/work-notice/list',
           name: 'WorkNoticeList',
-          component: () => import('@/views/work-notice/list/index.vue'),
+          component: () => import('@/views/work-notice/NoticeList.vue'),
           meta: { title: '通知列表', permission: 'work:notice:list:manage' }
         },
         {
@@ -274,30 +277,18 @@ const router = createRouter({
         {
           path: '/system/log',
           name: 'SystemLog',
-          component: () => import('@/views/Dashboard.vue'),
-          meta: { title: '操作日志', permission: 'system:log:manage' }
+          component: () => import('@/views/system/OperationLog.vue'),
+          meta: { title: '操作日志', permission: 'operation:log:manage' }
+        },
+        // 在线聊天
+        {
+          path: '/chat',
+          name: 'Chat',
+          component: () => import('@/views/chat/ChatLayout.vue'),
+          meta: { title: '在线聊天', permission: 'chat:manage' }
         }
       ]
     },
-    // 旧路由保留用于兼容
-    {
-      path: '/Projects',
-      name: 'Projects',
-      component: () => import('@/views/Project.vue'),
-      meta: { requiresAuth: false }
-    },
-    {
-      path: '/second-hand',
-      name: 'second-hand',
-      component: () => import('@/views/SecondHand.vue'),
-      meta: { requiresAuth: false }
-    },
-    {
-      path: '/main-layout',
-      name: 'main-layout',
-      component: () => import('@/views/MainLayout.vue'),
-      meta: { requiresAuth: false }
-    }
   ]
 })
 
@@ -313,6 +304,18 @@ router.beforeEach((to, from, next) => {
 
   // 检查权限（如果路由定义了权限要求）
   if (to.meta.permission) {
+    // 管理员默认放行
+    if (userStore.currentUser?.roleType === 1) {
+      next()
+      return
+    }
+
+    // 财务人员仅允许查看房源详情；若后端未下发该 permission，则在路由层放行
+    if (to.name === 'HouseDetail' && userStore.currentUser?.roleType === 4) {
+      next()
+      return
+    }
+
     const permission = to.meta.permission as string
     // 确保权限数组已加载
     if (!userStore.permissions || userStore.permissions.length === 0) {

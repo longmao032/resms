@@ -4,6 +4,7 @@ import type { loginForm, loginResp } from "@/api/user/type";
 enum API {
         LOGIN_URL = "/auth/login",
         USERINFO_URL = "/user/info",
+        USER_PROFILE_URL = "/user/profile",
         USER_PAGE_URL = "/user/page",
         USER_DETAIL_URL = "/user",
         USER_SAVE_URL = "/user",
@@ -16,11 +17,15 @@ enum API {
         USER_CHECK_USERNAME_URL = "/user/check-username",
         USER_CHECK_PHONE_URL = "/user/check-phone",
         USER_CHECK_EMAIL_URL = "/user/check-email",
+        USER_ALL_URL = "/user/all",
+        USER_BY_ROLE_URL = "/user/listByRole",
 }
 
 export const reqLogin = (data: loginForm) => request.post<any, loginResp>(API.LOGIN_URL, data);
 
 export const reqUserInfo = () => request.get<any, loginResp>(API.USERINFO_URL);
+
+export const reqUserProfileUpdate = (data: any) => request.put<any, any>(API.USER_PROFILE_URL, data);
 
 // 用户管理相关接口
 export const reqUserPage = (data: any) => request.post<any, any>(API.USER_PAGE_URL, data);
@@ -46,3 +51,20 @@ export const reqCheckUsername = (params: any) => request.get<any, any>(API.USER_
 export const reqCheckPhone = (params: any) => request.get<any, any>(API.USER_CHECK_PHONE_URL, { params });
 
 export const reqCheckEmail = (params: any) => request.get<any, any>(API.USER_CHECK_EMAIL_URL, { params });
+
+/**
+ * 获取所有用户列表（用于下拉框）
+ */
+export const reqAllUsers = () => request.get<any, any>(API.USER_ALL_URL);
+
+/**
+ * 根据角色类型获取用户列表
+ * @param roleType 角色类型：2=销售经理, 3=销售顾问
+ */
+export const reqUsersByRole = (roleType: number) => request.get<any, any>(`${API.USER_BY_ROLE_URL}/${roleType}`);
+
+/**
+ * 获取销售人员列表（仅销售顾问 roleType=3）
+ */
+export const getSalesList = () => reqUsersByRole(2);
+

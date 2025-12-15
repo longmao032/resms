@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guang.resms.module.notice.mapper.WorkNoticeMapper">
+
+    <select id="selectMyNoticePage" resultType="com.guang.resms.module.notice.entity.vo.WorkNoticeVO">
+        SELECT
+            wn.id,
+            wn.notice_title,
+            wn.notice_content,
+            wn.notice_type,
+            wn.priority,
+            wn.content_type,
+            wn.sender_name,
+            wn.sender_id,
+            wn.send_time,
+            wn.biz_type,
+            wn.biz_id,
+            wn.router_path,
+            wn.read_count,
+            wn.total_receivers,
+            -- 如果阅读记录表中存在记录，则为已读(true)，否则为未读(false)
+            IF(nr.id IS NOT NULL, 1, 0) AS is_read
+        FROM tb_work_notice wn
+        -- 左连接关联当前用户的阅读记录
+        LEFT JOIN tb_notice_read nr ON wn.id = nr.notice_id AND nr.user_id = #{userId}
+        WHERE wn.status = 1 -- 仅查询已发送状态
+        <if test="roleId != 1">
+            AND (
+                -- 1. 全体用户
+                wn.receiver_type = 4
+                -- 2. 指定个人 (JSON数组包含用户ID字符串)
+                OR (wn.receiver_type = 1 AND JSON_CONTAINS(wn.receiver_ids, CAST(#{userId} AS CHAR)))
+                -- 3. 指定角色 (JSON数组包含角色ID字符串)
+                OR (wn.receiver_type = 2 AND JSON_CONTAINS(wn.receiver_ids, CAST(#{roleId} AS CHAR)))
+                -- 4. 指定团队 (查找用户所在的团队ID，检查其是否在receiver_ids中)
+                OR (
+                    wn.receiver_type = 3 
+                    AND EXISTS (
+                        SELECT 1 FROM tb_team_member tm 
+                        WHERE tm.user_id = #{userId}
+                        AND JSON_CONTAINS(wn.receiver_ids, CAST(tm.team_id AS CHAR))
+                    )
+                )
+            )
+        </if>
+        -- 动态筛选条件
+        <if test="dto.keyword != null and dto.keyword != ''">
+            AND wn.notice_title LIKE CONCAT('%', #{dto.keyword}, '%')
+        </if>
+        <if test="dto.noticeType != null">
+            AND wn.notice_type = #{dto.noticeType}
+        </if>
+        <if test="dto.priority != null">
+            AND wn.priority = #{dto.priority}
+        </if>
+        <if test="dto.isRead != null">
+            <if test="dto.isRead == 1"> AND nr.id IS NOT NULL </if>
+            <if test="dto.isRead == 0"> AND nr.id IS NULL </if>
+        </if>
+        -- 排序：时间倒序（最新的在前），紧急优先
+        ORDER BY 
+            wn.send_time DESC,
+            wn.priority ASC
+    </select>
+
+</mapper>

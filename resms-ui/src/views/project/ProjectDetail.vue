@@ -5,7 +5,7 @@
         <div class="card-header">
           <span class="title">项目详情</span>
           <div class="button-group">
-            <el-button type="primary" @click="handleEdit">编辑</el-button>
+            <el-button type="primary" @click="handleEdit" v-if="canEdit">编辑</el-button>
             <el-button @click="handleBack">返回</el-button>
           </div>
         </div>
@@ -14,7 +14,7 @@
       <div v-if="projectData" class="detail-content">
         <!-- 封面图片 -->
         <div class="cover-section" v-if="projectData.coverUrl">
-          <img :src="`http://localhost:8080/uploads${projectData.coverUrl}`" class="cover-image" />
+          <img :src="getImageUrl(projectData.coverUrl)" class="cover-image" />
         </div>
 
         <!-- 基本信息 -->
@@ -95,15 +95,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getProjectById } from '@/api/project'
+import { getImageUrl } from '@/utils/image'
+import { useUserStore } from '@/stores/userStore'
 
 const router = useRouter()
 const route = useRoute()
 const loading = ref(false)
 const projectData = ref<any>(null)
+const userStore = useUserStore()
+const roleType = computed(() => userStore.userInfo?.roleType)
+const isAdmin = computed(() => roleType.value === 1)
+const isManager = computed(() => roleType.value === 3)
+const canEdit = computed(() => isAdmin.value || isManager.value)
 
 // 获取项目详情
 const fetchProjectDetail = async () => {

@@ -31,14 +31,9 @@
                 <el-table-column prop="receiptNo" label="收据编号" width="180" />
                 <el-table-column label="收据凭证" width="100">
                     <template #default="{ row }">
-                        <el-image 
-                            v-if="row.proofUrl" 
-                            :src="'/uploads' + row.proofUrl" 
-                            :preview-src-list="['/uploads' + row.proofUrl]"
-                            fit="cover"
-                            style="width: 50px; height: 50px; cursor: pointer;"
-                            preview-teleported
-                        />
+                        <el-image v-if="row.proofUrl" :src="'/uploads' + row.proofUrl"
+                            :preview-src-list="['/uploads' + row.proofUrl]" fit="cover"
+                            style="width: 50px; height: 50px; cursor: pointer;" preview-teleported />
                         <span v-else style="color: #909399;">暂无</span>
                     </template>
                 </el-table-column>
@@ -64,18 +59,25 @@
                 </el-table-column>
                 <el-table-column prop="paymentTime" label="收款时间" width="170" />
                 <el-table-column prop="financeName" label="经办人" width="100" />
-                <el-table-column label="操作" fixed="right" width="220">
+                <el-table-column label="操作" fixed="right" width="220" align="center">
                     <template #default="{ row }">
-                        <el-button link type="primary" @click="handleDetail(row)">详情</el-button>
-
-                        <el-button v-if="row.paymentStatus === 0 && hasPermission('payment:edit')" link type="primary"
-                            icon="Edit" @click="handleEdit(row)">编辑</el-button>
-
-                        <el-button v-if="row.paymentStatus === 0 && hasPermission('payment:confirm')" link
-                            type="success" @click="handleConfirm(row)">确认</el-button>
-
-                        <el-button v-if="row.paymentStatus !== 2 && hasPermission('payment:void')" link type="danger"
-                            @click="handleVoid(row)">作废</el-button>
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <el-tooltip content="详情" placement="top">
+                                <el-button link type="primary" :icon="View" @click="handleDetail(row)" />
+                            </el-tooltip>
+                            <el-tooltip content="编辑" placement="top"
+                                v-if="row.paymentStatus === 0 && hasPermission('payment:edit')">
+                                <el-button link type="primary" :icon="Edit" @click="handleEdit(row)" />
+                            </el-tooltip>
+                            <el-tooltip content="作废" placement="top"
+                                v-if="row.paymentStatus !== 2 && hasPermission('payment:void')">
+                                <el-button link type="danger" :icon="Close" @click="handleVoid(row)" />
+                            </el-tooltip>
+                            <el-tooltip content="确认" placement="top"
+                                v-if="row.paymentStatus === 0 && hasPermission('payment:confirm')">
+                                <el-button link type="success" :icon="Check" @click="handleConfirm(row)" />
+                            </el-tooltip>
+                        </div>
                     </template>
                 </el-table-column>
             </el-table>
@@ -117,17 +119,11 @@
                     <el-input v-model="form.payerInfo" placeholder="如非本人支付请备注" />
                 </el-form-item>
                 <el-form-item label="凭证图片">
-                    <el-upload
-                        action="#"
-                        list-type="picture-card"
-                        :auto-upload="false"
-                        :file-list="proofFileList"
-                        :on-change="handleProofChange"
-                        :on-remove="handleProofRemove"
-                        :limit="1"
-                        accept="image/*"
-                    >
-                        <el-icon><Plus /></el-icon>
+                    <el-upload action="#" list-type="picture-card" :auto-upload="false" :file-list="proofFileList"
+                        :on-change="handleProofChange" :on-remove="handleProofRemove" :limit="1" accept="image/*">
+                        <el-icon>
+                            <Plus />
+                        </el-icon>
                         <template #tip>
                             <div class="el-upload__tip">上传凭证图片(jpg/png，最大5MB)</div>
                         </template>
@@ -164,6 +160,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { Search, Refresh, Plus, Edit, Check, Close, View } from '@element-plus/icons-vue';
 import { reqPaymentList, reqAddPayment, reqConfirmPayment, reqVoidPayment, reqUpdatePayment, reqUploadProof } from '@/api/payment';
 import { reqTransactionList } from '@/api/transaction';
 import type { UploadFile } from 'element-plus';
@@ -262,121 +259,121 @@ const handleProofRemove = () => {
 
 // 打开新增弹窗
 const openAddDialog = () => {
-  isEditMode.value = false;
-  // 重置表单
-  Object.assign(form, {
-    id: undefined,
-    transactionId: null,
-    paymentType: 1,
-    flowType: 1,
-    amount: 0,
-    paymentMethod: '',
-    paymentTime: '',
-    proofUrl: '',
-    payerInfo: '',
-    remark: ''
-  });
-  // 重置凭证图片
-  proofFileList.value = [];
-  selectedProofFile.value = null;
-  dialogVisible.value = true;
+    isEditMode.value = false;
+    // 重置表单
+    Object.assign(form, {
+        id: undefined,
+        transactionId: null,
+        paymentType: 1,
+        flowType: 1,
+        amount: 0,
+        paymentMethod: '',
+        paymentTime: '',
+        proofUrl: '',
+        payerInfo: '',
+        remark: ''
+    });
+    // 重置凭证图片
+    proofFileList.value = [];
+    selectedProofFile.value = null;
+    dialogVisible.value = true;
 };
 
 // 点击编辑按钮
 const handleEdit = (row: PaymentVO) => {
-  isEditMode.value = true;
-  // 回填数据
-  Object.assign(form, {
-    id: row.id,
-    transactionId: row.transactionId,
-    paymentType: row.paymentType,
-    flowType: row.flowType,
-    amount: row.amount,
-    paymentMethod: row.paymentMethod,
-    // 注意格式化时间，如果是 ISO 格式可能需要处理
-    paymentTime: row.paymentTime,
-    proofUrl: row.proofUrl,
-    payerInfo: row.payerInfo,
-    remark: row.remark
-  });
-  
-  // 模拟回填下拉框显示（因为下拉框是远程搜索，需要手动设置初始值）
-  transactionOptions.value = [{ 
-    id: row.transactionId, 
-    transactionNo: row.transactionNo, 
-    customerName: row.customerName 
-  }];
-  
-  dialogVisible.value = true;
+    isEditMode.value = true;
+    // 回填数据
+    Object.assign(form, {
+        id: row.id,
+        transactionId: row.transactionId,
+        paymentType: row.paymentType,
+        flowType: row.flowType,
+        amount: row.amount,
+        paymentMethod: row.paymentMethod,
+        // 注意格式化时间，如果是 ISO 格式可能需要处理
+        paymentTime: row.paymentTime,
+        proofUrl: row.proofUrl,
+        payerInfo: row.payerInfo,
+        remark: row.remark
+    });
+
+    // 模拟回填下拉框显示（因为下拉框是远程搜索，需要手动设置初始值）
+    transactionOptions.value = [{
+        id: row.transactionId,
+        transactionNo: row.transactionNo,
+        customerName: row.customerName
+    }];
+
+    dialogVisible.value = true;
 };
 
 // 提交表单逻辑修改
 const submitForm = async () => {
-  await formRef.value.validate();
-  submitLoading.value = true;
-  try {
-    // 确保 paymentTime 有值
-    const submitData = { ...form };
-    if (!submitData.paymentTime) {
-      submitData.paymentTime = new Date().toISOString();
-    }
-    
-    // 如果有选择的凭证图片，先上传
-    if (selectedProofFile.value && submitData.transactionId) {
-      try {
-        console.log('开始上传凭证, transactionId:', submitData.transactionId);
-        console.log('选择的文件:', selectedProofFile.value);
-        const uploadRes = await reqUploadProof(selectedProofFile.value, submitData.transactionId) as any;
-        console.log('上传响应:', uploadRes);
-        // 检查多种可能的响应格式
-        if (uploadRes.code === 200 && uploadRes.data) {
-          submitData.proofUrl = uploadRes.data;
-          console.log('上传成功, proofUrl:', submitData.proofUrl);
-        } else if (uploadRes.status === true && uploadRes.data) {
-          // 另一种可能的响应格式
-          submitData.proofUrl = uploadRes.data;
-          console.log('上传成功(status), proofUrl:', submitData.proofUrl);
-        } else if (typeof uploadRes === 'string') {
-          // 直接返回路径的情况
-          submitData.proofUrl = uploadRes;
-          console.log('上传成功(直接字符串), proofUrl:', submitData.proofUrl);
-        } else {
-          console.warn('凭证上传响应格式异常:', uploadRes);
-          ElMessage.warning('凭证上传失败，将继续提交');
+    await formRef.value.validate();
+    submitLoading.value = true;
+    try {
+        // 确保 paymentTime 有值
+        const submitData = { ...form };
+        if (!submitData.paymentTime) {
+            submitData.paymentTime = new Date().toISOString();
         }
-      } catch (uploadError) {
-        console.error('凭证上传异常', uploadError);
-        ElMessage.warning('凭证上传异常，将继续提交');
-      }
+
+        // 如果有选择的凭证图片，先上传
+        if (selectedProofFile.value && submitData.transactionId) {
+            try {
+                console.log('开始上传凭证, transactionId:', submitData.transactionId);
+                console.log('选择的文件:', selectedProofFile.value);
+                const uploadRes = await reqUploadProof(selectedProofFile.value, submitData.transactionId) as any;
+                console.log('上传响应:', uploadRes);
+                // 检查多种可能的响应格式
+                if (uploadRes.code === 200 && uploadRes.data) {
+                    submitData.proofUrl = uploadRes.data;
+                    console.log('上传成功, proofUrl:', submitData.proofUrl);
+                } else if (uploadRes.status === true && uploadRes.data) {
+                    // 另一种可能的响应格式
+                    submitData.proofUrl = uploadRes.data;
+                    console.log('上传成功(status), proofUrl:', submitData.proofUrl);
+                } else if (typeof uploadRes === 'string') {
+                    // 直接返回路径的情况
+                    submitData.proofUrl = uploadRes;
+                    console.log('上传成功(直接字符串), proofUrl:', submitData.proofUrl);
+                } else {
+                    console.warn('凭证上传响应格式异常:', uploadRes);
+                    ElMessage.warning('凭证上传失败，将继续提交');
+                }
+            } catch (uploadError) {
+                console.error('凭证上传异常', uploadError);
+                ElMessage.warning('凭证上传异常，将继续提交');
+            }
+        }
+
+        if (isEditMode.value) {
+            // 编辑接口
+            const res = await reqUpdatePayment(submitData) as any;
+            if (res.code === 200) {
+                ElMessage.success('修改成功');
+                dialogVisible.value = false;
+                getList();
+            } else {
+                ElMessage.error(res.message || '修改失败');
+            }
+        } else {
+            // 新增接口
+            const res = await reqAddPayment(submitData) as any;
+            if (res.code === 200) {
+                ElMessage.success('新增成功');
+                dialogVisible.value = false;
+                getList();
+            } else {
+                ElMessage.error(res.message || '新增失败');
+            }
+        }
+    } catch (error: any) {
+        console.error('提交失败', error);
+        ElMessage.error(error?.response?.data?.message || error?.message || '操作失败');
+    } finally {
+        submitLoading.value = false;
     }
-    
-    if (isEditMode.value) {
-      // 编辑接口
-      const res = await reqUpdatePayment(submitData) as any;
-      if (res.code === 200) {
-        ElMessage.success('修改成功');
-        dialogVisible.value = false;
-        getList();
-      } else {
-        ElMessage.error(res.message || '修改失败');
-      }
-    } else {
-      // 新增接口
-      const res = await reqAddPayment(submitData) as any;
-      if (res.code === 200) {
-        ElMessage.success('新增成功');
-        dialogVisible.value = false;
-        getList();
-      } else {
-        ElMessage.error(res.message || '新增失败');
-      }
-    }
-  } catch (error: any) {
-    console.error('提交失败', error);
-    ElMessage.error(error?.response?.data?.message || error?.message || '操作失败');
-  } finally {
-    submitLoading.value = false;
-  }
 };
 
 // 远程搜索交易（真实API调用）

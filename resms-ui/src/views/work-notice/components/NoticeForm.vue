@@ -154,8 +154,11 @@ const fetchData = async () => {
     // Teams (Fetch All)
     try {
         const res = await getTeamList({ pageNum: 1, pageSize: 1000 })
-        if (res.data?.records) {
-            teamOptions.value = res.data.records
+        const apiResp: any = (res as any)?.data ?? res
+        const page = apiResp?.data ?? apiResp
+        const list = page?.records ?? page?.list
+        if (Array.isArray(list)) {
+            teamOptions.value = list
         }
     } catch {}
 
@@ -256,18 +259,20 @@ const handleClose = () => {
 
 const handleSubmit = async () => {
   if (!formRef.value) return
-  await formRef.value.validate(async (valid: boolean) => {
-    if (valid) {
-      try {
-        await sendNotice(form)
-        ElMessage.success('发送成功')
-        visible.value = false
-        emit('success')
-        formRef.value.resetFields()
-      } catch (error) {
-        console.error(error)
-      }
-    }
-  })
+  try {
+    await formRef.value.validate()
+  } catch (err) {
+    return
+  }
+
+  try {
+    await sendNotice(form)
+    ElMessage.success('发送成功')
+    visible.value = false
+    emit('success')
+    formRef.value.resetFields()
+  } catch (error) {
+    console.error(error)
+  }
 }
 </script>

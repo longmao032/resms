@@ -3,20 +3,28 @@
     <div class="page-header">
       <h2>用户管理</h2>
       <div class="header-actions">
-        <el-button type="primary" @click="handleAdd">
-          <el-icon><Plus /></el-icon>
+        <el-button v-if="isAdmin" type="primary" @click="handleAdd">
+          <el-icon>
+            <Plus />
+          </el-icon>
           新增用户
         </el-button>
-        <el-button type="warning" @click="handleBatchEnable" :disabled="selectedUsers.length === 0">
-          <el-icon><Check /></el-icon>
+        <el-button v-if="isAdmin" type="warning" @click="handleBatchEnable" :disabled="selectedUsers.length === 0">
+          <el-icon>
+            <Check />
+          </el-icon>
           批量启用
         </el-button>
-        <el-button type="danger" @click="handleBatchDisable" :disabled="selectedUsers.length === 0">
-          <el-icon><Close /></el-icon>
+        <el-button v-if="isAdmin" type="danger" @click="handleBatchDisable" :disabled="selectedUsers.length === 0">
+          <el-icon>
+            <Close />
+          </el-icon>
           批量禁用
         </el-button>
-        <el-button type="danger" @click="handleBatchDelete" :disabled="selectedUsers.length === 0">
-          <el-icon><Delete /></el-icon>
+        <el-button v-if="isAdmin" type="danger" @click="handleBatchDelete" :disabled="selectedUsers.length === 0">
+          <el-icon>
+            <Delete />
+          </el-icon>
           批量删除
         </el-button>
       </div>
@@ -27,70 +35,39 @@
       <el-card class="search-card">
         <el-form :inline="true" :model="searchForm" class="search-form">
           <el-form-item label="用户名">
-            <el-input
-              v-model="searchForm.username"
-              placeholder="请输入用户名"
-              clearable
-              style="width: 120px"
-            />
+            <el-input v-model="searchForm.username" placeholder="请输入用户名" clearable style="width: 120px" />
           </el-form-item>
           <el-form-item label="真实姓名">
-            <el-input
-              v-model="searchForm.realName"
-              placeholder="请输入真实姓名"
-              clearable
-              style="width: 120px"
-            />
+            <el-input v-model="searchForm.realName" placeholder="请输入真实姓名" clearable style="width: 120px" />
           </el-form-item>
           <el-form-item label="手机号">
-            <el-input
-              v-model="searchForm.phone"
-              placeholder="请输入手机号"
-              clearable
-              style="width: 130px"
-            />
+            <el-input v-model="searchForm.phone" placeholder="请输入手机号" clearable style="width: 130px" />
           </el-form-item>
           <el-form-item label="邮箱">
-            <el-input
-              v-model="searchForm.email"
-              placeholder="请输入邮箱"
-              clearable
-              style="width: 140px"
-            />
+            <el-input v-model="searchForm.email" placeholder="请输入邮箱" clearable style="width: 140px" />
           </el-form-item>
           <el-form-item label="角色">
-            <el-select
-              v-model="searchForm.roleType"
-              placeholder="请选择角色"
-              clearable
-              style="width: 120px"
-            >
-              <el-option
-                v-for="role in roleOptions"
-                :key="role.value"
-                :label="role.label"
-                :value="role.value"
-              />
+            <el-select v-model="searchForm.roleType" placeholder="请选择角色" clearable style="width: 120px">
+              <el-option v-for="role in roleOptions" :key="role.value" :label="role.label" :value="role.value" />
             </el-select>
           </el-form-item>
           <el-form-item label="状态">
-            <el-select
-              v-model="searchForm.status"
-              placeholder="请选择状态"
-              clearable
-              style="width: 100px"
-            >
+            <el-select v-model="searchForm.status" placeholder="请选择状态" clearable style="width: 100px">
               <el-option label="正常" :value="1" />
               <el-option label="禁用" :value="0" />
             </el-select>
           </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="handleSearch">
-              <el-icon><Search /></el-icon>
+              <el-icon>
+                <Search />
+              </el-icon>
               搜索
             </el-button>
             <el-button @click="handleReset">
-              <el-icon><Refresh /></el-icon>
+              <el-icon>
+                <Refresh />
+              </el-icon>
               重置
             </el-button>
           </el-form-item>
@@ -105,18 +82,13 @@
           </div>
         </template>
 
-        <el-table
-          :data="userList"
-          style="width: 100%"
-          @selection-change="handleSelectionChange"
-          v-loading="loading"
-        >
-          <el-table-column type="selection" width="55" />
+        <el-table :data="userList" style="width: 100%" @selection-change="handleSelectionChange" v-loading="loading">
+          <el-table-column v-if="isAdmin" type="selection" width="55" />
           <el-table-column prop="id" label="ID" width="80" />
-          <el-table-column prop="username" label="用户名" width="120" />
+          <el-table-column prop="username" label="用户名" min-width="120" />
           <el-table-column prop="realName" label="真实姓名" width="120" />
-          <el-table-column prop="phone" label="手机号" width="150" />
-          <el-table-column prop="email" label="邮箱" width="200" />
+          <el-table-column prop="phone" label="手机号" width="120" />
+          <el-table-column prop="email" label="邮箱" min-width="140" show-overflow-tooltip />
           <el-table-column prop="roleName" label="角色" width="100" />
           <el-table-column prop="status" label="状态" width="80">
             <template #default="scope">
@@ -125,69 +97,53 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="createTime" label="创建时间" width="180" />
-          <el-table-column label="操作" fixed="right" width="300">
+          <el-table-column prop="createTime" label="创建时间" width="170" />
+          <el-table-column label="操作" fixed="right" :width="isAdmin ? 260 : 80">
             <template #default="scope">
-              <div style="display: flex; align-items: center; justify-content: flex-start; flex-wrap: nowrap;">
-                <el-button size="small" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
-                <el-button size="small" type="warning" @click="handleResetPassword(scope.row)">重置密码</el-button>
-                <el-button
-                  size="small"
-                  :type="scope.row.status === 1 ? 'danger' : 'success'"
-                  @click="handleToggleStatus(scope.row)"
-                  :disabled="scope.row.id === 1"
-                >
-                  {{ scope.row.status === 1 ? '禁用' : '启用' }}
-                </el-button>
-                <el-button size="small" type="danger" @click="handleDelete(scope.row)" :disabled="scope.row.id === 1">删除</el-button>
+              <div style="display: flex; align-items: center; justify-content: flex-start; gap: 4px;">
+                <el-tooltip v-if="isAdmin" content="编辑" placement="top">
+                  <el-button link type="primary" :icon="Edit" @click="handleEdit(scope.row)" />
+                </el-tooltip>
+                <el-tooltip content="聊天" placement="top">
+                  <el-button link type="success" :icon="ChatDotRound" @click="handleChat(scope.row)" />
+                </el-tooltip>
+                <el-tooltip v-if="isAdmin" content="重置密码" placement="top">
+                  <el-button link type="warning" :icon="Key" @click="handleResetPassword(scope.row)" />
+                </el-tooltip>
+                <el-tooltip v-if="isAdmin" :content="scope.row.status === 1 ? '禁用' : '启用'" placement="top">
+                  <el-button link :type="scope.row.status === 1 ? 'danger' : 'success'"
+                    :icon="scope.row.status === 1 ? Lock : Unlock" @click="handleToggleStatus(scope.row)"
+                    :disabled="scope.row.id === 1" />
+                </el-tooltip>
+                <el-tooltip v-if="isAdmin" content="删除" placement="top">
+                  <el-button link type="danger" :icon="Delete" @click="handleDelete(scope.row)"
+                    :disabled="scope.row.id === 1" />
+                </el-tooltip>
               </div>
             </template>
           </el-table-column>
         </el-table>
 
         <div class="pagination">
-          <el-pagination
-            v-model:current-page="currentPage"
-            v-model:page-size="pageSize"
-            :page-sizes="[10, 20, 50, 100]"
-            :total="total"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
-            @current-change="handleCurrentChange"
-          />
+          <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :page-sizes="[10, 20, 50, 100]"
+            :total="total" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
+            @current-change="handleCurrentChange" />
         </div>
       </el-card>
     </div>
 
     <!-- 新增/编辑用户对话框 -->
-    <el-dialog
-      :title="dialogTitle"
-      v-model="dialogVisible"
-      width="600px"
-      @close="handleDialogClose"
-    >
-      <el-form
-        ref="userFormRef"
-        :model="userForm"
-        :rules="userFormRules"
-        label-width="120px"
-      >
+    <el-dialog :title="dialogTitle" v-model="dialogVisible" width="600px" @close="handleDialogClose">
+      <el-form ref="userFormRef" :model="userForm" :rules="userFormRules" label-width="120px">
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="用户名" prop="username">
-              <el-input
-                v-model="userForm.username"
-                placeholder="请输入用户名"
-                :disabled="isEdit"
-              />
+              <el-input v-model="userForm.username" placeholder="请输入用户名" :disabled="isEdit" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="真实姓名" prop="realName">
-              <el-input
-                v-model="userForm.realName"
-                placeholder="请输入真实姓名"
-              />
+              <el-input v-model="userForm.realName" placeholder="请输入真实姓名" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -195,22 +151,12 @@
         <el-row :gutter="20" v-if="!isEdit">
           <el-col :span="12">
             <el-form-item label="密码" prop="password">
-              <el-input
-                v-model="userForm.password"
-                type="password"
-                placeholder="请输入密码"
-                show-password
-              />
+              <el-input v-model="userForm.password" type="password" placeholder="请输入密码" show-password />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="确认密码" prop="confirmPassword">
-              <el-input
-                v-model="userForm.confirmPassword"
-                type="password"
-                placeholder="请再次输入密码"
-                show-password
-              />
+              <el-input v-model="userForm.confirmPassword" type="password" placeholder="请再次输入密码" show-password />
             </el-form-item>
           </el-col>
         </el-row>
@@ -223,22 +169,12 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="新密码" prop="password">
-              <el-input
-                v-model="userForm.password"
-                type="password"
-                placeholder="请输入新密码"
-                show-password
-              />
+              <el-input v-model="userForm.password" type="password" placeholder="请输入新密码" show-password />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="确认新密码" prop="confirmPassword">
-              <el-input
-                v-model="userForm.confirmPassword"
-                type="password"
-                placeholder="请再次输入新密码"
-                show-password
-              />
+              <el-input v-model="userForm.confirmPassword" type="password" placeholder="请再次输入新密码" show-password />
             </el-form-item>
           </el-col>
         </el-row>
@@ -246,18 +182,12 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="手机号" prop="phone">
-              <el-input
-                v-model="userForm.phone"
-                placeholder="请输入手机号"
-              />
+              <el-input v-model="userForm.phone" placeholder="请输入手机号" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="邮箱" prop="email">
-              <el-input
-                v-model="userForm.email"
-                placeholder="请输入邮箱"
-              />
+              <el-input v-model="userForm.email" placeholder="请输入邮箱" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -265,28 +195,15 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="角色" prop="roleType">
-              <el-select
-                v-model="userForm.roleType"
-                placeholder="请选择角色"
-                style="width: 100%"
-              >
-                <el-option
-                  v-for="role in roleOptions"
-                  :key="role.value"
-                  :label="role.label"
-                  :value="role.value"
-                />
+              <el-select v-model="userForm.roleType" placeholder="请选择角色" style="width: 100%">
+                <el-option v-for="role in roleOptions" :key="role.value" :label="role.label" :value="role.value" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="状态" prop="status">
-              <el-select
-                v-model="userForm.status"
-                placeholder="请选择状态"
-                style="width: 100%"
-                :disabled="userForm.id === 1"
-              >
+              <el-select v-model="userForm.status" placeholder="请选择状态" style="width: 100%"
+                :disabled="userForm.id === 1">
                 <el-option label="正常" :value="1" />
                 <el-option label="禁用" :value="0" />
               </el-select>
@@ -308,9 +225,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, Refresh, Check, Close, Delete } from '@element-plus/icons-vue'
+import {
+  Plus,
+  Search,
+  Refresh,
+  Check,
+  Close,
+  Delete,
+  ChatDotRound,
+  Edit,
+  Key,
+  Lock,
+  Unlock
+} from '@element-plus/icons-vue'
 import type { FormInstance } from 'element-plus'
 import {
   reqUserPage,
@@ -334,6 +264,15 @@ import type {
   RoleOption
 } from '@/api/user/type'
 import type { RoleVO } from '@/api/role/type'
+import { useChatStore } from '@/stores/chatStore'
+import { useUserStore } from '@/stores/userStore'
+
+
+const router = useRouter()
+const chatStore = useChatStore()
+const userStore = useUserStore()
+
+const isAdmin = computed(() => userStore.userInfo?.roleType === 1)
 
 // 响应式数据
 const loading = ref(false)
@@ -343,6 +282,25 @@ const pageSize = ref(10)
 const total = ref(0)
 const userList = ref<UserVO[]>([])
 const selectedUsers = ref<UserVO[]>([])
+
+// ... (search form and other logic remains same)
+
+// 发起聊天
+const handleChat = async (row: UserVO) => {
+  if (row.id === userStore.userInfo?.id) {
+    ElMessage.warning('不能和自己聊天')
+    return
+  }
+  try {
+    await chatStore.startPrivateChat(row.id)
+    router.push('/chat')
+  } catch (error) {
+    console.error('发起聊天失败', error)
+    ElMessage.error('无法发起会话')
+  }
+}
+
+// ... (rest of the script)
 
 // 搜索表单
 const searchForm = reactive<UserQueryParams>({
@@ -358,18 +316,30 @@ const searchForm = reactive<UserQueryParams>({
   createTimeEnd: ''
 })
 
-// 角色选项
+// 角色选项 - 从后端读取，确保与 tb_role.id 对齐
 const roleOptions = ref<RoleOption[]>([])
 
 // 获取角色选项
 const getRoleOptions = async () => {
   try {
-    const response = await reqRoleAll()
-    if (response.code === 200) {
-      roleOptions.value = response.data.map((role: RoleVO) => ({
+    const res: any = await reqRoleAll()
+    // request.ts 已经返回 response.data（通常是 ResponseResult），这里兼容两种结构：
+    // 1) ResponseResult<{...}>: { code, status, data: RoleVO[] }
+    // 2) 直接数组 RoleVO[]（少数情况下）
+    const roles: RoleVO[] = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : [])
+
+    roleOptions.value = roles
+        .slice()
+        .sort((a: any, b: any) => (a.id ?? 0) - (b.id ?? 0))
+        .map((role: any) => ({
         value: role.id,
         label: role.roleName
       }))
+
+    // 新增用户时，若默认值不在选项内则选择第一个角色
+    const hasDefault = roleOptions.value.some(r => r.value === userForm.roleType)
+    if (!isEdit.value && roleOptions.value.length > 0 && (!userForm.roleType || !hasDefault)) {
+      userForm.roleType = roleOptions.value[0]?.value as any
     }
   } catch (error) {
     console.error('获取角色选项失败', error)
@@ -867,5 +837,3 @@ onMounted(() => {
   }
 }
 </style>
-
-

@@ -29,8 +29,8 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
-          <el-button icon="Refresh" @click="resetQuery">重置</el-button>
+          <el-button type="primary" :icon="Search" @click="handleQuery">搜索</el-button>
+          <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -40,7 +40,7 @@
         <div class="card-header">
           <span class="title">交易列表</span>
           <div class="btns">
-            <el-button type="primary" icon="Plus" plain @click="handleAdd">新建交易</el-button>
+            <el-button type="primary" :icon="Plus" plain @click="handleAdd">新建交易</el-button>
           </div>
         </div>
       </template>
@@ -62,7 +62,7 @@
         <el-table-column prop="status" label="交易状态" width="100" align="center">
           <template #default="scope">
             <el-tag :type="getStatusTag(scope.row.status)">
-              {{ TransactionStatusMap[scope.row.status] || '未知' }}
+              {{ getDisplayStatusText(scope.row) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -79,8 +79,8 @@
 
         <el-table-column label="操作" width="180" fixed="right" align="center">
           <template #default="scope">
-            <el-button link type="primary" size="small" icon="View" @click="handleDetail(scope.row)">详情</el-button>
-            <el-button link type="primary" size="small" icon="Edit" @click="handleEdit(scope.row)">编辑</el-button>
+            <el-button link type="primary" size="small" :icon="View" @click="handleDetail(scope.row)">详情</el-button>
+            <el-button link type="primary" size="small" :icon="Edit" @click="handleEdit(scope.row)">编辑</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -141,73 +141,48 @@
 
     <el-dialog v-model="editVisible" title="编辑交易信息" width="650px" append-to-body destroy-on-close>
       <el-form :model="editForm" ref="editFormRef" :rules="rules" label-width="110px">
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="交易编号">
-              <el-input v-model="editForm.transactionNo" disabled />
-            </el-form-item>
-          </el-col>
+        <el-form-item label="交易编号">
+          <el-input v-model="editForm.transactionNo" disabled />
+        </el-form-item>
+
+        <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="成交价格" prop="dealPrice">
-              <el-input-number 
-                v-model="editForm.dealPrice" 
-                :min="0" :precision="2" 
-                style="width: 100%" 
-                :controls="false"
-              >
-                 <template #prefix>￥</template>
+              <el-input-number v-model="editForm.dealPrice" :min="0" :precision="2" :controls="false" style="width: 100%" :disabled="!canEditDealPrice || isFinalLocked">
+                <template #prefix>￥</template>
               </el-input-number>
             </el-form-item>
           </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="定金金额" prop="deposit">
-              <el-input-number 
-                v-model="editForm.deposit" 
-                :min="0" :precision="2" 
-                style="width: 100%" 
-                :controls="false"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="首付金额" prop="downPayment">
-              <el-input-number 
-                v-model="editForm.downPayment" 
-                :min="0" :precision="2" 
-                style="width: 100%" 
-                :controls="false"
-              />
+              <el-input-number v-model="editForm.deposit" :min="0" :precision="2" :controls="false" style="width: 100%" :disabled="!canEditFinanceFields || isFinalLocked" />
             </el-form-item>
           </el-col>
         </el-row>
 
-        <el-row :gutter="20">
+        <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="贷款金额" prop="loanAmount">
-               <el-input-number 
-                v-model="editForm.loanAmount" 
-                :min="0" :precision="2" 
-                style="width: 100%" 
-                :controls="false"
-              />
+            <el-form-item label="首付金额" prop="downPayment">
+              <el-input-number v-model="editForm.downPayment" :min="0" :precision="2" :controls="false" style="width: 100%" :disabled="!canEditFinanceFields || isFinalLocked" />
             </el-form-item>
           </el-col>
-           <el-col :span="12">
-            <el-form-item label="贷款状态" prop="loanStatus">
-              <el-select v-model="editForm.loanStatus" placeholder="请选择">
-                <el-option v-for="(label, val) in LoanStatusMap" :key="val" :label="label" :value="Number(val)" />
-              </el-select>
+          <el-col :span="12">
+            <el-form-item label="贷款金额" prop="loanAmount">
+              <el-input-number v-model="editForm.loanAmount" :min="0" :precision="2" :controls="false" style="width: 100%" :disabled="!canEditFinanceFields || isFinalLocked" />
             </el-form-item>
           </el-col>
         </el-row>
+
+        <el-form-item label="贷款状态" prop="loanStatus">
+          <el-select v-model="editForm.loanStatus" placeholder="请选择" style="width: 100%" :disabled="!canEditFinanceFields || isFinalLocked">
+            <el-option v-for="(label, val) in LoanStatusMap" :key="val" :label="label" :value="Number(val)" />
+          </el-select>
+        </el-form-item>
 
         <el-divider content-position="left">状态流转</el-divider>
 
-        <el-form-item label="交易状态" prop="status">
-          <el-radio-group v-model="editForm.status">
+        <el-form-item v-if="roleType === 1" label="交易状态" prop="status">
+          <el-radio-group v-model="editForm.status" :disabled="isFinalLocked">
             <el-radio-button :value="0">待定金</el-radio-button>
             <el-radio-button :value="1">已定金</el-radio-button>
             <el-radio-button :value="2">已首付</el-radio-button>
@@ -217,18 +192,54 @@
           </el-radio-group>
         </el-form-item>
 
-        <el-form-item label="经理审核" prop="managerAudit">
-          <el-radio-group v-model="editForm.managerAudit">
-            <el-radio :value="0">待审核</el-radio>
-            <el-radio :value="1" border class="radio-success">通过</el-radio>
-            <el-radio :value="2" border class="radio-danger">驳回</el-radio>
+        <el-form-item v-if="roleType === 1" label="经理审核" prop="managerAudit">
+          <el-radio-group v-model="editForm.managerAudit" :disabled="isFinalLocked">
+            <el-radio-button :value="0">待审核</el-radio-button>
+            <el-radio-button :value="1">通过</el-radio-button>
+            <el-radio-button :value="2">驳回</el-radio-button>
           </el-radio-group>
+        </el-form-item>
+
+        <el-form-item v-if="roleType === 3 && editForm.status === 0 && editForm.managerAudit === 0" label="经理审核">
+          <el-button type="success" plain @click="submitManagerApprove(true)">通过</el-button>
+          <el-button type="danger" plain @click="submitManagerApprove(false)">驳回</el-button>
+        </el-form-item>
+
+        <el-form-item v-if="roleType === 4 && canFinanceApplyFinish" label="财务确认">
+          <el-button type="primary" plain @click="submitFinanceApplyFinish">申请完成</el-button>
+        </el-form-item>
+
+        <el-form-item v-if="roleType === 4 && isFinishAuditPending" label="财务确认">
+          <el-tag type="warning">待管理员审核</el-tag>
+        </el-form-item>
+
+        <el-form-item v-if="roleType === 1 && isFinishAuditPending" label="完成审核">
+          <el-button type="success" plain @click="submitAdminFinishApprove(true)">通过</el-button>
+          <el-button type="danger" plain @click="submitAdminFinishApprove(false)">驳回</el-button>
+        </el-form-item>
+
+        <el-divider content-position="left">佣金</el-divider>
+
+        <el-form-item v-if="commissionInfo" label="佣金状态">
+          <el-tag :type="commissionInfo.status === 2 ? 'success' : (commissionInfo.status === 1 ? 'warning' : 'info')">
+            {{ CommissionStatusMap[commissionInfo.status] || '未知' }}
+          </el-tag>
+        </el-form-item>
+        <el-form-item v-if="commissionInfo" label="佣金金额">
+          <span class="text-price">{{ formatCurrency(commissionInfo.amount as any) }}</span>
+        </el-form-item>
+
+        <el-form-item v-if="canCreateCommission" label="提成比例(%)">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <el-input-number v-model="commissionRateInput" :min="0" :precision="2" :controls="false" style="width: 140px" />
+            <el-button type="primary" plain :loading="commissionCreating" @click="submitCreateCommission">生成佣金</el-button>
+          </div>
         </el-form-item>
       </el-form>
 
       <template #footer>
         <el-button @click="editVisible = false">取 消</el-button>
-        <el-button type="primary" @click="submitEdit" :loading="submitLoading">确 定</el-button>
+        <el-button type="primary" @click="submitEdit" :loading="submitLoading" :disabled="isFinalLocked">确 定</el-button>
       </template>
     </el-dialog>
 
@@ -265,7 +276,7 @@
          <el-row :gutter="20">
              <el-col :span="12">
                  <el-form-item label="销售" prop="salesId">
-                  <el-select v-model="addForm.salesId" placeholder="请选择销售" filterable style="width: 100%">
+                  <el-select v-model="addForm.salesId" placeholder="请选择销售" filterable style="width: 100%" :disabled="roleType === 2">
                     <el-option
                       v-for="item in salesOptions"
                       :key="item.id"
@@ -288,50 +299,47 @@
                 </el-form-item>
              </el-col>
          </el-row>
-
-         <el-row :gutter="20">
-            <el-col :span="8">
-                 <el-form-item label="定金" prop="deposit">
-                  <el-input-number v-model="addForm.deposit" :min="0" :precision="2" style="width: 100%" :controls="false" />
-                </el-form-item>
-            </el-col>
-             <el-col :span="8">
-                 <el-form-item label="首付" prop="downPayment">
-                  <el-input-number v-model="addForm.downPayment" :min="0" :precision="2" style="width: 100%" :controls="false" />
-                </el-form-item>
-            </el-col>
-             <el-col :span="8">
-                 <el-form-item label="贷款" prop="loanAmount">
-                  <el-input-number v-model="addForm.loanAmount" :min="0" :precision="2" style="width: 100%" :controls="false" />
-                </el-form-item>
-            </el-col>
-         </el-row>
       </el-form>
       <template #footer>
         <el-button @click="addVisible = false">取 消</el-button>
         <el-button type="primary" @click="submitAdd" :loading="addLoading">创 建</el-button>
       </template>
     </el-dialog>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, nextTick } from 'vue';
-import { ElMessage, type FormInstance } from 'element-plus';
-import { reqTransactionList, reqGetTransactionDetail, reqUpdateTransaction, reqAddTransaction } from '@/api/transaction';
+import { ref, reactive, onMounted, nextTick, watch, computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus';
+import { View, Edit, Search, Refresh, Plus } from '@element-plus/icons-vue';
+import { useUserStore } from '@/stores/userStore';
+import { reqTransactionList, reqGetTransactionDetail, reqUpdateTransaction, reqAddTransaction, reqManagerApprove, reqFinanceApplyFinish, reqAdminFinishApprove } from '@/api/transaction';
 import type { TransactionQuery, TransactionVO, TransactionForm, TransactionAddDTO } from '@/api/transaction/type';
 import { getCustomerList, getHouseList, getSalesList } from '@/api/appointment';
+import { reqGetCommissionByTransaction, reqCreateCommissionByTransaction } from '@/api/commission';
+import type { CommissionVO } from '@/api/commission/type';
 
 // ================= 常量定义 =================
 const TransactionStatusMap: Record<number, string> = {
   0: '待付定金', 1: '已付定金', 2: '已付首付', 3: '已过户', 4: '已完成', 5: '已取消'
 };
+
 const LoanStatusMap: Record<number, string> = {
   0: '未申请', 1: '审核中', 2: '已放款', 3: '未通过'
 };
 const AuditStatusMap: Record<number, string> = {
   0: '待审核', 1: '已通过', 2: '已驳回'
 };
+const FinishAuditMap: Record<number, string> = { 0: '未申请', 1: '待审核', 2: '已通过', 3: '已驳回' };
+const CommissionStatusMap: Record<number, string> = { 0: '待核算', 1: '已核算', 2: '已发放' };
+
+const userStore = useUserStore();
+const roleType = computed(() => userStore.userInfo?.roleType);
+
+const canEditDealPrice = computed(() => roleType.value === 1 || roleType.value === 2 || roleType.value === 3);
+const canEditFinanceFields = computed(() => roleType.value === 1 || roleType.value === 4);
 
 // ================= 状态定义 =================
 const loading = ref(false);
@@ -347,6 +355,72 @@ const queryParams = reactive<TransactionQuery>({
   customerName: '',
   status: undefined
 });
+
+const route = useRoute();
+const router = useRouter();
+const routeOpening = ref(false);
+
+const pickQueryValue = (val: unknown) => {
+  if (Array.isArray(val)) return val[0];
+  return val;
+};
+
+const clearQueryKeys = async (keys: string[]) => {
+  const nextQuery: Record<string, any> = { ...(route.query as any) };
+  keys.forEach((k) => {
+    delete nextQuery[k];
+  });
+  try {
+    await router.replace({ path: route.path, query: nextQuery });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+const handleRouteOpen = async () => {
+  if (routeOpening.value) return;
+  const auditId = pickQueryValue(route.query.auditId);
+  const editId = pickQueryValue(route.query.editId);
+  const detailId = pickQueryValue(route.query.detailId);
+
+  const keysToClear: string[] = [];
+  let openType: 'audit' | 'edit' | 'detail' | null = null;
+  let rawId: unknown = null;
+
+  if (auditId) {
+    openType = 'audit';
+    rawId = auditId;
+    keysToClear.push('auditId');
+  } else if (editId) {
+    openType = 'edit';
+    rawId = editId;
+    keysToClear.push('editId');
+  } else if (detailId) {
+    openType = 'detail';
+    rawId = detailId;
+    keysToClear.push('detailId');
+  }
+
+  if (!openType) return;
+
+  const id = Number(rawId);
+  routeOpening.value = true;
+  try {
+    if (!Number.isFinite(id) || id <= 0) {
+      await clearQueryKeys(keysToClear);
+      return;
+    }
+
+    if (openType === 'detail') {
+      await handleDetail({ id } as TransactionVO);
+    } else {
+      await handleEdit({ id } as TransactionVO);
+    }
+  } finally {
+    await clearQueryKeys(keysToClear);
+    routeOpening.value = false;
+  }
+};
 
 // 详情相关
 const detailVisible = ref(false);
@@ -365,7 +439,31 @@ const editForm = reactive<TransactionForm>({
   loanAmount: 0,
   loanStatus: 0,
   status: 0,
-  managerAudit: 0
+  managerAudit: 0,
+  finishAudit: 0
+});
+
+const isFinalLocked = computed(() => editForm.status === 4 && editForm.finishAudit === 2);
+const isFinishAuditPending = computed(() => editForm.finishAudit === 1);
+const isFullyPaid = computed(() => {
+  const deal = Number(editForm.dealPrice || 0);
+  const paid = Number(editForm.deposit || 0) + Number(editForm.downPayment || 0) + Number(editForm.loanAmount || 0);
+  return deal > 0 && paid >= deal;
+});
+const canFinanceApplyFinish = computed(() => {
+  if (roleType.value !== 4) return false;
+  if (!(editForm.status === 2 || editForm.status === 3)) return false;
+  if (editForm.finishAudit === 1 || editForm.finishAudit === 2) return false;
+  return isFullyPaid.value;
+});
+
+const commissionInfo = ref<CommissionVO | null>(null);
+const commissionRateInput = ref<number>(3);
+const commissionCreating = ref(false);
+const canCreateCommission = computed(() => {
+  if (!(roleType.value === 1 || roleType.value === 4)) return false;
+  if (!(editForm.status === 4 && editForm.finishAudit === 2)) return false;
+  return !commissionInfo.value;
 });
 
 // 表单校验规则
@@ -390,6 +488,7 @@ const addForm = reactive<TransactionAddDTO>({
   loanAmount: 0,
   loanStatus: 0
 });
+
 const addRules = {
   houseId: [{ required: true, message: '请选择房源', trigger: 'change' }],
   customerId: [{ required: true, message: '请选择客户', trigger: 'change' }],
@@ -404,7 +503,7 @@ const salesOptions = ref<any[]>([]);
 
 // 获取下拉数据
 const getOptions = async () => {
-    if (customerOptions.value.length > 0) return; // cache
+  if (customerOptions.value.length > 0) return; // cache
   try {
     const [cRes, hRes, sRes] = await Promise.all([
       getCustomerList(),
@@ -421,19 +520,20 @@ const getOptions = async () => {
 
 // 打开新增
 const handleAdd = () => {
-    addVisible.value = true;
-    getOptions();
-    // Reset form
-    addForm.houseId = undefined as any;
-    addForm.customerId = undefined as any;
-    addForm.salesId = undefined as any;
-    addForm.dealPrice = 0;
-    addForm.deposit = 0;
-    addForm.loanAmount = 0;
-    
-    nextTick(() => {
-        addFormRef.value?.clearValidate();
-    })
+  addVisible.value = true;
+  getOptions();
+  // Reset form
+  addForm.houseId = undefined as any;
+  addForm.customerId = undefined as any;
+  addForm.salesId = roleType.value === 2 ? (userStore.userInfo as any)?.userId : (undefined as any);
+  addForm.dealPrice = 0;
+  addForm.deposit = 0;
+  addForm.downPayment = 0;
+  addForm.loanAmount = 0;
+  
+  nextTick(() => {
+    addFormRef.value?.clearValidate();
+  })
 }
 
 // 提交新增
@@ -504,11 +604,40 @@ const handleDetail = async (row: TransactionVO) => {
   }
 };
 
+const getDisplayStatusText = (row: TransactionVO) => {
+  const base = TransactionStatusMap[row.status] || '未知';
+  if (row.status === 0) {
+    if (row.managerAudit === 2) return `${base}(驳回)`;
+    if (row.managerAudit === 1) return `${base}(通过)`;
+    if (row.managerAudit === 0) return `${base}(待审核)`;
+  }
+  if ((row.status === 2 || row.status === 3) && row.finishAudit != null) {
+    if (row.finishAudit === 1) return `${base}(待完成审核)`;
+    if (row.finishAudit === 3) return `${base}(完成驳回)`;
+  }
+  if (row.status === 4 && row.finishAudit != null && row.finishAudit !== 2) {
+    return `${base}(${FinishAuditMap[row.finishAudit] || '未知'})`;
+  }
+  return base;
+};
+
+const fetchCommissionInfo = async (transactionId: number) => {
+  try {
+    const res = await reqGetCommissionByTransaction(transactionId) as any;
+    if (res.code === 200) {
+      commissionInfo.value = res.data || null;
+    }
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 // 5. 打开编辑
 const handleEdit = async (row: TransactionVO) => {
   const res = await reqGetTransactionDetail(row.id) as any;
   if (res.code === 200) {
     const data = res.data;
+
     // 赋值给表单
     editForm.id = data.id;
     editForm.transactionNo = data.transactionNo;
@@ -519,13 +648,104 @@ const handleEdit = async (row: TransactionVO) => {
     editForm.loanStatus = data.loanStatus;
     editForm.status = data.status;
     editForm.managerAudit = data.managerAudit;
+    editForm.finishAudit = data.finishAudit ?? 0;
 
     editVisible.value = true;
+    commissionInfo.value = null;
+    await fetchCommissionInfo(editForm.id);
     nextTick(() => {
       editFormRef.value?.clearValidate();
     });
   } else {
     ElMessage.error(res.message || '获取数据失败');
+  }
+};
+
+const refreshCurrentEdit = async () => {
+  if (!editForm.id) return;
+  const res = await reqGetTransactionDetail(editForm.id) as any;
+  if (res.code === 200) {
+    const data = res.data;
+    editForm.transactionNo = data.transactionNo;
+    editForm.dealPrice = data.dealPrice;
+    editForm.deposit = data.deposit;
+    editForm.downPayment = data.downPayment;
+    editForm.loanAmount = data.loanAmount;
+    editForm.loanStatus = data.loanStatus;
+    editForm.status = data.status;
+    editForm.managerAudit = data.managerAudit;
+    editForm.finishAudit = data.finishAudit ?? 0;
+    await fetchCommissionInfo(editForm.id);
+  }
+};
+
+const submitManagerApprove = async (approved: boolean) => {
+  if (!editForm.id) return;
+  let reason: string | undefined;
+  if (!approved) {
+    try {
+      const { value } = await ElMessageBox.prompt('请输入驳回原因', '驳回', { confirmButtonText: '确定', cancelButtonText: '取消' });
+      reason = value;
+    } catch {
+      return;
+    }
+  }
+  const res = await reqManagerApprove(editForm.id, approved, reason) as any;
+  if (res.code === 200) {
+    ElMessage.success('操作成功');
+    await refreshCurrentEdit();
+    getList();
+  } else {
+    ElMessage.error(res.message || '操作失败');
+  }
+};
+
+const submitFinanceApplyFinish = async () => {
+  if (!editForm.id) return;
+  const res = await reqFinanceApplyFinish(editForm.id) as any;
+  if (res.code === 200) {
+    ElMessage.success('已提交完成申请');
+    await refreshCurrentEdit();
+    getList();
+  } else {
+    ElMessage.error(res.message || '提交失败');
+  }
+};
+
+const submitAdminFinishApprove = async (approved: boolean) => {
+  if (!editForm.id) return;
+  let reason: string | undefined;
+  if (!approved) {
+    try {
+      const { value } = await ElMessageBox.prompt('请输入驳回原因', '驳回', { confirmButtonText: '确定', cancelButtonText: '取消' });
+      reason = value;
+    } catch {
+      return;
+    }
+  }
+  const res = await reqAdminFinishApprove(editForm.id, approved, reason) as any;
+  if (res.code === 200) {
+    ElMessage.success('操作成功');
+    await refreshCurrentEdit();
+    getList();
+  } else {
+    ElMessage.error(res.message || '操作失败');
+  }
+};
+
+const submitCreateCommission = async () => {
+  if (!editForm.id) return;
+  commissionCreating.value = true;
+  try {
+    const res = await reqCreateCommissionByTransaction(editForm.id, Number(commissionRateInput.value || 0)) as any;
+    if (res.code === 200) {
+      ElMessage.success('生成佣金成功');
+      await fetchCommissionInfo(editForm.id);
+    } else {
+      ElMessage.error(res.message || '生成失败');
+    }
+  } finally {
+    commissionCreating.value = false;
   }
 };
 
@@ -555,9 +775,11 @@ const submitEdit = async () => {
 
 // ================= 辅助函数 =================
 
-const formatCurrency = (value?: number | null) => {
+const formatCurrency = (value?: number | null | string) => {
   if (value === undefined || value === null) return '-';
-  return `¥ ${value.toLocaleString()}`;
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n)) return '-';
+  return `¥ ${n.toLocaleString()}`;
 };
 
 const getStatusTag = (status: number) => {
@@ -580,7 +802,16 @@ const getLoanTag = (status: number) => {
 // 初始化
 onMounted(() => {
   getList();
+  handleRouteOpen();
 });
+
+watch(
+  () => route.query,
+  () => {
+    handleRouteOpen();
+  },
+  { deep: true }
+);
 </script>
 
 <style scoped lang="scss">

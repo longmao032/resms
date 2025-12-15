@@ -263,6 +263,7 @@ import type { FormInstance, FormRules, UploadFile } from 'element-plus'
 import { useRouter, useRoute } from 'vue-router'
 import { Plus } from '@element-plus/icons-vue'
 import { getProjectById, updateProject } from '@/api/project'
+import { getImageUrl } from '@/utils/image'
 
 const router = useRouter()
 const route = useRoute()
@@ -338,7 +339,7 @@ const fetchProjectDetail = async () => {
       Object.assign(formData, res.data)
       originalCoverUrl.value = res.data.coverUrl || ''
       if (res.data.coverUrl) {
-        coverImageUrl.value = `http://localhost:8080/uploads${res.data.coverUrl}`
+        coverImageUrl.value = getImageUrl(res.data.coverUrl)
       }
     } else {
       ElMessage.error(res.message || '获取项目详情失败')
@@ -386,39 +387,41 @@ const handleFileChange = (uploadFile: UploadFile) => {
 // 提交表单
 const handleSubmit = async () => {
   if (!formRef.value) return
-  
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
-      submitting.value = true
-      try {
-        // 准备FormData
-        const formDataToSend = new FormData()
-        
-        // 添加项目信息（作为JSON字符串）
-        formDataToSend.append('project', new Blob([JSON.stringify(formData)], { type: 'application/json' }))
-        
-        // 添加封面图片（如果有新上传）
-        if (coverImageFile.value) {
-          formDataToSend.append('coverImage', coverImageFile.value)
-        }
-        
-        const res = await updateProject(formDataToSend)
-        if (res.status) {
-          ElMessage.success('项目更新成功')
-          router.push('/project/list')
-        } else {
-          ElMessage.error(res.message || '项目更新失败')
-        }
-      } catch (error: any) {
-        console.error('更新项目失败:', error)
-        ElMessage.error(error.response?.data?.message || error.message || '项目更新失败')
-      } finally {
-        submitting.value = false
-      }
-    } else {
-      ElMessage.warning('请填写必填项')
+
+  try {
+    await formRef.value.validate()
+  } catch (err) {
+    ElMessage.warning('请填写必填项')
+    return
+  }
+
+  submitting.value = true
+  try {
+    // 准备FormData
+    const formDataToSend = new FormData()
+
+    // 添加项目信息（作为JSON字符串）
+    formDataToSend.append('project', new Blob([JSON.stringify(formData)], { type: 'application/json' }))
+
+    // 添加封面图片（如果有新上传）
+    if (coverImageFile.value) {
+      formDataToSend.append('coverImage', coverImageFile.value)
     }
-  })
+
+    const resAny: any = await updateProject(formDataToSend)
+    const apiResp = resAny.data ?? resAny
+    if (apiResp.status) {
+      ElMessage.success('项目更新成功')
+      router.push('/project/list')
+    } else {
+      ElMessage.error(apiResp.message || '项目更新失败')
+    }
+  } catch (error: any) {
+    console.error('更新项目失败:', error)
+    ElMessage.error(error.response?.data?.message || error.message || '项目更新失败')
+  } finally {
+    submitting.value = false
+  }
 }
 
 // 重置表单

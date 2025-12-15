@@ -1,5 +1,5 @@
 // utils/request.ts 示例配置
-import axios, { type AxiosResponse } from 'axios'
+import axios, { type AxiosResponse, type AxiosInstance } from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 // CSRF token存储
@@ -25,6 +25,16 @@ const getCsrfToken = async (): Promise<string | null> => {
   return null
 }
 
+type RequestInstance = {
+  <T = any, R = T, D = any>(config: any): Promise<R>
+  get<T = any, R = T, D = any>(url: string, config?: any): Promise<R>
+  post<T = any, R = T, D = any>(url: string, data?: D, config?: any): Promise<R>
+  put<T = any, R = T, D = any>(url: string, data?: D, config?: any): Promise<R>
+  delete<T = any, R = T, D = any>(url: string, config?: any): Promise<R>
+  interceptors: AxiosInstance['interceptors']
+  defaults: AxiosInstance['defaults']
+}
+
 // 创建axios实例
 const request = axios.create({
   baseURL: '/api', // 使用相对路径，通过 Vite 代理转发到后端
@@ -33,43 +43,65 @@ const request = axios.create({
     'Content-Type': 'application/json'
   },
   withCredentials: true // 启用跨域请求时发送凭据
-})
+}) as unknown as RequestInstance
 
 // 请求拦截器
 request.interceptors.request.use(
-  async (config) => {
+  async (config: any) => {
     // 添加token到请求头
     const token = localStorage.getItem('token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
 
+    // 如果是 FormData，删除默认的 Content-Type，让浏览器自动设置带 boundary 的值
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type']
+    }
+
     return config
   },
-  (error) => {
+  (error: any) => {
     return Promise.reject(error)
   }
 )
 
 // 响应拦截器
 request.interceptors.response.use(
-  (response) => {
-    console.log('响应数据:', response)
+  async (response: any) => {
+
     const data = response.data
+
+    if (response?.config?.responseType === 'blob' && data instanceof Blob) {
+      if (data.type && data.type.includes('application/json')) {
+        const text = await data.text()
+        try {
+          const json = JSON.parse(text)
+          const error = new Error(json.message || '请求失败')
+          ;(error as any).response = { data: json }
+          throw error
+        } catch {
+          const error = new Error('请求失败')
+          ;(error as any).response = { data: { message: text } }
+          throw error
+        }
+      }
+      return data
+    }
 
     // 检查后端返回的业务状态码
     if (data && typeof data.code === 'number') {
       // 如果是业务错误，抛出错误让业务代码处理
       if (data.code !== 200 || !data.status) {
         const error = new Error(data.message || '请求失败')
-        error.response = { data }
+        ;(error as any).response = { data }
         throw error
       }
     }
 
     return data
   },
-  async (error) => {
+  async (error: any) => {
     console.log('响应错误:', error)
 
     if (error.response) {
@@ -87,10 +119,13 @@ request.interceptors.response.use(
           break
         case 401:
           // token过期或无效
-          ElMessage.warning('登录已过期，请重新登录')
+          ElMessage.warning(data?.message || '登录已过期，请重新登录')
           // 清除本地存储的用户信息
           localStorage.removeItem('token')
           localStorage.removeItem('userInfo')
+          localStorage.removeItem('loginTime')
+          // pinia-plugin-persistedstate 默认以 store id 作为 key
+          localStorage.removeItem('user')
           // 清除CSRF token
           csrfToken = null
           // 延迟跳转以显示消息

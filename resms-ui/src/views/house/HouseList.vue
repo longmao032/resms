@@ -36,15 +36,15 @@
     <el-card class="toolbar-card" shadow="never">
       <el-row :gutter="10">
         <el-col :span="1.5">
-          <el-button type="primary" :icon="Plus" @click="handleAdd">新增房源</el-button>
+          <el-button v-if="!isFinance()" type="primary" :icon="Plus" @click="handleAdd">新增房源</el-button>
         </el-col>
         <el-col :span="1.5">
-          <el-button type="danger" :icon="Delete" :disabled="selectedIds.length === 0" @click="handleBatchDelete">
+          <el-button v-if="!isSalesConsultant() && !isFinance()" type="danger" :icon="Delete" :disabled="selectedIds.length === 0" @click="handleBatchDelete">
             批量删除
           </el-button>
         </el-col>
         <el-col :span="1.5">
-          <el-button type="success" :icon="Check" :disabled="selectedIds.length === 0" @click="handleBatchAudit">
+          <el-button v-if="!isSalesConsultant() && !isFinance()" type="success" :icon="Check" :disabled="selectedIds.length === 0" @click="handleBatchAudit">
             批量审核
           </el-button>
         </el-col>
@@ -53,32 +53,28 @@
 
     <!-- 数据表格 -->
     <el-card class="table-card" shadow="never">
-      <el-table
-        v-loading="loading"
-        :data="houseList"
-        @selection-change="handleSelectionChange"
-        border
-        stripe
-      >
-        <el-table-column type="selection" width="55" align="center" />
+      <el-table v-loading="loading" :data="houseList" @selection-change="handleSelectionChange" border stripe>
+        <el-table-column v-if="!isSalesConsultant() && !isFinance()" type="selection" width="55" align="center" />
         <el-table-column label="房源编号" prop="houseNo" width="140" />
         <el-table-column label="房产图片" width="120" align="center">
           <template #default="{ row }">
-            <el-image
-              v-if="row.images && row.images.length > 0"
-              :src="getImageUrl(row.images[0])"
-              :preview-src-list="row.images.map((img: string) => getImageUrl(img))"
-              fit="cover"
-              style="width: 80px; height: 60px; border-radius: 4px; cursor: pointer;"
-            >
+            <el-image v-if="row.images && row.images.length > 0" :src="getImageUrl(row.images[0])"
+              :preview-src-list="row.images.map((img: string) => getImageUrl(img))" fit="cover"
+              style="width: 80px; height: 60px; border-radius: 4px; cursor: pointer;">
               <template #error>
-                <div style="display: flex; align-items: center; justify-content: center; width: 80px; height: 60px; background: #f5f7fa; border-radius: 4px;">
-                  <el-icon :size="20" color="#c0c4cc"><Picture /></el-icon>
+                <div
+                  style="display: flex; align-items: center; justify-content: center; width: 80px; height: 60px; background: #f5f7fa; border-radius: 4px;">
+                  <el-icon :size="20" color="#c0c4cc">
+                    <Picture />
+                  </el-icon>
                 </div>
               </template>
             </el-image>
-            <div v-else style="display: flex; align-items: center; justify-content: center; width: 80px; height: 60px; background: #f5f7fa; border-radius: 4px;">
-              <el-icon :size="20" color="#c0c4cc"><Picture /></el-icon>
+            <div v-else
+              style="display: flex; align-items: center; justify-content: center; width: 80px; height: 60px; background: #f5f7fa; border-radius: 4px;">
+              <el-icon :size="20" color="#c0c4cc">
+                <Picture />
+              </el-icon>
             </div>
           </template>
         </el-table-column>
@@ -113,36 +109,34 @@
         <el-table-column label="负责销售" prop="salesName" width="120" />
         <el-table-column label="项目" prop="projectName" width="150" show-overflow-tooltip />
         <el-table-column label="创建时间" prop="createTime" width="160" />
-        <el-table-column label="操作" width="280" fixed="right" align="center">
+        <el-table-column label="操作" width="180" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button link type="primary" :icon="View" @click="handleView(row)">详情</el-button>
-            <el-button link type="primary" :icon="Edit" @click="handleEdit(row)">编辑</el-button>
-            <el-button link type="success" v-if="row.status === 0" @click="handleAudit(row)">审核</el-button>
-            <el-button link type="danger" :icon="Delete" @click="handleDelete(row)">删除</el-button>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <el-tooltip content="详情" placement="top">
+                <el-button link type="primary" :icon="View" @click="handleView(row)" />
+              </el-tooltip>
+              <el-tooltip content="编辑" placement="top" v-if="!isFinance()">
+                <el-button link type="primary" :icon="Edit" @click="handleEdit(row)" />
+              </el-tooltip>
+              <el-tooltip content="删除" placement="top" v-if="!isSalesConsultant() && !isFinance()">
+                <el-button link type="danger" :icon="Delete" @click="handleDelete(row)" />
+              </el-tooltip>
+              <el-tooltip content="审核" placement="top" v-if="!isSalesConsultant() && !isFinance() && row.status === 0">
+                <el-button link type="success" :icon="Check" @click="handleAudit(row)" />
+              </el-tooltip>
+            </div>
           </template>
         </el-table-column>
       </el-table>
 
       <!-- 分页 -->
-      <el-pagination
-        v-model:current-page="queryParams.pageNum"
-        v-model:page-size="queryParams.pageSize"
-        :total="total"
-        :page-sizes="[10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="handleSizeChange"
-        @current-change="handlePageChange"
-        style="margin-top: 20px; justify-content: flex-end"
-      />
+      <el-pagination v-model:current-page="queryParams.pageNum" v-model:page-size="queryParams.pageSize" :total="total"
+        :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
+        @current-change="handlePageChange" style="margin-top: 20px; justify-content: flex-end" />
     </el-card>
 
     <!-- 审核对话框 -->
-    <el-dialog
-      v-model="auditDialogVisible"
-      title="房源审核"
-      width="800px"
-      :close-on-click-modal="false"
-    >
+    <el-dialog v-model="auditDialogVisible" title="房源审核" width="800px" :close-on-click-modal="false">
       <div v-loading="auditLoading" class="audit-dialog-content">
         <!-- 房源基本信息 -->
         <el-descriptions :column="2" border>
@@ -170,18 +164,14 @@
         <div class="audit-images-section" v-if="currentAuditHouse?.images && currentAuditHouse.images.length > 0">
           <h4>房源图片</h4>
           <div class="images-grid">
-            <el-image
-              v-for="(image, index) in currentAuditHouse.images"
-              :key="index"
-              :src="getImageUrl(image)"
-              :preview-src-list="currentAuditHouse.images.map((img: string) => getImageUrl(img))"
-              :initial-index="index"
-              fit="cover"
-              class="audit-image"
-            >
+            <el-image v-for="(image, index) in currentAuditHouse.images" :key="index" :src="getImageUrl(image)"
+              :preview-src-list="currentAuditHouse.images.map((img: string) => getImageUrl(img))" :initial-index="index"
+              fit="cover" class="audit-image">
               <template #error>
                 <div class="image-slot">
-                  <el-icon><Picture /></el-icon>
+                  <el-icon>
+                    <Picture />
+                  </el-icon>
                   <span>加载失败</span>
                 </div>
               </template>
@@ -197,19 +187,10 @@
               <el-radio :label="false">不通过</el-radio>
             </el-radio-group>
           </el-form-item>
-          <el-form-item 
-            label="审核意见" 
-            prop="reason"
-            :rules="auditForm.approved === false ? [{ required: true, message: '请输入审核意见', trigger: 'blur' }] : []"
-          >
-            <el-input
-              v-model="auditForm.reason"
-              type="textarea"
-              :rows="3"
-              :placeholder="auditForm.approved ? '可选：说明通过原因' : '必填：说明不通过原因'"
-              maxlength="200"
-              show-word-limit
-            />
+          <el-form-item label="审核意见" prop="reason"
+            :rules="auditForm.approved === false ? [{ required: true, message: '请输入审核意见', trigger: 'blur' }] : []">
+            <el-input v-model="auditForm.reason" type="textarea" :rows="3"
+              :placeholder="auditForm.approved ? '可选：说明通过原因' : '必填：说明不通过原因'" maxlength="200" show-word-limit />
           </el-form-item>
         </el-form>
       </div>
@@ -233,8 +214,13 @@ import { Plus, Delete, Search, Refresh, View, Edit, Check, Picture } from '@elem
 import { getHouseList, deleteHouse, batchDeleteHouse, auditHouse, getHouseById } from '@/api/house'
 import type { HouseDetail, HouseQueryParams } from '@/api/house/type'
 import { useRouter } from 'vue-router'
+import { getImageUrl } from '@/utils/image'
+import { useUserStore } from '@/stores/userStore'
 
 const router = useRouter()
+const userStore = useUserStore()
+const isSalesConsultant = () => (userStore.currentUser?.roleType === 2)
+const isFinance = () => (userStore.currentUser?.roleType === 4)
 
 // 数据
 const loading = ref(false)
@@ -316,7 +302,14 @@ const handlePageChange = () => {
 
 // 重置搜索
 const handleReset = () => {
-  Object.assign(queryParams, { pageNum: 1, pageSize: 10 })
+  Object.assign(queryParams, {
+    pageNum: 1,
+    pageSize: 10,
+    houseNo: undefined,
+    layout: undefined,
+    houseType: undefined,
+    status: undefined
+  })
   loadHouseList()
 }
 
@@ -327,11 +320,19 @@ const handleSelectionChange = (selection: HouseDetail[]) => {
 
 // 新增房源
 const handleAdd = () => {
+  if (isFinance()) {
+    ElMessage.error('无权限新增房源')
+    return
+  }
   router.push('/house/add')
 }
 
 // 编辑房源
 const handleEdit = (row: HouseDetail) => {
+  if (isFinance()) {
+    ElMessage.error('无权限编辑房源')
+    return
+  }
   router.push(`/house/edit/${row.id}`)
 }
 
@@ -374,6 +375,8 @@ const handleDelete = async (row: HouseDetail) => {
 
 // 批量删除
 const handleBatchDelete = async () => {
+  if (selectedIds.value.length === 0) return
+
   try {
     await ElMessageBox.confirm(
       `确定要删除选中的 ${selectedIds.value.length} 条房源吗？`,
@@ -394,7 +397,7 @@ const handleBatchDelete = async () => {
       // deleted count might be in apiResp.data or apiResp
       const payload = apiResp.data ?? apiResp
       const deletedCount = typeof payload === 'number' ? payload : (payload?.data ?? payload)
-      ElMessage.success(`成功删除 ${deletedCount || 0} 条记录`)
+      ElMessage.success(`成功删除 ${typeof deletedCount === 'number' ? deletedCount : '选中'} 条记录`)
       selectedIds.value = []
       loadHouseList()
     } else {
@@ -414,15 +417,15 @@ const handleAudit = async (row: HouseDetail) => {
   auditDialogVisible.value = true
   auditLoading.value = true
   currentAuditHouse.value = null
-  
+
   // 重置表单
   auditForm.approved = true
   auditForm.reason = ''
-  
+
   try {
     const res = await getHouseById(row.id)
     if (res.status && res.data) {
-      currentAuditHouse.value = res.data
+      currentAuditHouse.value = res.data as any
     } else {
       ElMessage.error('加载房源信息失败')
       auditDialogVisible.value = false
@@ -439,22 +442,22 @@ const handleAudit = async (row: HouseDetail) => {
 // 提交审核
 const handleAuditSubmit = async () => {
   if (!auditFormRef.value) return
-  
+
   await auditFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
         auditSubmitting.value = true
-        
+
         const res = await auditHouse(
           currentAuditHouse.value!.id,
           auditForm.approved,
           auditForm.reason || undefined
         )
-        
+
         const anyRes: any = res
         const apiResp = anyRes.data?.data ? anyRes.data : anyRes.data ?? anyRes
         const statusFlag = anyRes.data?.status ?? anyRes.status ?? apiResp.status
-        
+
         if (statusFlag) {
           ElMessage.success(auditForm.approved ? '审核通过' : '审核已拒绝')
           auditDialogVisible.value = false
@@ -485,7 +488,7 @@ const formatPrice = (price: number) => {
 // 房源类型标签
 const getHouseTypeTag = (type: number) => {
   const tagMap: Record<number, string> = {
-    1: '',
+    1: 'primary',
     2: 'success',
     3: 'warning'
   }
@@ -498,22 +501,12 @@ const getStatusTag = (status: number) => {
     0: 'info',
     1: 'success',
     2: 'warning',
-    3: '',
+    3: 'info',
     4: 'danger'
   }
   return tagMap[status] || 'info'
 }
-// 图片 URL 处理
-const getImageUrl = (url: string) => {
-  if (!url) return ''
-  if (url.startsWith('http')) return url
-  // 处理已包含 /uploads 的情况
-  if (url.startsWith('/uploads')) return `http://localhost:8080${url}`
-  // 处理以 / 开头的情况 (如 /project/1.jpg)
-  if (url.startsWith('/')) return `http://localhost:8080/uploads${url}`
-  // 处理相对路径 (如 temp_...)
-  return `http://localhost:8080/uploads/${url}`
-}
+
 </script>
 
 <style scoped lang="scss">
@@ -534,29 +527,29 @@ const getImageUrl = (url: string) => {
   :deep(.el-card__body) {
     padding: 16px;
   }
-  
+
   // 审核对话框样式
   .audit-dialog-content {
     .audit-images-section {
       margin-top: 20px;
-      
+
       h4 {
         margin-bottom: 15px;
         font-size: 14px;
         font-weight: 600;
       }
-      
+
       .images-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         gap: 15px;
-        
+
         .audit-image {
           width: 100%;
           height: 150px;
           border-radius: 4px;
           cursor: pointer;
-          
+
           .image-slot {
             display: flex;
             flex-direction: column;
@@ -565,7 +558,7 @@ const getImageUrl = (url: string) => {
             height: 100%;
             background: #f5f7fa;
             color: #909399;
-            
+
             .el-icon {
               font-size: 30px;
               margin-bottom: 5px;
@@ -574,7 +567,7 @@ const getImageUrl = (url: string) => {
         }
       }
     }
-    
+
     .audit-form {
       margin-top: 20px;
       padding-top: 20px;

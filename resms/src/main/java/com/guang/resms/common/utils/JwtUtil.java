@@ -32,14 +32,21 @@ public class JwtUtil {
      * @param userId   用户ID
      * @param username 用户名
      * @param roleType 角色类型
+     * @param realName 真实姓名
+     * @param teamId   团队ID (可能为null)
      * @return JWT字符串
      */
-    public String generateToken(Integer userId, String username, Integer roleType) {
+    public String generateToken(Integer userId, String username, Integer roleType,
+            String realName, Integer teamId) {
         // 设置JWT声明
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
         claims.put("username", username);
         claims.put("roleType", roleType);
+        claims.put("realName", realName);
+        if (teamId != null) {
+            claims.put("teamId", teamId);
+        }
 
         // 生成JWT - 注意：0.12.x 版本API有变化
         return Jwts.builder()
@@ -119,5 +126,25 @@ public class JwtUtil {
     public boolean isTokenExpired(String token) {
         Date expiration = parseToken(token).getExpiration();
         return expiration.before(new Date());
+    }
+
+    /**
+     * 从token中获取真实姓名
+     * 
+     * @param token JWT字符串
+     * @return 真实姓名
+     */
+    public String getRealNameFromToken(String token) {
+        return parseToken(token).get("realName", String.class);
+    }
+
+    /**
+     * 从token中获取团队ID
+     * 
+     * @param token JWT字符串
+     * @return 团队ID (可能为null)
+     */
+    public Integer getTeamIdFromToken(String token) {
+        return parseToken(token).get("teamId", Integer.class);
     }
 }

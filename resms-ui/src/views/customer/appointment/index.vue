@@ -103,16 +103,9 @@
               class="danger-text"
               @click="handleCancel(scope.row)"
             >取消</el-button>
-            
-             <el-popconfirm
-              v-if="scope.row.status === 2 || scope.row.status === 3"
-              title="确定删除这条预约记录吗？"
-              @confirm="handleDelete(scope.row)"
-            >
-              <template #reference>
-                <el-button type="text" icon="Delete" class="danger-text">删除</el-button>
-              </template>
-            </el-popconfirm>
+
+            <span v-if="scope.row.status === 2">已完成</span>
+            <span v-if="scope.row.status === 3">已取消</span>
           </template>
         </el-table-column>
       </el-table>
@@ -155,7 +148,7 @@
             placeholder="请选择销售" 
             filterable 
             style="width: 100%"
-            :disabled="userStore.userInfo?.roleType === 3"
+            :disabled="userStore.userInfo?.roleType === 2"
           >
             <el-option
               v-for="item in salesOptions"
@@ -218,7 +211,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, toRefs } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Refresh, Plus, Delete, Check, Close, Finished } from '@element-plus/icons-vue'
+import { Search, Refresh, Plus, Check, Close, Finished } from '@element-plus/icons-vue'
 import { 
   getAppointmentPage, 
   addAppointment, 
@@ -312,7 +305,7 @@ const getOptions = async () => {
     customerOptions.value = cRes.data.records || []
     // 房源列表接口返回的是 Map { list: [], total: ... }
     houseOptions.value = hRes.data.list || [] 
-    salesOptions.value = sRes.data.records || []
+    salesOptions.value = Array.isArray(sRes.data) ? sRes.data : (sRes.data.records || [])
   } catch (error) {
     console.error('获取下拉数据失败', error)
   }
@@ -351,7 +344,7 @@ const handleAdd = () => {
   title.value = '新增预约'
   
   // 如果是销售顾问（角色ID=3），默认选中自己且不可修改
-  if (userStore.userInfo?.roleType === 3) {
+  if (userStore.userInfo?.roleType === 2) {
       form.salesId = userStore.userInfo.userId
   }
 }
@@ -431,15 +424,6 @@ const submitCancel = async () => {
   ElMessage.success('操作成功')
   cancelOpen.value = false
   getList()
-}
-
-// 删除（仅用于清理数据，实际业务可能不需要物理删除，这里假设调用通用删除接口）
-const handleDelete = async (row: ViewRecord) => {
-    // 这里暂时没有专门的删除接口，如果复用 viewRecord 的删除
-    // await deleteViewRecord(row.id)
-    // ElMessage.success('删除成功')
-    // getList()
-    ElMessage.warning('暂不支持删除')
 }
 
 onMounted(() => {

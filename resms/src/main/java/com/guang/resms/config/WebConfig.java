@@ -1,6 +1,7 @@
 package com.guang.resms.config;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -8,6 +9,12 @@ import java.io.File;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
+
+    private final JwtAuthInterceptor jwtAuthInterceptor;
+
+    public WebConfig(JwtAuthInterceptor jwtAuthInterceptor) {
+        this.jwtAuthInterceptor = jwtAuthInterceptor;
+    }
 
     @org.springframework.beans.factory.annotation.Value("${file.upload.path:uploads}")
     private String uploadPath;
@@ -36,5 +43,17 @@ public class WebConfig implements WebMvcConfigurer {
         // 同时保留默认的静态资源映射
         registry.addResourceHandler("/**")
                 .addResourceLocations("classpath:/static/", "classpath:/templates/");
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(jwtAuthInterceptor)
+                .addPathPatterns("/**")
+                .excludePathPatterns(
+                        "/auth/login",
+                        "/auth/csrf-token",
+                        "/uploads/**",
+                        "/error",
+                        "/favicon.ico");
     }
 }

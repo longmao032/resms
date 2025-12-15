@@ -295,50 +295,52 @@ const fetchCommunityDetail = async () => {
 // 提交表单
 const handleSubmit = async () => {
   if (!formRef.value) return
-  
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
-      submitting.value = true
+  try {
+    await formRef.value.validate()
+  } catch (err) {
+    ElMessage.warning('请填写必填项')
+    return
+  }
+
+  submitting.value = true
+  try {
+    let finalCoverUrl = formData.coverUrl
+
+    // 1. 如果有选择新图片，先上传图片
+    if (selectedCoverFile.value) {
       try {
-        let finalCoverUrl = formData.coverUrl
-        
-        // 1. 如果有选择新图片，先上传图片
-        if (selectedCoverFile.value) {
-            try {
-                const uploadRes = await uploadCommunityCover(selectedCoverFile.value, formData.communityName) as any
-                if (uploadRes.code === 200 && uploadRes.data) {
-                    finalCoverUrl = uploadRes.data
-                } else {
-                    ElMessage.warning('封面上传失败，将使用原封面')
-                }
-            } catch (err) {
-                console.error('封面上传异常', err)
-                ElMessage.warning('封面上传异常')
-            }
-        }
-
-        const submitData = {
-            ...formData,
-            coverUrl: finalCoverUrl
-        }
-
-        const res = await updateCommunity(submitData) as any
-        if (res.status || res.code === 200) {
-          ElMessage.success('小区更新成功')
-          router.push('/community/list')
+        const uploadResAny: any = await uploadCommunityCover(selectedCoverFile.value, formData.communityName)
+        const uploadResp = uploadResAny.data ?? uploadResAny
+        if (uploadResp.code === 200 && uploadResp.data) {
+          finalCoverUrl = uploadResp.data
         } else {
-          ElMessage.error(res.message || '小区更新失败')
+          ElMessage.warning('封面上传失败，将使用原封面')
         }
-      } catch (error: any) {
-        console.error('更新小区失败:', error)
-        ElMessage.error(error.response?.data?.message || error.message || '小区更新失败')
-      } finally {
-        submitting.value = false
+      } catch (err) {
+        console.error('封面上传异常', err)
+        ElMessage.warning('封面上传异常')
       }
-    } else {
-      ElMessage.warning('请填写必填项')
     }
-  })
+
+    const submitData = {
+      ...formData,
+      coverUrl: finalCoverUrl
+    }
+
+    const resAny: any = await updateCommunity(submitData)
+    const apiResp = resAny.data ?? resAny
+    if (apiResp.status || apiResp.code === 200) {
+      ElMessage.success('小区更新成功')
+      router.push('/community/list')
+    } else {
+      ElMessage.error(apiResp.message || '小区更新失败')
+    }
+  } catch (error: any) {
+    console.error('更新小区失败:', error)
+    ElMessage.error(error.response?.data?.message || error.message || '小区更新失败')
+  } finally {
+    submitting.value = false
+  }
 }
 
 // 重置表单

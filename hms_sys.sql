@@ -11,11 +11,122 @@
  Target Server Version : 80407 (8.4.7)
  File Encoding         : 65001
 
- Date: 12/12/2025 00:48:47
+ Date: 15/12/2025 03:33:14
 */
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
+
+-- ----------------------------
+-- Table structure for tb_chat_message
+-- ----------------------------
+DROP TABLE IF EXISTS `tb_chat_message`;
+CREATE TABLE `tb_chat_message`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '消息ID',
+  `session_id` bigint NOT NULL COMMENT '所属会话ID',
+  `sender_id` int NOT NULL COMMENT '发送者ID',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '消息内容',
+  `msg_type` tinyint NOT NULL DEFAULT 1 COMMENT '消息类型：1=文本，2=图片，3=文件，4=系统提示',
+  `file_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '文件/图片地址（当类型不为1时使用）',
+  `file_size` bigint NULL DEFAULT NULL COMMENT '文件大小（字节）',
+  `file_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '原始文件名',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '发送时间',
+  `is_recalled` tinyint NOT NULL DEFAULT 0 COMMENT '是否撤回：0=否，1=是',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_session_time`(`session_id` ASC, `create_time` ASC) USING BTREE,
+  CONSTRAINT `fk_message_session` FOREIGN KEY (`session_id`) REFERENCES `tb_chat_session` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 25 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '聊天消息表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Records of tb_chat_message
+-- ----------------------------
+INSERT INTO `tb_chat_message` VALUES (1, 3, 2, '??', 1, NULL, NULL, NULL, '2025-12-12 22:39:05', 0);
+INSERT INTO `tb_chat_message` VALUES (2, 3, 2, '？', 1, NULL, NULL, NULL, '2025-12-12 22:40:24', 0);
+INSERT INTO `tb_chat_message` VALUES (3, 3, 2, '？', 1, NULL, NULL, NULL, '2025-12-12 22:40:27', 0);
+INSERT INTO `tb_chat_message` VALUES (4, 4, 2, '？？', 1, NULL, NULL, NULL, '2025-12-12 22:41:10', 0);
+INSERT INTO `tb_chat_message` VALUES (5, 4, 2, '？？', 1, NULL, NULL, NULL, '2025-12-12 22:43:51', 0);
+INSERT INTO `tb_chat_message` VALUES (6, 3, 1, '..', 1, NULL, NULL, NULL, '2025-12-12 22:46:27', 0);
+INSERT INTO `tb_chat_message` VALUES (7, 3, 1, '..', 1, NULL, NULL, NULL, '2025-12-12 22:47:01', 0);
+INSERT INTO `tb_chat_message` VALUES (8, 4, 1, '..', 1, NULL, NULL, NULL, '2025-12-12 22:47:09', 0);
+INSERT INTO `tb_chat_message` VALUES (9, 3, 1, '？？？？？？？', 1, NULL, NULL, NULL, '2025-12-12 22:47:54', 0);
+INSERT INTO `tb_chat_message` VALUES (10, 3, 1, '？？', 1, NULL, NULL, NULL, '2025-12-12 22:49:34', 0);
+INSERT INTO `tb_chat_message` VALUES (11, 3, 1, '？？', 1, NULL, NULL, NULL, '2025-12-12 22:49:37', 0);
+INSERT INTO `tb_chat_message` VALUES (12, 3, 1, '。。。', 1, NULL, NULL, NULL, '2025-12-12 22:50:29', 0);
+INSERT INTO `tb_chat_message` VALUES (13, 3, 1, '。。', 1, NULL, NULL, NULL, '2025-12-12 22:50:32', 0);
+INSERT INTO `tb_chat_message` VALUES (14, 3, 1, '？？', 1, NULL, NULL, NULL, '2025-12-12 22:53:03', 0);
+INSERT INTO `tb_chat_message` VALUES (15, 3, 1, '。。', 1, NULL, NULL, NULL, '2025-12-12 22:57:28', 0);
+INSERT INTO `tb_chat_message` VALUES (16, 3, 1, '。', 1, NULL, NULL, NULL, '2025-12-12 22:57:52', 0);
+INSERT INTO `tb_chat_message` VALUES (17, 3, 1, '？', 1, NULL, NULL, NULL, '2025-12-12 22:58:00', 0);
+INSERT INTO `tb_chat_message` VALUES (18, 3, 1, '。。', 1, NULL, NULL, NULL, '2025-12-12 23:02:24', 0);
+INSERT INTO `tb_chat_message` VALUES (19, 3, 1, '下周计划', 1, NULL, NULL, NULL, '2025-12-12 23:09:26', 0);
+INSERT INTO `tb_chat_message` VALUES (20, 3, 2, 'http://localhost:8080/uploads/chat/chat_f097877117624f14a4abac5fe7e851fd.jpg', 2, NULL, NULL, NULL, '2025-12-13 00:24:14', 0);
+INSERT INTO `tb_chat_message` VALUES (21, 6, 1, '123', 1, NULL, NULL, NULL, '2025-12-13 01:29:52', 0);
+INSERT INTO `tb_chat_message` VALUES (22, 6, 1, '12', 1, NULL, NULL, NULL, '2025-12-14 01:39:49', 0);
+INSERT INTO `tb_chat_message` VALUES (23, 3, 2, '?', 1, NULL, NULL, NULL, '2025-12-14 01:40:28', 0);
+INSERT INTO `tb_chat_message` VALUES (24, 7, 1, 'weqw', 1, NULL, NULL, NULL, '2025-12-14 17:22:01', 0);
+
+-- ----------------------------
+-- Table structure for tb_chat_session
+-- ----------------------------
+DROP TABLE IF EXISTS `tb_chat_session`;
+CREATE TABLE `tb_chat_session`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '会话ID',
+  `session_type` tinyint NOT NULL DEFAULT 1 COMMENT '会话类型：1=私聊(1:1)，2=群聊(Group)',
+  `session_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '会话名称（群聊时显示，私聊可为空或自动生成）',
+  `last_message_content` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '最后一条消息内容快照（用于列表展示）',
+  `last_message_type` tinyint NULL DEFAULT 1 COMMENT '最后一条消息类型：1=文本，2=图片，3=文件',
+  `last_message_time` datetime NULL DEFAULT NULL COMMENT '最后一条消息发送时间（用于排序）',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_last_message_time`(`last_message_time` DESC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '聊天会话主表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Records of tb_chat_session
+-- ----------------------------
+INSERT INTO `tb_chat_session` VALUES (2, 1, NULL, NULL, 1, NULL, '2025-12-12 22:38:21', '2025-12-12 22:38:21');
+INSERT INTO `tb_chat_session` VALUES (3, 1, NULL, '?', 1, '2025-12-14 01:40:28', '2025-12-12 22:39:03', '2025-12-14 01:40:28');
+INSERT INTO `tb_chat_session` VALUES (4, 1, NULL, '..', 1, '2025-12-12 22:47:09', '2025-12-12 22:41:07', '2025-12-12 22:47:09');
+INSERT INTO `tb_chat_session` VALUES (5, 1, NULL, NULL, 1, NULL, '2025-12-12 23:06:47', '2025-12-12 23:06:47');
+INSERT INTO `tb_chat_session` VALUES (6, 1, NULL, '12', 1, '2025-12-14 01:39:49', '2025-12-13 01:29:49', '2025-12-14 01:39:49');
+INSERT INTO `tb_chat_session` VALUES (7, 1, NULL, 'weqw', 1, '2025-12-14 17:22:01', '2025-12-14 17:21:58', '2025-12-14 17:22:01');
+
+-- ----------------------------
+-- Table structure for tb_chat_session_member
+-- ----------------------------
+DROP TABLE IF EXISTS `tb_chat_session_member`;
+CREATE TABLE `tb_chat_session_member`  (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `session_id` bigint NOT NULL COMMENT '会话ID',
+  `user_id` int NOT NULL COMMENT '用户ID',
+  `user_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '用户名称快照（可选）',
+  `unread_count` int NOT NULL DEFAULT 0 COMMENT '未读消息数',
+  `is_top` tinyint NOT NULL DEFAULT 0 COMMENT '是否置顶：0=否，1=是',
+  `is_disturb` tinyint NOT NULL DEFAULT 0 COMMENT '消息免打扰：0=否，1=是',
+  `join_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '加入时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_session_user`(`session_id` ASC, `user_id` ASC) USING BTREE,
+  INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
+  CONSTRAINT `fk_member_session` FOREIGN KEY (`session_id`) REFERENCES `tb_chat_session` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '会话成员关联表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Records of tb_chat_session_member
+-- ----------------------------
+INSERT INTO `tb_chat_session_member` VALUES (3, 2, 1, NULL, 0, 0, 0, '2025-12-12 22:38:21', '2025-12-12 22:38:21');
+INSERT INTO `tb_chat_session_member` VALUES (4, 2, 16, NULL, 0, 0, 0, '2025-12-12 22:38:21', '2025-12-12 22:38:21');
+INSERT INTO `tb_chat_session_member` VALUES (5, 3, 2, NULL, 0, 0, 0, '2025-12-12 22:39:03', '2025-12-12 23:09:29');
+INSERT INTO `tb_chat_session_member` VALUES (6, 3, 1, NULL, 0, 0, 0, '2025-12-12 22:39:03', '2025-12-14 01:40:32');
+INSERT INTO `tb_chat_session_member` VALUES (7, 4, 2, NULL, 0, 0, 0, '2025-12-12 22:41:07', '2025-12-12 23:12:27');
+INSERT INTO `tb_chat_session_member` VALUES (8, 4, 16, NULL, 3, 0, 0, '2025-12-12 22:41:07', '2025-12-12 22:47:08');
+INSERT INTO `tb_chat_session_member` VALUES (9, 5, 1, NULL, 0, 0, 0, '2025-12-12 23:06:47', '2025-12-12 23:06:47');
+INSERT INTO `tb_chat_session_member` VALUES (10, 5, 3, NULL, 0, 0, 0, '2025-12-12 23:06:47', '2025-12-12 23:06:47');
+INSERT INTO `tb_chat_session_member` VALUES (11, 6, 1, NULL, 0, 0, 0, '2025-12-13 01:29:49', '2025-12-13 01:29:49');
+INSERT INTO `tb_chat_session_member` VALUES (12, 6, 15, NULL, 2, 0, 0, '2025-12-13 01:29:49', '2025-12-14 01:39:48');
+INSERT INTO `tb_chat_session_member` VALUES (13, 7, 1, NULL, 0, 0, 0, '2025-12-14 17:21:58', '2025-12-14 17:21:58');
+INSERT INTO `tb_chat_session_member` VALUES (14, 7, 25, NULL, 1, 0, 0, '2025-12-14 17:21:58', '2025-12-14 17:22:01');
 
 -- ----------------------------
 -- Table structure for tb_commission
@@ -81,7 +192,7 @@ CREATE TABLE `tb_customer`  (
   INDEX `idx_sales_id`(`sales_id` ASC) USING BTREE,
   INDEX `idx_intention_level`(`intention_level` ASC) USING BTREE,
   CONSTRAINT `fk_customer_sales` FOREIGN KEY (`sales_id`) REFERENCES `tb_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 16 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '客户信息表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 24 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '客户信息表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_customer
@@ -101,30 +212,12 @@ INSERT INTO `tb_customer` VALUES (12, 'KH20240012', '王十四', '13600000012', 
 INSERT INTO `tb_customer` VALUES (13, 'KH20240013', '冯十五', '13600000013', '110101199001134567', 160.00, 12000000.00, '5室2厅', '浦东新区', 1, 5, '渠道合作', '2025-11-05 16:45:00', '2025-11-05 16:45:00');
 INSERT INTO `tb_customer` VALUES (14, 'KH20240014', '陈十六', '13600000014', '110101199002145678', 80.00, 2100000.00, '2室1厅', '江汉区', 2, 6, '线上咨询', '2025-11-06 10:10:00', '2025-11-06 10:10:00');
 INSERT INTO `tb_customer` VALUES (15, 'KH20240015', '褚十七', '13600000015', '110101199003156789', 110.00, 4500000.00, '3室2厅', '锦江区', 2, 4, '门店接待', '2025-11-07 13:00:00', '2025-11-07 13:00:00');
-
--- ----------------------------
--- Table structure for tb_favorites
--- ----------------------------
-DROP TABLE IF EXISTS `tb_favorites`;
-CREATE TABLE `tb_favorites`  (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL COMMENT '用户ID',
-  `target_type` enum('project','building','layout','unit') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '收藏类型',
-  `target_id` int NOT NULL COMMENT '收藏对象ID',
-  `created_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `unique_favorite`(`user_id` ASC, `target_type` ASC, `target_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
-
--- ----------------------------
--- Records of tb_favorites
--- ----------------------------
-INSERT INTO `tb_favorites` VALUES (1, 9, 'unit', 1, '2025-12-08 22:00:45');
-INSERT INTO `tb_favorites` VALUES (2, 9, 'unit', 5, '2025-12-08 22:00:45');
-INSERT INTO `tb_favorites` VALUES (3, 9, 'project', 1, '2025-12-08 22:00:45');
-INSERT INTO `tb_favorites` VALUES (4, 10, 'unit', 10, '2025-12-08 22:00:45');
-INSERT INTO `tb_favorites` VALUES (5, 10, 'project', 4, '2025-12-08 22:00:45');
-INSERT INTO `tb_favorites` VALUES (6, 1, 'unit', 12, '2025-12-08 22:00:45');
+INSERT INTO `tb_customer` VALUES (16, 'KH1765473088501', '11', '19200000321', '111', 1.00, 1.00, '1', '1', 2, NULL, '门店接待', '2025-12-12 01:11:29', '2025-12-12 01:11:29');
+INSERT INTO `tb_customer` VALUES (17, 'KH1765560402647', '12323', '18723234121', '123312231', 123.00, 123123.00, '21312', '121', 3, NULL, '广告投放', '2025-12-13 01:26:43', '2025-12-13 01:26:43');
+INSERT INTO `tb_customer` VALUES (19, 'KH1765562643332', 'admin', '18773219341', '12312', 12.00, 12.00, '12', '12', 1, NULL, '门店接待', '2025-12-13 02:04:03', '2025-12-13 02:04:03');
+INSERT INTO `tb_customer` VALUES (21, 'KH1765700492733', 'tt', '18212313231', '', 12.00, 12.00, '12', '12', 2, 1, '线上咨询', '2025-12-14 16:21:33', '2025-12-14 16:21:33');
+INSERT INTO `tb_customer` VALUES (22, 'KH1765704363715', '12', '13531231522', '', 12.00, 12.00, '12', '12', 2, 1, '线上咨询', '2025-12-14 17:26:04', '2025-12-14 17:26:04');
+INSERT INTO `tb_customer` VALUES (23, 'KH1765733204320', '21', '19032132131', '', 12.00, 12.00, '12', '12', 2, 4, '线上咨询', '2025-12-15 01:26:44', '2025-12-15 01:26:44');
 
 -- ----------------------------
 -- Table structure for tb_house
@@ -153,8 +246,11 @@ CREATE TABLE `tb_house`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_house_no`(`house_no` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE,
-  INDEX `idx_sales_id`(`sales_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 96 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '房源信息表' ROW_FORMAT = DYNAMIC;
+  INDEX `idx_sales_id`(`sales_id` ASC) USING BTREE,
+  INDEX `fk_house_project`(`project_id` ASC) USING BTREE,
+  CONSTRAINT `fk_house_project` FOREIGN KEY (`project_id`) REFERENCES `tb_project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `fk_house_sales` FOREIGN KEY (`sales_id`) REFERENCES `tb_user` (`id`) ON DELETE SET NULL ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 102 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '房源信息表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_house
@@ -167,7 +263,7 @@ INSERT INTO `tb_house` VALUES (5, 'FC20240005', 150.00, 'E户型', '5室2厅2卫
 INSERT INTO `tb_house` VALUES (6, 'FC20240006', 110.00, 'F户型', '3室2厅1卫', 12, 25, '西南向', '精装修', 3500000.00, 1, 6, '中间楼层，采光充足', 1, 3, 3, '1202', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
 INSERT INTO `tb_house` VALUES (7, 'FC20240007', 135.00, 'G户型', '4室2厅2卫', 10, 18, '南北通透', '精装修', 5800000.00, 1, 4, '大平层，户型方正', 1, 1, 1, '1001', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
 INSERT INTO `tb_house` VALUES (8, 'FC20240008', 85.00, 'H户型', '2室1厅1卫', 6, 32, '北向', '简装', 1800000.00, 1, 5, '投资首选，租金回报率高', 1, 2, 2, '602', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
-INSERT INTO `tb_house` VALUES (9, 'FC20240009', 95.00, 'A新品', '3室2厅2卫', 12, 35, '南北通透', '毛坯', 8500000.00, 1, 4, '科技园核心，地铁上盖，智能家居', 2, 1, 4, '1201', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
+INSERT INTO `tb_house` VALUES (9, 'FC20240009', 95.00, 'A新品', '3室2厅2卫', 12, 35, '南北通透', '毛坯', 8500000.00, 2, 4, '科技园核心，地铁上盖，智能家居', 2, 1, 4, '1201', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
 INSERT INTO `tb_house` VALUES (10, 'FC20240010', 125.00, 'B新品', '4室2厅2卫', 20, 35, '南向', '毛坯', 11500000.00, 1, 4, '视野开阔，看深圳湾海景', 2, 1, 4, '2001', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
 INSERT INTO `tb_house` VALUES (11, 'FC20240011', 88.00, 'C洋房', '3室2厅1卫', 6, 8, '东南向', '精装修', 6500000.00, 1, 5, '西湖边低密度洋房，得房率高', 2, 2, 5, '601', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
 INSERT INTO `tb_house` VALUES (12, 'FC20240012', 145.00, 'D楼王', '4室2厅2卫', 8, 8, '南北通透', '豪华装修', 9800000.00, 1, 5, '楼王位置，私家花园，稀缺资源', 2, 2, 5, '801', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
@@ -240,10 +336,11 @@ INSERT INTO `tb_house` VALUES (79, 'FC20250052', 95.00, '白云清新', '3室2�
 INSERT INTO `tb_house` VALUES (89, 'FC202512080001', 121.00, '321', '3133', 12, 21, '南', '简装', 12.00, 1, 6, '21', 1, 21, 1, '1212', '2025-12-08 15:45:23', '2025-12-08 16:00:45');
 INSERT INTO `tb_house` VALUES (90, 'FC202512080002', 21.00, '12', '12', 12, 21, '南', '简装', 12.00, 4, 5, '12', 1, 12, 3, '21', '2025-12-08 15:45:56', '2025-12-08 15:45:56');
 INSERT INTO `tb_house` VALUES (91, 'FC202512080003', 12.00, '12', '123', 12, 12, '西', '精装修', 12.00, 4, 6, '12', 1, 21, 2, '21', '2025-12-08 15:48:50', '2025-12-08 15:48:50');
-INSERT INTO `tb_house` VALUES (92, 'FC202512080004', 12.00, '12', '121', 21, 21, '西', '豪华装修', 21.00, 1, 4, '12', 2, 12, 7, '12', '2025-12-08 15:49:18', '2025-12-10 18:21:01');
+INSERT INTO `tb_house` VALUES (92, 'FC202512080004', 12.00, '12', '121', 21, 21, '西', '豪华装修', 21.00, 1, 6, '1221', 2, 12, 7, '12', '2025-12-08 15:49:18', '2025-12-13 01:36:00');
 INSERT INTO `tb_house` VALUES (93, 'FC202512110001', 111.00, 'tt', 'test', 11, 11, '南', '简装', 1111.00, 1, 6, '11', 1, 11, 5, '11', '2025-12-11 01:24:08', '2025-12-11 01:24:08');
-INSERT INTO `tb_house` VALUES (94, 'FC202512110002', 11.00, '11', '11', 11, 11, '南', '简装', 9999999.00, 0, 6, '111', 1, 11, 4, '11', '2025-12-11 01:42:11', '2025-12-11 23:02:47');
-INSERT INTO `tb_house` VALUES (95, 'FC202512110003', 1.00, 'qq', 'test', 1, 1, '西', '毛坯', 1.00, 0, 6, '11', 1, 1, 2, '1', '2025-12-11 23:02:25', '2025-12-11 23:27:16');
+INSERT INTO `tb_house` VALUES (94, 'FC202512110002', 11.00, '11', '11', 11, 11, '南', '简装', 9999999.00, 1, 6, '111', 1, 11, 4, '11', '2025-12-11 01:42:11', '2025-12-14 16:49:32');
+INSERT INTO `tb_house` VALUES (95, 'FC202512110003', 1.00, 'qq', 'test', 1, 1, '西', '毛坯', 1.00, 1, 5, '11432321', 1, 1, 2, '1', '2025-12-11 23:02:25', '2025-12-14 16:46:55');
+INSERT INTO `tb_house` VALUES (98, 'FC202512140002', 312.00, '123', '3123', 12, 12, '东南', '豪华装修', 12.00, 1, 6, '12', 2, 12, 5, '12', '2025-12-14 17:35:19', '2025-12-14 19:46:08');
 
 -- ----------------------------
 -- Table structure for tb_house_image
@@ -269,7 +366,7 @@ CREATE TABLE `tb_house_image`  (
   CONSTRAINT `fk_image_audit_user` FOREIGN KEY (`audit_user_id`) REFERENCES `tb_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_image_house` FOREIGN KEY (`house_id`) REFERENCES `tb_house` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `fk_image_upload_user` FOREIGN KEY (`upload_user_id`) REFERENCES `tb_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 157 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '房源图片表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 199 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '房源图片表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_house_image
@@ -411,10 +508,11 @@ INSERT INTO `tb_house_image` VALUES (134, 68, 'FC20250042/cover.jpg', 1, 1, 5, 1
 INSERT INTO `tb_house_image` VALUES (135, 68, 'FC20250042/mountain_view.jpg', 4, 2, 5, 1, 2, '2025-10-30 09:00:00', '2025-11-28 21:53:23', '2025-11-28 21:53:23');
 INSERT INTO `tb_house_image` VALUES (145, 90, 'temp_1765179955569/f9c8b9ea-0029-4b91-93d2-4fcd3008442a.jpg', 1, 1, 1, 0, NULL, NULL, '2025-12-08 07:45:56', '2025-12-08 15:45:55');
 INSERT INTO `tb_house_image` VALUES (146, 91, 'temp_1765180130142/dcb3d10a-f1df-4593-8485-d5efd6886136.jpg', 1, 1, 1, 0, NULL, NULL, '2025-12-08 07:48:50', '2025-12-08 15:48:50');
-INSERT INTO `tb_house_image` VALUES (148, 92, 'temp_1765180158265/e7a947cf-c705-4501-a88c-55f102f2709d.jpg', 1, 1, 1, 0, NULL, NULL, '2025-12-10 10:21:01', '2025-12-10 18:21:01');
-INSERT INTO `tb_house_image` VALUES (152, 94, 'temp_1765465366831/bc0b8672-f277-4fff-ad5b-7b95f3bdb067.jpg', 1, 1, 1, 0, NULL, NULL, '2025-12-11 15:02:47', '2025-12-11 23:02:46');
-INSERT INTO `tb_house_image` VALUES (155, 95, '/temp_1765465345247/3258cafb-0d5e-4341-b00b-c779322ffcc4.jpg', 1, 1, 1, 0, NULL, NULL, '2025-12-11 15:27:16', '2025-12-11 23:27:16');
-INSERT INTO `tb_house_image` VALUES (156, 95, '/temp_1765465345247/ccdf8dbb-4b8d-499d-b32f-3bd280ef0fe9.jpg', 2, 2, 1, 0, NULL, NULL, '2025-12-11 15:27:16', '2025-12-11 23:27:16');
+INSERT INTO `tb_house_image` VALUES (162, 92, 'temp_1765560959898/00e72f7d-fa9f-4916-8c05-28775e11759e.jpg', 1, 1, 1, 0, NULL, NULL, '2025-12-12 17:36:00', '2025-12-13 01:35:59');
+INSERT INTO `tb_house_image` VALUES (163, 92, 'temp_1765560959898/e1762a8a-20f6-42d2-a0fa-8edaebdf5550.jpg', 2, 2, 1, 0, NULL, NULL, '2025-12-12 17:36:00', '2025-12-13 01:35:59');
+INSERT INTO `tb_house_image` VALUES (164, 95, 'temp_1765702015259/fd2faa00-4195-4e0c-8b4b-e89a8b19a7fe.jpg', 1, 1, 1, 0, NULL, NULL, '2025-12-14 08:46:55', '2025-12-14 16:46:55');
+INSERT INTO `tb_house_image` VALUES (165, 95, 'temp_1765702015259/2ac54419-b19b-4446-85e4-ba87bd5d4dbc.jpg', 2, 2, 1, 0, NULL, NULL, '2025-12-14 08:46:55', '2025-12-14 16:46:55');
+INSERT INTO `tb_house_image` VALUES (166, 94, 'temp_1765702172367/ceb8cfb8-d765-4c08-89bc-fa173674ffbd.jpg', 1, 1, 1, 0, NULL, NULL, '2025-12-14 08:49:32', '2025-12-14 16:49:32');
 
 -- ----------------------------
 -- Table structure for tb_new_house_info
@@ -435,7 +533,7 @@ CREATE TABLE `tb_new_house_info`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_house_id`(`house_id` ASC) USING BTREE,
   CONSTRAINT `fk_new_house_info_house` FOREIGN KEY (`house_id`) REFERENCES `tb_house` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 62 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '新房扩展信息表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 64 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '新房扩展信息表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_new_house_info
@@ -499,7 +597,8 @@ INSERT INTO `tb_new_house_info` VALUES (56, 76, 'YSXK202400020', 5300000.00, 70,
 INSERT INTO `tb_new_house_info` VALUES (57, 77, 'YSXK202400020', 7800000.00, 70, '2027-09-30', '毛坯', '2梯2户', 79.00, '2025-12-01 20:14:54', '2025-12-01 20:14:54');
 INSERT INTO `tb_new_house_info` VALUES (58, 78, 'YSXK202400021', 7800000.00, 70, '2027-05-31', '毛坯', '2梯2户', 80.00, '2025-12-01 20:14:54', '2025-12-01 20:14:54');
 INSERT INTO `tb_new_house_info` VALUES (59, 79, 'YSXK202400021', 5500000.00, 70, '2027-05-31', '毛坯', '2梯4户', 76.50, '2025-12-01 20:14:54', '2025-12-01 20:14:54');
-INSERT INTO `tb_new_house_info` VALUES (61, 92, '', 123.00, 70, '2025-12-29', '毛坯', '', 100.00, '2025-12-08 15:49:18', '2025-12-08 15:49:18');
+INSERT INTO `tb_new_house_info` VALUES (61, 92, '', 123.00, 70, '2025-12-28', '毛坯', '', 100.00, '2025-12-08 15:49:18', '2025-12-08 15:49:18');
+INSERT INTO `tb_new_house_info` VALUES (62, 98, '123', 123.00, 70, '2025-12-27', '毛坯', '112', 12.00, '2025-12-14 17:35:19', '2025-12-14 17:35:19');
 
 -- ----------------------------
 -- Table structure for tb_notice_read
@@ -515,7 +614,7 @@ CREATE TABLE `tb_notice_read`  (
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
   CONSTRAINT `fk_notice_read_notice` FOREIGN KEY (`notice_id`) REFERENCES `tb_work_notice` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `fk_notice_read_user` FOREIGN KEY (`user_id`) REFERENCES `tb_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 51 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '通知阅读记录表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 150 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '通知阅读记录表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_notice_read
@@ -570,6 +669,105 @@ INSERT INTO `tb_notice_read` VALUES (47, 21, 1, '2025-12-10 17:34:21');
 INSERT INTO `tb_notice_read` VALUES (48, 20, 1, '2025-12-10 17:34:24');
 INSERT INTO `tb_notice_read` VALUES (49, 14, 1, '2025-12-10 17:35:27');
 INSERT INTO `tb_notice_read` VALUES (50, 19, 1, '2025-12-10 17:56:19');
+INSERT INTO `tb_notice_read` VALUES (51, 73, 1, '2025-12-12 12:55:45');
+INSERT INTO `tb_notice_read` VALUES (52, 72, 1, '2025-12-12 12:55:47');
+INSERT INTO `tb_notice_read` VALUES (53, 71, 1, '2025-12-12 12:55:49');
+INSERT INTO `tb_notice_read` VALUES (54, 70, 1, '2025-12-12 12:55:50');
+INSERT INTO `tb_notice_read` VALUES (55, 69, 1, '2025-12-12 12:55:55');
+INSERT INTO `tb_notice_read` VALUES (56, 68, 1, '2025-12-12 12:56:09');
+INSERT INTO `tb_notice_read` VALUES (57, 67, 1, '2025-12-12 12:56:10');
+INSERT INTO `tb_notice_read` VALUES (58, 66, 1, '2025-12-12 12:56:11');
+INSERT INTO `tb_notice_read` VALUES (59, 65, 1, '2025-12-12 12:56:13');
+INSERT INTO `tb_notice_read` VALUES (60, 64, 1, '2025-12-12 12:56:14');
+INSERT INTO `tb_notice_read` VALUES (61, 60, 1, '2025-12-12 12:56:19');
+INSERT INTO `tb_notice_read` VALUES (62, 61, 1, '2025-12-12 12:56:20');
+INSERT INTO `tb_notice_read` VALUES (63, 59, 1, '2025-12-12 12:56:21');
+INSERT INTO `tb_notice_read` VALUES (64, 57, 1, '2025-12-12 12:56:22');
+INSERT INTO `tb_notice_read` VALUES (65, 58, 1, '2025-12-12 12:56:23');
+INSERT INTO `tb_notice_read` VALUES (66, 56, 1, '2025-12-12 12:56:25');
+INSERT INTO `tb_notice_read` VALUES (67, 54, 1, '2025-12-12 12:56:26');
+INSERT INTO `tb_notice_read` VALUES (68, 55, 1, '2025-12-12 12:56:32');
+INSERT INTO `tb_notice_read` VALUES (69, 63, 1, '2025-12-12 12:58:49');
+INSERT INTO `tb_notice_read` VALUES (70, 62, 1, '2025-12-12 12:58:51');
+INSERT INTO `tb_notice_read` VALUES (71, 32, 1, '2025-12-12 13:00:47');
+INSERT INTO `tb_notice_read` VALUES (72, 30, 1, '2025-12-12 13:00:48');
+INSERT INTO `tb_notice_read` VALUES (73, 29, 1, '2025-12-12 13:00:49');
+INSERT INTO `tb_notice_read` VALUES (74, 28, 1, '2025-12-12 13:00:51');
+INSERT INTO `tb_notice_read` VALUES (75, 27, 1, '2025-12-12 13:00:52');
+INSERT INTO `tb_notice_read` VALUES (76, 26, 1, '2025-12-12 13:00:53');
+INSERT INTO `tb_notice_read` VALUES (77, 25, 1, '2025-12-12 13:00:55');
+INSERT INTO `tb_notice_read` VALUES (78, 23, 1, '2025-12-12 13:00:56');
+INSERT INTO `tb_notice_read` VALUES (79, 17, 1, '2025-12-12 13:00:59');
+INSERT INTO `tb_notice_read` VALUES (80, 3, 1, '2025-12-12 13:01:01');
+INSERT INTO `tb_notice_read` VALUES (81, 1, 1, '2025-12-12 13:01:02');
+INSERT INTO `tb_notice_read` VALUES (82, 40, 1, '2025-12-12 13:01:06');
+INSERT INTO `tb_notice_read` VALUES (83, 41, 1, '2025-12-12 13:01:09');
+INSERT INTO `tb_notice_read` VALUES (84, 42, 1, '2025-12-12 13:01:11');
+INSERT INTO `tb_notice_read` VALUES (85, 38, 1, '2025-12-12 13:01:12');
+INSERT INTO `tb_notice_read` VALUES (86, 37, 1, '2025-12-12 13:01:13');
+INSERT INTO `tb_notice_read` VALUES (87, 36, 1, '2025-12-12 13:01:15');
+INSERT INTO `tb_notice_read` VALUES (88, 35, 1, '2025-12-12 13:01:16');
+INSERT INTO `tb_notice_read` VALUES (89, 34, 1, '2025-12-12 13:01:17');
+INSERT INTO `tb_notice_read` VALUES (90, 51, 1, '2025-12-12 13:01:20');
+INSERT INTO `tb_notice_read` VALUES (91, 50, 1, '2025-12-12 13:01:21');
+INSERT INTO `tb_notice_read` VALUES (92, 49, 1, '2025-12-12 13:01:22');
+INSERT INTO `tb_notice_read` VALUES (93, 48, 1, '2025-12-12 13:01:24');
+INSERT INTO `tb_notice_read` VALUES (94, 45, 1, '2025-12-12 13:01:25');
+INSERT INTO `tb_notice_read` VALUES (95, 46, 1, '2025-12-12 13:01:27');
+INSERT INTO `tb_notice_read` VALUES (96, 44, 1, '2025-12-12 13:01:29');
+INSERT INTO `tb_notice_read` VALUES (97, 43, 1, '2025-12-12 13:01:31');
+INSERT INTO `tb_notice_read` VALUES (98, 53, 1, '2025-12-12 13:01:55');
+INSERT INTO `tb_notice_read` VALUES (99, 52, 1, '2025-12-12 13:01:57');
+INSERT INTO `tb_notice_read` VALUES (100, 47, 1, '2025-12-12 13:01:58');
+INSERT INTO `tb_notice_read` VALUES (101, 39, 1, '2025-12-12 13:01:59');
+INSERT INTO `tb_notice_read` VALUES (102, 31, 1, '2025-12-12 13:02:00');
+INSERT INTO `tb_notice_read` VALUES (103, 33, 1, '2025-12-12 13:02:01');
+INSERT INTO `tb_notice_read` VALUES (104, 24, 1, '2025-12-12 13:02:03');
+INSERT INTO `tb_notice_read` VALUES (105, 22, 1, '2025-12-12 13:02:05');
+INSERT INTO `tb_notice_read` VALUES (106, 106, 1, '2025-12-13 08:04:20');
+INSERT INTO `tb_notice_read` VALUES (107, 105, 1, '2025-12-13 08:06:31');
+INSERT INTO `tb_notice_read` VALUES (108, 104, 1, '2025-12-13 08:06:33');
+INSERT INTO `tb_notice_read` VALUES (109, 101, 1, '2025-12-13 08:06:35');
+INSERT INTO `tb_notice_read` VALUES (110, 100, 1, '2025-12-13 08:06:37');
+INSERT INTO `tb_notice_read` VALUES (111, 99, 1, '2025-12-13 08:06:41');
+INSERT INTO `tb_notice_read` VALUES (112, 98, 1, '2025-12-13 08:06:42');
+INSERT INTO `tb_notice_read` VALUES (113, 97, 1, '2025-12-13 08:06:43');
+INSERT INTO `tb_notice_read` VALUES (114, 96, 1, '2025-12-13 08:06:44');
+INSERT INTO `tb_notice_read` VALUES (115, 92, 1, '2025-12-13 08:06:45');
+INSERT INTO `tb_notice_read` VALUES (116, 108, 1, '2025-12-13 08:07:47');
+INSERT INTO `tb_notice_read` VALUES (117, 107, 1, '2025-12-13 08:07:49');
+INSERT INTO `tb_notice_read` VALUES (118, 101, 4, '2025-12-13 08:42:28');
+INSERT INTO `tb_notice_read` VALUES (119, 99, 4, '2025-12-13 08:42:29');
+INSERT INTO `tb_notice_read` VALUES (120, 55, 4, '2025-12-13 08:42:30');
+INSERT INTO `tb_notice_read` VALUES (121, 52, 4, '2025-12-13 08:42:31');
+INSERT INTO `tb_notice_read` VALUES (122, 107, 2, '2025-12-13 09:10:50');
+INSERT INTO `tb_notice_read` VALUES (123, 99, 2, '2025-12-13 09:13:04');
+INSERT INTO `tb_notice_read` VALUES (124, 110, 1, '2025-12-14 08:43:09');
+INSERT INTO `tb_notice_read` VALUES (125, 109, 1, '2025-12-14 08:43:11');
+INSERT INTO `tb_notice_read` VALUES (126, 93, 1, '2025-12-14 08:43:19');
+INSERT INTO `tb_notice_read` VALUES (127, 94, 1, '2025-12-14 08:43:21');
+INSERT INTO `tb_notice_read` VALUES (128, 95, 1, '2025-12-14 08:43:22');
+INSERT INTO `tb_notice_read` VALUES (129, 90, 1, '2025-12-14 08:43:24');
+INSERT INTO `tb_notice_read` VALUES (130, 91, 1, '2025-12-14 08:43:25');
+INSERT INTO `tb_notice_read` VALUES (131, 86, 1, '2025-12-14 08:43:27');
+INSERT INTO `tb_notice_read` VALUES (132, 87, 1, '2025-12-14 08:43:28');
+INSERT INTO `tb_notice_read` VALUES (133, 88, 1, '2025-12-14 08:43:29');
+INSERT INTO `tb_notice_read` VALUES (134, 89, 1, '2025-12-14 08:43:30');
+INSERT INTO `tb_notice_read` VALUES (135, 85, 1, '2025-12-14 08:43:33');
+INSERT INTO `tb_notice_read` VALUES (136, 74, 1, '2025-12-14 08:43:35');
+INSERT INTO `tb_notice_read` VALUES (137, 84, 1, '2025-12-14 08:43:43');
+INSERT INTO `tb_notice_read` VALUES (138, 83, 1, '2025-12-14 08:43:44');
+INSERT INTO `tb_notice_read` VALUES (139, 82, 1, '2025-12-14 08:43:46');
+INSERT INTO `tb_notice_read` VALUES (140, 81, 1, '2025-12-14 08:43:47');
+INSERT INTO `tb_notice_read` VALUES (141, 80, 1, '2025-12-14 08:43:49');
+INSERT INTO `tb_notice_read` VALUES (142, 79, 1, '2025-12-14 08:43:50');
+INSERT INTO `tb_notice_read` VALUES (143, 78, 1, '2025-12-14 08:43:59');
+INSERT INTO `tb_notice_read` VALUES (144, 77, 1, '2025-12-14 08:44:00');
+INSERT INTO `tb_notice_read` VALUES (145, 76, 1, '2025-12-14 08:44:02');
+INSERT INTO `tb_notice_read` VALUES (146, 75, 1, '2025-12-14 08:44:04');
+INSERT INTO `tb_notice_read` VALUES (147, 113, 1, '2025-12-14 09:00:08');
+INSERT INTO `tb_notice_read` VALUES (148, 13, 2, '2025-12-14 13:14:15');
+INSERT INTO `tb_notice_read` VALUES (149, 115, 2, '2025-12-14 13:14:17');
 
 -- ----------------------------
 -- Table structure for tb_operation_log
@@ -636,15 +834,18 @@ CREATE TABLE `tb_payment`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_receipt_no`(`receipt_no` ASC) USING BTREE,
-  INDEX `idx_transaction_id`(`transaction_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 17 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '收退款记录表' ROW_FORMAT = Dynamic;
+  INDEX `idx_transaction_id`(`transaction_id` ASC) USING BTREE,
+  INDEX `fk_payment_finance`(`finance_id` ASC) USING BTREE,
+  CONSTRAINT `fk_payment_finance` FOREIGN KEY (`finance_id`) REFERENCES `tb_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `fk_payment_trans` FOREIGN KEY (`transaction_id`) REFERENCES `tb_transaction` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 32 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '收退款记录表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of tb_payment
 -- ----------------------------
 INSERT INTO `tb_payment` VALUES (1, 1, 1, 1, 100000.00, 1, '2024-10-18 10:15:00', '银行转账', 'SK202410180001', NULL, '张三', 7, '交易JY20240001定金收款', '2025-12-09 16:14:02', '2025-12-09 16:14:02');
 INSERT INTO `tb_payment` VALUES (2, 1, 2, 1, 2000000.00, 1, '2024-10-25 14:20:00', '银行转账', 'SK202410250001', NULL, '张三', 8, '交易JY20240001首付款收款', '2025-12-09 16:14:02', '2025-12-09 16:14:02');
-INSERT INTO `tb_payment` VALUES (3, 1, 4, 1, 102000.00, 0, '2024-11-15 09:30:00', '微信支付', 'SK202411150005', NULL, '张三', 7, '交易JY20240001中介费(2%)', '2025-12-09 16:14:02', '2025-12-09 17:36:59');
+INSERT INTO `tb_payment` VALUES (3, 1, 2, 1, 102003.00, 0, '2024-11-15 09:30:00', '微信支付', 'SK202411150005', NULL, '张三', 7, '交易JY20240001中介费(2%)', '2025-12-09 16:14:02', '2025-12-12 17:12:20');
 INSERT INTO `tb_payment` VALUES (4, 2, 1, 1, 50000.00, 1, '2024-10-20 11:10:00', '支付宝', 'SK202410200002', NULL, '李四', 8, '交易JY20240002定金', '2025-12-09 16:14:02', '2025-12-09 16:14:02');
 INSERT INTO `tb_payment` VALUES (5, 2, 2, 1, 1000000.00, 1, '2024-10-27 15:30:00', '银行转账', 'SK202410270003', NULL, '李四', 7, '交易JY20240002首付款', '2025-12-09 16:14:02', '2025-12-09 16:14:02');
 INSERT INTO `tb_payment` VALUES (6, 3, 1, 1, 80000.00, 1, '2024-10-22 09:45:00', '银行转账', 'SK202410220001', NULL, '王五', 7, '交易JY20240003定金', '2025-12-09 16:14:02', '2025-12-09 16:14:02');
@@ -658,6 +859,17 @@ INSERT INTO `tb_payment` VALUES (13, 9, 2, 1, 1000000.00, 1, '2025-11-05 14:20:0
 INSERT INTO `tb_payment` VALUES (14, 11, 1, 1, 50000.00, 1, '2025-11-08 11:10:00', '支付宝', 'SK202511080001', NULL, '陈十六', 8, '交易JY20240011定金', '2025-12-09 16:14:02', '2025-12-09 16:14:02');
 INSERT INTO `tb_payment` VALUES (15, 11, 2, 1, 234600.00, 1, '2025-11-10 15:15:00', '银行转账', 'SK202511100003', NULL, '陈十六', 7, '交易JY20240011首付款', '2025-12-09 16:14:02', '2025-12-09 16:14:02');
 INSERT INTO `tb_payment` VALUES (16, 11, 1, 2, 50000.00, 1, '2025-11-26 09:00:00', '银行转账', 'TK202511260001', NULL, '陈十六', 7, '交易JY20240011定金退款(模拟流程)', '2025-12-09 16:14:02', '2025-12-09 16:14:02');
+INSERT INTO `tb_payment` VALUES (17, 16, 1, 1, 100000.00, 0, '2025-12-12 17:21:38', '银行转账', 'REC20251212199940', '', '', 1, '', '2025-12-12 17:21:38', '2025-12-12 17:21:57');
+INSERT INTO `tb_payment` VALUES (21, 16, 2, 1, 500000.00, 0, '2025-12-12 09:27:51', '现金', 'REC20251212199941', '', '本人', 1, '11', '2025-12-12 17:27:52', '2025-12-12 17:27:52');
+INSERT INTO `tb_payment` VALUES (23, 16, 3, 1, 300000.00, 2, '2025-12-12 09:30:22', '银行转账', 'REC20251212173022863794', '', '贷款', 1, '银行贷款 [作废原因: test]', '2025-12-12 17:30:23', '2025-12-12 17:30:23');
+INSERT INTO `tb_payment` VALUES (24, 16, 3, 1, 100000.00, 2, '2025-12-12 09:39:58', '现金', 'REC20251212173957220479', '', '', 1, ' [作废原因: 12]', '2025-12-12 17:39:58', '2025-12-12 17:39:58');
+INSERT INTO `tb_payment` VALUES (25, 16, 1, 1, 1.00, 0, '2025-12-12 09:42:46', '现金', 'REC20251212174246378579', '', '1', 1, 'test', '2025-12-12 17:42:46', '2025-12-12 17:42:46');
+INSERT INTO `tb_payment` VALUES (26, 15, 2, 1, 1212.00, 0, '2025-12-12 09:45:40', '现金', 'REC20251212174540435634', '', '1', 1, '', '2025-12-12 17:45:40', '2025-12-12 17:45:40');
+INSERT INTO `tb_payment` VALUES (27, 15, 2, 1, 121.00, 0, '2025-12-12 09:46:53', '银行转账', 'REC20251212174652962535', '', '1', 1, '111', '2025-12-12 17:46:53', '2025-12-12 17:46:53');
+INSERT INTO `tb_payment` VALUES (28, 10, 2, 1, 121.00, 0, '2025-12-12 09:47:31', '银行转账', 'REC20251212174731611336', '/proof/TX10_20251212204025_6571.jpg', '12', 1, '121', '2025-12-12 17:47:31', '2025-12-12 20:40:25');
+INSERT INTO `tb_payment` VALUES (29, 14, 2, 1, 121.00, 0, '2025-12-12 09:51:58', '现金', 'REC20251212175158461620', '/proof/TX14_20251214032112_8809.jpg', '12', 1, '12', '2025-12-12 17:51:58', '2025-12-14 03:21:12');
+INSERT INTO `tb_payment` VALUES (30, 14, 3, 1, 123.00, 2, '2025-12-12 09:53:05', '银行转账', 'REC20251212175305386498', '/proof/TX14_20251213021831_3539.jpg', '112', 1, '11112 [作废原因: ``]', '2025-12-12 17:53:05', '2025-12-13 02:18:32');
+INSERT INTO `tb_payment` VALUES (31, 20, 1, 1, 100000.00, 1, '2025-12-14 21:50:00', 'bank', 'REC20251214220548409755', '', '', 1, '定金', '2025-12-14 22:05:48', '2025-12-14 22:05:48');
 
 -- ----------------------------
 -- Table structure for tb_permission
@@ -680,7 +892,7 @@ CREATE TABLE `tb_permission`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_permission_code`(`permission_code` ASC) USING BTREE,
   INDEX `idx_parent_id`(`parent_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 201 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '权限表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 208 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '权限表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_permission
@@ -692,7 +904,6 @@ INSERT INTO `tb_permission` VALUES (4, '菜单管理', 'menu:manage', 1, 1, '/sy
 INSERT INTO `tb_permission` VALUES (5, '操作日志', 'operation:log:manage', 1, 1, '/system/log', 'system/log/index', 'file-text', 104, '操作日志查看', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
 INSERT INTO `tb_permission` VALUES (6, '房源管理', 'house:manage', 1, 0, '/house', 'Layout', 'home', 200, '房源管理菜单', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
 INSERT INTO `tb_permission` VALUES (7, '房源列表', 'house:list:manage', 1, 6, '/house/list', 'house/list/index', 'table', 201, '房源列表管理', 1, '2025-12-06 22:50:16', '2025-12-06 23:20:34');
-INSERT INTO `tb_permission` VALUES (8, '新增房源', 'house:add:page', 1, 6, '/house/add', 'house/add/index', 'plus', 202, '新增房源页面', 1, '2025-12-06 22:50:16', '2025-12-06 23:20:34');
 INSERT INTO `tb_permission` VALUES (10, '房源统计', 'house:statistics:manage', 1, 6, '/house/statistics', 'house/statistics/index', 'bar-chart', 204, '房源统计菜单', 1, '2025-12-06 22:50:16', '2025-12-06 23:20:34');
 INSERT INTO `tb_permission` VALUES (11, '客户管理', 'customer:manage', 1, 0, '/customer', 'Layout', 'customer-service', 300, '客户管理菜单', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
 INSERT INTO `tb_permission` VALUES (12, '客户列表', 'customer:list:manage', 1, 11, '/customer/list', 'customer/list/index', 'form', 301, '客户列表菜单', 1, '2025-12-06 22:50:16', '2025-12-06 23:20:34');
@@ -721,22 +932,22 @@ INSERT INTO `tb_permission` VALUES (38, '客户报表', 'report:customer:manage'
 INSERT INTO `tb_permission` VALUES (39, '个人中心', 'profile:manage', 1, 0, '/profile', 'Layout', 'user', 1100, '个人中心菜单', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
 INSERT INTO `tb_permission` VALUES (40, '个人资料', 'profile:info:manage', 1, 39, '/profile/info', 'profile/info/index', 'table', 1101, '个人资料菜单', 1, '2025-12-06 22:50:16', '2025-12-06 23:20:34');
 INSERT INTO `tb_permission` VALUES (41, '修改密码', 'profile:password:manage', 1, 39, '/profile/password', 'profile/password/index', 'lock', 1102, '修改密码菜单', 1, '2025-12-06 22:50:16', '2025-12-06 23:20:34');
-INSERT INTO `tb_permission` VALUES (42, '房源编辑页面', 'house:edit:page', 2, 4, NULL, NULL, NULL, 80, '进入房源编辑页面权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (43, '房源详情页面', 'house:detail:page', 2, 4, NULL, NULL, NULL, 81, '进入房源详情页面权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (44, '图片管理页面', 'house:image:manage:page', 2, 4, NULL, NULL, NULL, 82, '进入图片管理页面权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (45, '图片上传页面', 'house:image:upload:page', 2, 4, NULL, NULL, NULL, 83, '进入图片上传页面权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (46, '图片审核页面', 'house:image:audit:page', 2, 4, NULL, NULL, NULL, 84, '进入图片审核页面权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (47, '新房管理页面', 'house:new:manage:page', 2, 4, NULL, NULL, NULL, 85, '进入新房管理页面权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (48, '新房项目页面', 'house:new:project:page', 2, 4, NULL, NULL, NULL, 86, '进入新房项目页面权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (49, '新房统计页面', 'house:new:statistics:page', 2, 4, NULL, NULL, NULL, 87, '进入新房统计页面权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (50, '二手房管理页面', 'house:second:manage:page', 2, 4, NULL, NULL, NULL, 88, '进入二手房管理页面权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (51, '小区管理页面', 'house:community:manage:page', 2, 4, NULL, NULL, NULL, 89, '进入小区管理页面权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (52, '二手房标签页面', 'house:second:tag:page', 2, 4, NULL, NULL, NULL, 90, '进入二手房标签页面权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (53, '二手房统计页面', 'house:second:statistics:page', 2, 4, NULL, NULL, NULL, 91, '进入二手房统计页面权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (54, '高级搜索页面', 'house:search:advanced:page', 2, 4, NULL, NULL, NULL, 92, '进入高级搜索页面权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (55, '地图找房页面', 'house:map:page', 2, 4, NULL, NULL, NULL, 93, '进入地图找房页面权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (56, '智能推荐页面', 'house:recommend:page', 2, 4, NULL, NULL, NULL, 94, '进入智能推荐页面权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (57, '房源分配页面', 'house:assign:page', 2, 4, NULL, NULL, NULL, 95, '进入房源分配页面权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
+INSERT INTO `tb_permission` VALUES (42, '房源编辑页面', 'house:edit:page', 2, 6, NULL, NULL, NULL, 80, '进入房源编辑页面权限', 1, '2025-12-06 22:50:16', '2025-12-12 01:07:35');
+INSERT INTO `tb_permission` VALUES (43, '房源详情页面', 'house:detail:page', 2, 6, NULL, NULL, NULL, 81, '进入房源详情页面权限', 1, '2025-12-06 22:50:16', '2025-12-12 01:07:35');
+INSERT INTO `tb_permission` VALUES (44, '图片管理页面', 'house:image:manage:page', 2, 6, NULL, NULL, NULL, 82, '进入图片管理页面权限', 1, '2025-12-06 22:50:16', '2025-12-12 01:07:35');
+INSERT INTO `tb_permission` VALUES (45, '图片上传页面', 'house:image:upload:page', 2, 6, NULL, NULL, NULL, 83, '进入图片上传页面权限', 1, '2025-12-06 22:50:16', '2025-12-12 01:07:35');
+INSERT INTO `tb_permission` VALUES (46, '图片审核页面', 'house:image:audit:page', 2, 6, NULL, NULL, NULL, 84, '进入图片审核页面权限', 1, '2025-12-06 22:50:16', '2025-12-12 01:07:35');
+INSERT INTO `tb_permission` VALUES (47, '新房管理页面', 'house:new:manage:page', 2, 6, NULL, NULL, NULL, 85, '进入新房管理页面权限', 1, '2025-12-06 22:50:16', '2025-12-12 01:07:35');
+INSERT INTO `tb_permission` VALUES (48, '新房项目页面', 'house:new:project:page', 2, 6, NULL, NULL, NULL, 86, '进入新房项目页面权限', 1, '2025-12-06 22:50:16', '2025-12-12 01:07:35');
+INSERT INTO `tb_permission` VALUES (49, '新房统计页面', 'house:new:statistics:page', 2, 6, NULL, NULL, NULL, 87, '进入新房统计页面权限', 1, '2025-12-06 22:50:16', '2025-12-12 01:07:35');
+INSERT INTO `tb_permission` VALUES (50, '二手房管理页面', 'house:second:manage:page', 2, 6, NULL, NULL, NULL, 88, '进入二手房管理页面权限', 1, '2025-12-06 22:50:16', '2025-12-12 01:07:35');
+INSERT INTO `tb_permission` VALUES (51, '小区管理页面', 'house:community:manage:page', 2, 6, NULL, NULL, NULL, 89, '进入小区管理页面权限', 1, '2025-12-06 22:50:16', '2025-12-12 01:07:35');
+INSERT INTO `tb_permission` VALUES (52, '二手房标签页面', 'house:second:tag:page', 2, 6, NULL, NULL, NULL, 90, '进入二手房标签页面权限', 1, '2025-12-06 22:50:16', '2025-12-12 01:07:35');
+INSERT INTO `tb_permission` VALUES (53, '二手房统计页面', 'house:second:statistics:page', 2, 6, NULL, NULL, NULL, 91, '进入二手房统计页面权限', 1, '2025-12-06 22:50:16', '2025-12-12 01:07:35');
+INSERT INTO `tb_permission` VALUES (54, '高级搜索页面', 'house:search:advanced:page', 2, 6, NULL, NULL, NULL, 92, '进入高级搜索页面权限', 1, '2025-12-06 22:50:16', '2025-12-12 01:07:35');
+INSERT INTO `tb_permission` VALUES (55, '地图找房页面', 'house:map:page', 2, 6, NULL, NULL, NULL, 93, '进入地图找房页面权限', 1, '2025-12-06 22:50:16', '2025-12-12 01:07:35');
+INSERT INTO `tb_permission` VALUES (56, '智能推荐页面', 'house:recommend:page', 2, 6, NULL, NULL, NULL, 94, '进入智能推荐页面权限', 1, '2025-12-06 22:50:16', '2025-12-12 01:07:35');
+INSERT INTO `tb_permission` VALUES (57, '房源分配页面', 'house:assign:page', 2, 6, NULL, NULL, NULL, 95, '进入房源分配页面权限', 1, '2025-12-06 22:50:16', '2025-12-12 01:07:35');
 INSERT INTO `tb_permission` VALUES (58, '审核记录页面', 'house:audit:record:page', 2, 129, NULL, NULL, NULL, 96, '进入审核记录页面权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
 INSERT INTO `tb_permission` VALUES (59, '房源概览页面', 'house:statistics:overview:page', 2, 130, NULL, NULL, NULL, 60, '进入房源概览页面权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
 INSERT INTO `tb_permission` VALUES (60, '区域分布页面', 'house:statistics:region:page', 2, 130, NULL, NULL, NULL, 61, '进入区域分布页面权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
@@ -754,20 +965,15 @@ INSERT INTO `tb_permission` VALUES (71, '权限详情页面', 'permission:detail
 INSERT INTO `tb_permission` VALUES (72, '编辑资料页面', 'profile:edit:page', 2, 158, NULL, NULL, NULL, 1110, '进入编辑个人资料页面权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
 INSERT INTO `tb_permission` VALUES (73, '查看房源', 'house:view', 2, 4, NULL, NULL, NULL, 1, '查看房源权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
 INSERT INTO `tb_permission` VALUES (74, '查看个人房源', 'house:view:own', 2, 4, NULL, NULL, NULL, 2, '查看个人房源权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (75, '新增房源', 'house:add', 2, 4, NULL, NULL, NULL, 3, '新增房源权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (76, '编辑房源', 'house:edit', 2, 7, NULL, NULL, NULL, 4, '房源列表页-编辑房源按钮权限', 1, '2025-12-06 22:50:16', '2025-12-08 15:25:50');
-INSERT INTO `tb_permission` VALUES (77, '编辑个人房源', 'house:edit:own', 2, 4, NULL, NULL, NULL, 5, '编辑个人房源权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
+INSERT INTO `tb_permission` VALUES (75, '新增房源', 'house:add', 2, 4, NULL, NULL, NULL, 3, '新增房源按钮权限（房源列表页）', 1, '2025-12-06 22:50:16', '2025-12-12 01:07:35');
+INSERT INTO `tb_permission` VALUES (76, '编辑房源', 'house:edit', 2, 6, NULL, NULL, NULL, 4, '编辑房源按钮权限（房源列表页）', 1, '2025-12-06 22:50:16', '2025-12-12 01:07:35');
+INSERT INTO `tb_permission` VALUES (77, '编辑个人房源', 'house:edit:own', 2, 4, NULL, NULL, NULL, 5, '编辑个人房源按钮权限（仅自己的房源）', 1, '2025-12-06 22:50:16', '2025-12-12 01:07:35');
 INSERT INTO `tb_permission` VALUES (78, '审核房源', 'house:audit', 2, 4, NULL, NULL, NULL, 6, '审核房源权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
 INSERT INTO `tb_permission` VALUES (79, '浏览公开房源', 'house:browse', 2, 4, NULL, NULL, NULL, 7, '浏览公开房源权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (80, '删除房源', 'house:delete', 2, 4, NULL, NULL, NULL, 8, '删除房源权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (81, '删除个人房源', 'house:delete:own', 2, 4, NULL, NULL, NULL, 9, '删除个人房源权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
+INSERT INTO `tb_permission` VALUES (80, '删除房源', 'house:delete', 2, 4, NULL, NULL, NULL, 8, '删除房源按钮权限（房源列表页）', 1, '2025-12-06 22:50:16', '2025-12-12 01:07:35');
+INSERT INTO `tb_permission` VALUES (81, '删除个人房源', 'house:delete:own', 2, 4, NULL, NULL, NULL, 9, '删除个人房源按钮权限（仅自己的房源）', 1, '2025-12-06 22:50:16', '2025-12-12 01:07:35');
 INSERT INTO `tb_permission` VALUES (82, '查看房源列表', 'house:list:view', 2, 4, NULL, NULL, NULL, 10, '查看房源列表权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
 INSERT INTO `tb_permission` VALUES (83, '查看自己房源', 'house:list:view:own', 2, 4, NULL, NULL, NULL, 11, '仅查看自己的房源', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (84, '新增房源按钮', 'house:btn:add', 2, 4, NULL, NULL, NULL, 12, '新增房源按钮权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (85, '编辑房源按钮', 'house:btn:edit', 2, 4, NULL, NULL, NULL, 13, '编辑房源按钮权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (86, '编辑自己房源按钮', 'house:btn:edit:own', 2, 4, NULL, NULL, NULL, 14, '仅编辑自己房源', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (87, '删除房源按钮', 'house:btn:delete', 2, 4, NULL, NULL, NULL, 15, '删除房源按钮权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (88, '删除自己房源按钮', 'house:btn:delete:own', 2, 4, NULL, NULL, NULL, 16, '仅删除自己房源', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
 INSERT INTO `tb_permission` VALUES (89, '房源详情查看', 'house:detail:view', 2, 4, NULL, NULL, NULL, 17, '查看房源详情权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
 INSERT INTO `tb_permission` VALUES (90, '房源状态变更', 'house:status:change', 2, 4, NULL, NULL, NULL, 18, '修改房源状态权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
 INSERT INTO `tb_permission` VALUES (91, '房源上架', 'house:online', 2, 4, NULL, NULL, NULL, 19, '房源上架权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
@@ -789,8 +995,6 @@ INSERT INTO `tb_permission` VALUES (106, '查看二手房信息', 'house:second:
 INSERT INTO `tb_permission` VALUES (107, '编辑二手房信息', 'house:second:edit', 2, 4, NULL, NULL, NULL, 51, '编辑二手房扩展信息', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
 INSERT INTO `tb_permission` VALUES (108, '查看小区信息', 'house:community:view', 2, 4, NULL, NULL, NULL, 52, '查看小区信息权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
 INSERT INTO `tb_permission` VALUES (109, '编辑小区信息', 'house:community:edit', 2, 4, NULL, NULL, NULL, 53, '编辑小区信息权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (110, '新增小区', 'house:community:add', 2, 4, NULL, NULL, NULL, 54, '新增小区权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
-INSERT INTO `tb_permission` VALUES (111, '删除小区', 'house:community:delete', 2, 4, NULL, NULL, NULL, 55, '删除小区权限', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
 INSERT INTO `tb_permission` VALUES (112, '管理房源标签', 'house:second:tag:manage', 2, 4, NULL, NULL, NULL, 56, '管理二手房标签', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
 INSERT INTO `tb_permission` VALUES (113, '查看二手房统计', 'house:second:statistics:view', 2, 4, NULL, NULL, NULL, 57, '查看二手房统计数据', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
 INSERT INTO `tb_permission` VALUES (114, '高级搜索操作', 'house:search:advanced:btn', 2, 4, NULL, NULL, NULL, 70, '使用高级搜索功能', 1, '2025-12-06 22:50:16', '2025-12-06 22:50:16');
@@ -849,15 +1053,22 @@ INSERT INTO `tb_permission` VALUES (166, '房源列表按钮', 'house:list:butto
 INSERT INTO `tb_permission` VALUES (167, '楼盘列表', 'project:list:page', 1, 6, '/project/list', 'project/ProjectList', 'office-building', 205, '新房项目管理', 1, '2025-12-07 01:03:31', '2025-12-07 20:15:14');
 INSERT INTO `tb_permission` VALUES (168, '小区列表', 'community:list:page', 1, 6, '/community/list', 'community/CommunityList', 'house', 206, '管理二手房小区信息', 1, '2025-12-07 01:06:32', '2025-12-07 20:14:52');
 INSERT INTO `tb_permission` VALUES (169, '新增项目', 'project:add', 2, 167, NULL, NULL, NULL, 10, '新增项目按钮权限', 1, '2025-12-07 20:43:41', '2025-12-07 20:43:41');
-INSERT INTO `tb_permission` VALUES (170, '新增小区', 'community:add', 2, 168, NULL, NULL, NULL, 10, '新增小区按钮权限', 1, '2025-12-07 20:43:41', '2025-12-07 20:43:41');
+INSERT INTO `tb_permission` VALUES (170, '新增小区', 'community:add', 2, 168, NULL, NULL, NULL, 10, '新增小区按钮权限（小区列表页）', 1, '2025-12-07 20:43:41', '2025-12-12 01:07:35');
 INSERT INTO `tb_permission` VALUES (171, '项目详情', 'project:detail', 2, 167, NULL, NULL, NULL, 20, '项目详情查看权限', 1, '2025-12-08 14:31:51', '2025-12-08 14:31:51');
 INSERT INTO `tb_permission` VALUES (172, '编辑项目', 'project:edit', 2, 167, NULL, NULL, NULL, 30, '项目编辑权限', 1, '2025-12-08 14:31:51', '2025-12-08 14:31:51');
 INSERT INTO `tb_permission` VALUES (173, '删除项目', 'project:delete', 2, 167, NULL, NULL, NULL, 40, '项目删除权限', 1, '2025-12-08 14:31:51', '2025-12-08 14:31:51');
 INSERT INTO `tb_permission` VALUES (174, '小区详情', 'community:detail', 2, 168, NULL, NULL, NULL, 20, '小区详情查看权限', 1, '2025-12-08 14:31:51', '2025-12-08 14:31:51');
 INSERT INTO `tb_permission` VALUES (175, '编辑小区', 'community:edit', 2, 168, NULL, NULL, NULL, 30, '小区编辑权限', 1, '2025-12-08 14:31:51', '2025-12-08 14:31:51');
-INSERT INTO `tb_permission` VALUES (176, '删除小区', 'community:delete', 2, 168, NULL, NULL, NULL, 40, '小区删除权限', 1, '2025-12-08 14:31:51', '2025-12-08 14:31:51');
+INSERT INTO `tb_permission` VALUES (176, '删除小区', 'community:delete', 2, 168, NULL, NULL, NULL, 40, '删除小区按钮权限（小区列表页）', 1, '2025-12-08 14:31:51', '2025-12-12 01:07:35');
 INSERT INTO `tb_permission` VALUES (179, '确认收款', 'payment:confirm', 2, 29, NULL, NULL, NULL, 4, '确认收款按钮权限', 1, '2025-12-09 17:40:29', '2025-12-09 17:40:29');
 INSERT INTO `tb_permission` VALUES (180, '作废收款', 'payment:void', 2, 29, NULL, NULL, NULL, 5, '作废收款按钮权限', 1, '2025-12-09 17:40:29', '2025-12-09 17:40:29');
+INSERT INTO `tb_permission` VALUES (201, '预约看房', 'appointment:manage', 1, 11, '/customer/appointment', 'customer/appointment/index', 'calendar', 304, '预约看房管理菜单', 1, '2025-12-12 01:29:44', '2025-12-12 01:29:44');
+INSERT INTO `tb_permission` VALUES (202, '查看预约列表', 'appointment:list', 2, 201, NULL, NULL, NULL, 1, '查看预约记录列表', 1, '2025-12-12 01:29:44', '2025-12-12 01:29:44');
+INSERT INTO `tb_permission` VALUES (203, '发起预约', 'appointment:add', 2, 201, NULL, NULL, NULL, 2, '发起新的预约申请', 1, '2025-12-12 01:29:44', '2025-12-12 01:29:44');
+INSERT INTO `tb_permission` VALUES (204, '确认预约', 'appointment:confirm', 2, 201, NULL, NULL, NULL, 3, '确认客户的预约申请', 1, '2025-12-12 01:29:44', '2025-12-12 01:29:44');
+INSERT INTO `tb_permission` VALUES (205, '完成带看', 'appointment:complete', 2, 201, NULL, NULL, NULL, 4, '完成带看并填写反馈', 1, '2025-12-12 01:29:44', '2025-12-12 01:29:44');
+INSERT INTO `tb_permission` VALUES (206, '取消预约', 'appointment:cancel', 2, 201, NULL, NULL, NULL, 5, '取消预约申请', 1, '2025-12-12 01:29:44', '2025-12-12 01:29:44');
+INSERT INTO `tb_permission` VALUES (207, '房源新增页面', 'house:add:page', 2, 6, NULL, NULL, NULL, 79, '进入房源新增页面权限', 1, '2025-12-14 03:19:08', '2025-12-14 03:19:08');
 
 -- ----------------------------
 -- Table structure for tb_project
@@ -897,7 +1108,7 @@ CREATE TABLE `tb_project`  (
   `creator_id` int NULL DEFAULT NULL COMMENT '创建人ID',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_project_no`(`project_no` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 32 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 38 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_project
@@ -933,6 +1144,9 @@ INSERT INTO `tb_project` VALUES (28, 'XM202512080001', 'test', 'test', '11', '6'
 INSERT INTO `tb_project` VALUES (29, 'XM202512080002', '3221', '3213', '32113', '32131', 313.00, 213.00, 131.00, 131, '313', 313, 131.00, '住宅', '2025-12-24', '2026-01-28 00:00:00', '3213', '321', '31231', '31231', NULL, NULL, 213, '123', '1231', '231', '/project/XM202512080002.jpg', 4, '2025-12-08 14:15:42', '2025-12-08 14:15:42', 2);
 INSERT INTO `tb_project` VALUES (30, 'XM202512110001', '1', '1', '1', '1111', 11.00, 1.00, 1.00, 1, '1', 1, 1.00, '住宅', '2025-12-02', '2025-12-16 00:00:00', '1', '1', '1', '1', NULL, NULL, 1, '12', '1', '1', '/project/13.jpg', 4, '2025-12-11 02:03:30', '2025-12-11 02:03:30', 1);
 INSERT INTO `tb_project` VALUES (31, 'XM202512110002', '1', '12', '1', '1', 1.00, 1.00, 1.00, 1, '1', 1, 1.00, '公寓', '2025-12-18', '2025-12-16 00:00:00', '111', '1', '11', '1', NULL, NULL, 1, '1', '1', '1', '/project/XM202512110002.jpg', 4, '2025-12-11 17:14:25', '2025-12-11 17:14:25', 1);
+INSERT INTO `tb_project` VALUES (32, 'XM202512120001', '11', '11', '11', '111', 11.00, 111.00, 11.00, 111, '111', 111, 11.00, '公寓', '2025-12-12', '2025-12-22 00:00:00', '111', '11', '111', '111', NULL, NULL, 11, '11', '111', '11', '/project/XM202512120001.jpg', 4, '2025-12-12 18:42:25', '2025-12-12 18:42:25', 1);
+INSERT INTO `tb_project` VALUES (35, 'XM202512130002', 'test1', 'test1', 'test1', '12', 12.00, 12.00, 21.00, 12, '12', 21, 12.00, '别墅', '2025-12-11', '2025-12-16 00:00:00', '1221', '12', '12', '12', NULL, NULL, 12, '12', '12', '12', '/project/XM202512130002.jpg', 3, '2025-12-13 16:04:09', '2025-12-13 16:04:09', 2);
+INSERT INTO `tb_project` VALUES (37, 'XM202512140001', '3213', '312', '132', '312', 312.00, 31.00, 12.00, 12, '12', 123, 132.00, '别墅', '2025-12-30', '2025-12-15 00:00:00', '312321', '132', '312', '132', NULL, NULL, 132, '231', '231', '123', '/project/XM202512140001.jpg', 1, '2025-12-14 17:24:43', '2025-12-14 17:24:43', 1);
 
 -- ----------------------------
 -- Table structure for tb_role
@@ -950,14 +1164,14 @@ CREATE TABLE `tb_role`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_role_name`(`role_name` ASC) USING BTREE,
   UNIQUE INDEX `uk_role_code`(`role_code` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '角色表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 100 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '角色表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_role
 -- ----------------------------
 INSERT INTO `tb_role` VALUES (1, '系统管理员', 'admin', '系统超级管理员，拥有所有权限', 1, 1, '2025-10-30 00:31:05', '2025-12-10 17:55:03');
-INSERT INTO `tb_role` VALUES (2, '销售经理', 'sales_manager', '销售团队经理，管理团队和审核交易', 3, 1, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
-INSERT INTO `tb_role` VALUES (3, '销售顾问', 'sales_consultant', '一线销售人员，负责客户和房源', 4, 1, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
+INSERT INTO `tb_role` VALUES (2, '销售顾问', 'sales_consultant', '一线销售人员，负责客户和房源', 4, 1, '2025-10-30 00:31:05', '2025-12-15 03:31:20');
+INSERT INTO `tb_role` VALUES (3, '销售经理', 'sales_manager', '销售团队经理，管理团队和审核交易', 3, 1, '2025-10-30 00:31:05', '2025-12-15 03:31:20');
 INSERT INTO `tb_role` VALUES (4, '财务人员', 'finance_staff', '财务部门人员，负责收款和佣金核算', 2, 1, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
 INSERT INTO `tb_role` VALUES (5, '普通用户', 'normal_user', '普通注册用户，查看公开房源', 4, 1, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
 
@@ -975,7 +1189,7 @@ CREATE TABLE `tb_role_permission`  (
   INDEX `idx_permission_id`(`permission_id` ASC) USING BTREE,
   CONSTRAINT `fk_role_permission_permission` FOREIGN KEY (`permission_id`) REFERENCES `tb_permission` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `fk_role_permission_role` FOREIGN KEY (`role_id`) REFERENCES `tb_role` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 1305 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '角色权限关联表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2212 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '角色权限关联表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_role_permission
@@ -987,7 +1201,6 @@ INSERT INTO `tb_role_permission` VALUES (284, 1, 4, '2025-12-06 23:15:55');
 INSERT INTO `tb_role_permission` VALUES (285, 1, 5, '2025-12-06 23:15:55');
 INSERT INTO `tb_role_permission` VALUES (286, 1, 6, '2025-12-06 23:15:55');
 INSERT INTO `tb_role_permission` VALUES (287, 1, 7, '2025-12-06 23:15:55');
-INSERT INTO `tb_role_permission` VALUES (288, 1, 8, '2025-12-06 23:15:55');
 INSERT INTO `tb_role_permission` VALUES (290, 1, 10, '2025-12-06 23:15:55');
 INSERT INTO `tb_role_permission` VALUES (291, 1, 11, '2025-12-06 23:15:55');
 INSERT INTO `tb_role_permission` VALUES (292, 1, 12, '2025-12-06 23:15:55');
@@ -1058,11 +1271,6 @@ INSERT INTO `tb_role_permission` VALUES (360, 1, 80, '2025-12-06 23:15:55');
 INSERT INTO `tb_role_permission` VALUES (361, 1, 81, '2025-12-06 23:15:55');
 INSERT INTO `tb_role_permission` VALUES (362, 1, 82, '2025-12-06 23:15:55');
 INSERT INTO `tb_role_permission` VALUES (363, 1, 83, '2025-12-06 23:15:55');
-INSERT INTO `tb_role_permission` VALUES (364, 1, 84, '2025-12-06 23:15:55');
-INSERT INTO `tb_role_permission` VALUES (365, 1, 85, '2025-12-06 23:15:55');
-INSERT INTO `tb_role_permission` VALUES (366, 1, 86, '2025-12-06 23:15:55');
-INSERT INTO `tb_role_permission` VALUES (367, 1, 87, '2025-12-06 23:15:55');
-INSERT INTO `tb_role_permission` VALUES (368, 1, 88, '2025-12-06 23:15:55');
 INSERT INTO `tb_role_permission` VALUES (369, 1, 89, '2025-12-06 23:15:55');
 INSERT INTO `tb_role_permission` VALUES (370, 1, 90, '2025-12-06 23:15:55');
 INSERT INTO `tb_role_permission` VALUES (371, 1, 91, '2025-12-06 23:15:55');
@@ -1084,8 +1292,6 @@ INSERT INTO `tb_role_permission` VALUES (386, 1, 106, '2025-12-06 23:15:55');
 INSERT INTO `tb_role_permission` VALUES (387, 1, 107, '2025-12-06 23:15:55');
 INSERT INTO `tb_role_permission` VALUES (388, 1, 108, '2025-12-06 23:15:55');
 INSERT INTO `tb_role_permission` VALUES (389, 1, 109, '2025-12-06 23:15:55');
-INSERT INTO `tb_role_permission` VALUES (390, 1, 110, '2025-12-06 23:15:55');
-INSERT INTO `tb_role_permission` VALUES (391, 1, 111, '2025-12-06 23:15:55');
 INSERT INTO `tb_role_permission` VALUES (392, 1, 112, '2025-12-06 23:15:55');
 INSERT INTO `tb_role_permission` VALUES (393, 1, 113, '2025-12-06 23:15:55');
 INSERT INTO `tb_role_permission` VALUES (394, 1, 114, '2025-12-06 23:15:55');
@@ -1153,167 +1359,6 @@ INSERT INTO `tb_role_permission` VALUES (689, 1, 175, '2025-12-08 14:31:59');
 INSERT INTO `tb_role_permission` VALUES (690, 1, 176, '2025-12-08 14:31:59');
 INSERT INTO `tb_role_permission` VALUES (691, 1, 179, '2025-12-09 17:40:29');
 INSERT INTO `tb_role_permission` VALUES (692, 1, 180, '2025-12-09 17:40:29');
-INSERT INTO `tb_role_permission` VALUES (695, 2, 1, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (696, 2, 2, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (697, 2, 3, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (698, 2, 4, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (699, 2, 73, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (700, 2, 74, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (701, 2, 75, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (702, 2, 77, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (703, 2, 78, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (704, 2, 79, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (705, 2, 80, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (706, 2, 81, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (707, 2, 82, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (708, 2, 83, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (709, 2, 84, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (710, 2, 85, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (711, 2, 86, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (712, 2, 87, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (713, 2, 88, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (714, 2, 89, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (715, 2, 90, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (716, 2, 91, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (717, 2, 92, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (718, 2, 93, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (719, 2, 94, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (720, 2, 95, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (721, 2, 96, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (722, 2, 97, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (723, 2, 98, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (724, 2, 99, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (725, 2, 100, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (726, 2, 101, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (727, 2, 102, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (728, 2, 103, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (729, 2, 104, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (730, 2, 105, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (731, 2, 106, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (732, 2, 107, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (733, 2, 108, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (734, 2, 109, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (735, 2, 110, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (736, 2, 111, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (737, 2, 112, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (738, 2, 113, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (739, 2, 114, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (740, 2, 115, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (741, 2, 116, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (742, 2, 117, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (743, 2, 42, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (744, 2, 43, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (745, 2, 44, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (746, 2, 45, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (747, 2, 46, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (748, 2, 47, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (749, 2, 48, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (750, 2, 49, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (751, 2, 50, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (752, 2, 51, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (753, 2, 52, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (754, 2, 123, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (755, 2, 53, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (756, 2, 124, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (757, 2, 54, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (758, 2, 125, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (759, 2, 55, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (760, 2, 126, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (761, 2, 56, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (762, 2, 57, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (763, 2, 128, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (764, 2, 166, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (765, 2, 5, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (766, 2, 129, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (767, 2, 127, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (768, 2, 58, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (769, 2, 130, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (770, 2, 59, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (771, 2, 60, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (772, 2, 61, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (773, 2, 62, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (774, 2, 118, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (775, 2, 119, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (776, 2, 120, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (777, 2, 121, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (778, 2, 122, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (779, 2, 131, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (780, 2, 132, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (781, 2, 133, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (782, 2, 134, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (783, 2, 135, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (784, 2, 136, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (785, 2, 63, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (786, 2, 64, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (787, 2, 69, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (788, 2, 70, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (789, 2, 71, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (790, 2, 164, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (791, 2, 165, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (792, 2, 6, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (793, 2, 137, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (794, 2, 138, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (795, 2, 139, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (796, 2, 140, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (797, 2, 141, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (798, 2, 142, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (799, 2, 143, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (800, 2, 144, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (801, 2, 7, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (802, 2, 145, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (803, 2, 151, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (804, 2, 157, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (805, 2, 158, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (806, 2, 161, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (807, 2, 162, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (808, 2, 163, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (809, 2, 72, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (810, 2, 152, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (811, 2, 153, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (812, 2, 146, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (813, 2, 147, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (814, 2, 76, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (816, 2, 154, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (817, 2, 159, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (818, 2, 160, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (821, 2, 67, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (822, 2, 8, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (823, 2, 149, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (824, 2, 150, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (825, 2, 68, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (826, 2, 10, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (827, 2, 167, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (828, 2, 169, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (829, 2, 171, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (830, 2, 172, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (831, 2, 173, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (832, 2, 168, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (833, 2, 170, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (834, 2, 174, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (835, 2, 175, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (836, 2, 176, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (837, 2, 65, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (838, 2, 66, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (839, 2, 11, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (840, 2, 12, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (841, 2, 13, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (842, 2, 14, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (843, 2, 15, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (844, 2, 16, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (845, 2, 17, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (846, 2, 18, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (847, 2, 19, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (848, 2, 20, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (849, 2, 21, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (850, 2, 22, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (851, 2, 23, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (852, 2, 24, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (853, 2, 25, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (857, 2, 32, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (858, 2, 33, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (860, 2, 39, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (861, 2, 40, '2025-12-10 17:19:00');
-INSERT INTO `tb_role_permission` VALUES (862, 2, 41, '2025-12-10 17:19:00');
 INSERT INTO `tb_role_permission` VALUES (958, 4, 137, '2025-12-10 17:19:08');
 INSERT INTO `tb_role_permission` VALUES (959, 4, 145, '2025-12-10 17:19:08');
 INSERT INTO `tb_role_permission` VALUES (960, 4, 151, '2025-12-10 17:19:08');
@@ -1380,58 +1425,188 @@ INSERT INTO `tb_role_permission` VALUES (1079, 5, 161, '2025-12-10 18:11:16');
 INSERT INTO `tb_role_permission` VALUES (1080, 5, 33, '2025-12-10 18:11:16');
 INSERT INTO `tb_role_permission` VALUES (1081, 5, 32, '2025-12-10 18:11:16');
 INSERT INTO `tb_role_permission` VALUES (1082, 5, 157, '2025-12-10 18:11:16');
-INSERT INTO `tb_role_permission` VALUES (1252, 3, 137, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1253, 3, 138, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1254, 3, 139, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1255, 3, 140, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1256, 3, 141, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1257, 3, 142, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1258, 3, 143, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1259, 3, 144, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1260, 3, 7, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1261, 3, 145, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1262, 3, 151, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1263, 3, 157, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1264, 3, 158, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1265, 3, 161, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1266, 3, 162, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1267, 3, 163, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1268, 3, 72, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1269, 3, 152, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1270, 3, 153, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1271, 3, 146, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1272, 3, 147, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1273, 3, 76, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1274, 3, 148, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1275, 3, 154, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1276, 3, 159, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1277, 3, 160, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1278, 3, 155, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1279, 3, 156, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1280, 3, 67, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1281, 3, 8, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1282, 3, 149, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1283, 3, 150, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1284, 3, 68, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1285, 3, 10, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1286, 3, 66, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1287, 3, 12, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1288, 3, 13, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1289, 3, 15, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1290, 3, 16, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1291, 3, 17, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1292, 3, 18, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1293, 3, 19, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1294, 3, 20, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1295, 3, 21, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1296, 3, 22, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1297, 3, 32, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1298, 3, 33, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1300, 3, 39, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1301, 3, 40, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1302, 3, 41, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1303, 3, 6, '2025-12-11 01:41:15');
-INSERT INTO `tb_role_permission` VALUES (1304, 3, 11, '2025-12-11 01:41:15');
+INSERT INTO `tb_role_permission` VALUES (1312, 1, 201, '2025-12-12 01:29:44');
+INSERT INTO `tb_role_permission` VALUES (1313, 1, 202, '2025-12-12 01:29:44');
+INSERT INTO `tb_role_permission` VALUES (1314, 1, 203, '2025-12-12 01:29:44');
+INSERT INTO `tb_role_permission` VALUES (1315, 1, 204, '2025-12-12 01:29:44');
+INSERT INTO `tb_role_permission` VALUES (1316, 1, 205, '2025-12-12 01:29:44');
+INSERT INTO `tb_role_permission` VALUES (1317, 1, 206, '2025-12-12 01:29:44');
+INSERT INTO `tb_role_permission` VALUES (1394, 1, 207, '2025-12-14 03:19:22');
+INSERT INTO `tb_role_permission` VALUES (2037, 2, 6, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2038, 2, 137, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2039, 2, 138, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2040, 2, 139, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2041, 2, 76, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2042, 2, 140, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2043, 2, 141, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2044, 2, 142, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2045, 2, 143, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2046, 2, 144, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2047, 2, 207, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2048, 2, 42, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2049, 2, 43, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2050, 2, 44, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2051, 2, 45, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2052, 2, 46, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2053, 2, 47, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2054, 2, 48, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2055, 2, 49, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2056, 2, 50, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2057, 2, 51, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2058, 2, 52, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2059, 2, 53, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2060, 2, 54, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2061, 2, 55, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2062, 2, 56, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2063, 2, 57, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2064, 2, 7, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2065, 2, 145, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2066, 2, 151, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2067, 2, 157, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2068, 2, 158, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2069, 2, 161, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2070, 2, 162, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2071, 2, 163, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2072, 2, 72, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2073, 2, 152, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2074, 2, 153, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2075, 2, 146, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2076, 2, 147, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2077, 2, 148, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2078, 2, 154, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2079, 2, 159, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2080, 2, 160, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2081, 2, 155, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2082, 2, 156, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2083, 2, 67, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2084, 2, 10, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2085, 2, 167, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2086, 2, 169, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2087, 2, 171, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2088, 2, 172, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2089, 2, 173, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2090, 2, 168, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2091, 2, 170, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2092, 2, 174, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2093, 2, 175, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2094, 2, 176, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2095, 2, 65, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2096, 2, 66, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2097, 2, 11, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2098, 2, 12, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2099, 2, 13, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2100, 2, 14, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2101, 2, 201, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2102, 2, 202, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2103, 2, 203, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2104, 2, 204, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2105, 2, 205, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2106, 2, 206, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2107, 2, 15, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2108, 2, 16, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2109, 2, 17, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2110, 2, 18, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2111, 2, 19, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2112, 2, 20, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2113, 2, 21, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2114, 2, 22, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2115, 2, 32, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2116, 2, 33, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2117, 2, 39, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2118, 2, 40, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2119, 2, 41, '2025-12-15 01:39:49');
+INSERT INTO `tb_role_permission` VALUES (2120, 3, 2, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2121, 3, 3, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2122, 3, 69, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2123, 3, 70, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2124, 3, 164, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2125, 3, 165, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2126, 3, 6, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2127, 3, 137, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2128, 3, 138, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2129, 3, 139, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2130, 3, 76, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2131, 3, 140, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2132, 3, 141, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2133, 3, 142, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2134, 3, 143, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2135, 3, 144, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2136, 3, 207, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2137, 3, 42, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2138, 3, 43, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2139, 3, 44, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2140, 3, 45, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2141, 3, 46, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2142, 3, 47, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2143, 3, 48, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2144, 3, 49, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2145, 3, 50, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2146, 3, 51, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2147, 3, 52, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2148, 3, 53, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2149, 3, 54, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2150, 3, 55, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2151, 3, 56, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2152, 3, 57, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2153, 3, 7, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2154, 3, 145, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2155, 3, 151, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2156, 3, 157, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2157, 3, 158, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2158, 3, 161, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2159, 3, 162, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2160, 3, 163, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2161, 3, 72, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2162, 3, 152, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2163, 3, 153, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2164, 3, 146, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2165, 3, 147, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2166, 3, 148, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2167, 3, 154, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2168, 3, 159, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2169, 3, 160, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2170, 3, 155, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2171, 3, 156, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2172, 3, 67, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2173, 3, 10, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2174, 3, 167, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2175, 3, 169, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2176, 3, 171, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2177, 3, 172, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2178, 3, 173, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2179, 3, 168, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2180, 3, 170, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2181, 3, 174, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2182, 3, 175, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2183, 3, 176, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2184, 3, 65, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2185, 3, 66, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2186, 3, 11, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2187, 3, 12, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2188, 3, 13, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2189, 3, 14, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2190, 3, 201, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2191, 3, 202, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2192, 3, 203, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2193, 3, 204, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2194, 3, 205, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2195, 3, 206, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2196, 3, 15, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2197, 3, 16, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2198, 3, 17, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2199, 3, 18, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2200, 3, 20, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2201, 3, 22, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2202, 3, 23, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2203, 3, 24, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2204, 3, 25, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2205, 3, 32, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2206, 3, 33, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2207, 3, 39, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2208, 3, 40, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2209, 3, 41, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2210, 3, 1, '2025-12-15 02:31:43');
+INSERT INTO `tb_role_permission` VALUES (2211, 3, 19, '2025-12-15 02:31:43');
 
 -- ----------------------------
 -- Table structure for tb_second_house_community
@@ -1444,6 +1619,7 @@ CREATE TABLE `tb_second_house_community`  (
   `province` varchar(40) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '省份',
   `city` varchar(40) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '城市',
   `district` varchar(40) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '区县',
+  `cover_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '小区封面图',
   `build_year` int NULL DEFAULT NULL COMMENT '建成年代',
   `developer` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '开发商',
   `total_households` int NULL DEFAULT NULL COMMENT '总户数',
@@ -1455,18 +1631,20 @@ CREATE TABLE `tb_second_house_community`  (
   `creator_id` int NULL DEFAULT NULL COMMENT '创建人ID',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_community_name_district`(`community_name` ASC, `district` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '二手房小区信息表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '二手房小区信息表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_second_house_community
 -- ----------------------------
-INSERT INTO `tb_second_house_community` VALUES (1, '万科城市花园', '北京市朝阳区建国路88号', '北京市', '北京', '朝阳区', 2018, '万科地产', 1200, 3.80, '大望路站', '朝阳实验小学学区', 0, '2025-12-01 20:14:33', 1);
-INSERT INTO `tb_second_house_community` VALUES (2, '保利江景豪庭', '上海市浦东新区陆家嘴金融区', '上海市', '上海', '浦东新区', 2020, '保利发展', 2134, 4.50, '陆家嘴站', '浦东外国语学校附属小学', 0, '2025-12-01 20:14:33', 2);
-INSERT INTO `tb_second_house_community` VALUES (3, '碧桂园天河府', '广州市天河区珠江新城', '广东省', '广州', '天河区', 2015, '碧桂园', 1231, 3.50, '珠江新城站', '天河第一实验小学', 0, '2025-12-01 20:14:33', 3);
-INSERT INTO `tb_second_house_community` VALUES (4, '招商蛇口金陵府', '南京市鼓楼区中山北路', '江苏省', '南京', '鼓楼区', 2019, '招商蛇口', 543, 4.20, '鼓楼站', '南京师范大学附属小学', 0, '2025-12-01 20:14:33', 3);
-INSERT INTO `tb_second_house_community` VALUES (5, '金地东湖壹号', '武汉市武昌区东湖路', '湖北省', '武汉', '武昌区', 2018, '金地集团', 1231, 3.90, '东亭站', '武汉小学学区', 0, '2025-12-01 20:14:33', 2);
-INSERT INTO `tb_second_house_community` VALUES (6, 'tt1', 't', 't', 't', 't', 2022, 't1', 123, 3.00, '12', '123', 1, '2025-12-07 21:05:59', 2);
-INSERT INTO `tb_second_house_community` VALUES (7, '11', '1', '1', '1', '1', 2021, '11', 1, 1.00, '1', '1', 1, '2025-12-11 01:28:15', 4);
+INSERT INTO `tb_second_house_community` VALUES (1, '万科城市花园', '北京市朝阳区建国路88号', '北京市', '北京', '朝阳区', '/project/3.jpg', 2018, '万科地产', 1200, 3.80, '大望路站', '朝阳实验小学学区', 0, '2025-12-01 20:14:33', 1);
+INSERT INTO `tb_second_house_community` VALUES (2, '保利江景豪庭', '上海市浦东新区陆家嘴金融区', '上海市', '上海', '浦东新区', '/project/1.jpg', 2020, '保利发展', 2134, 4.50, '陆家嘴站', '浦东外国语学校附属小学', 0, '2025-12-01 20:14:33', 2);
+INSERT INTO `tb_second_house_community` VALUES (3, '碧桂园天河府', '广州市天河区珠江新城', '广东省', '广州', '天河区', '/project/14.jpg', 2015, '碧桂园', 1231, 3.50, '珠江新城站', '天河第一实验小学', 0, '2025-12-01 20:14:33', 3);
+INSERT INTO `tb_second_house_community` VALUES (4, '招商蛇口金陵府', '南京市鼓楼区中山北路', '江苏省', '南京', '鼓楼区', '/project/1.jpg', 2019, '招商蛇口', 543, 4.20, '鼓楼站', '南京师范大学附属小学', 0, '2025-12-01 20:14:33', 3);
+INSERT INTO `tb_second_house_community` VALUES (5, '金地东湖壹号', '武汉市武昌区东湖路', '湖北省', '武汉', '武昌区', '/project/17.jpg', 2018, '金地集团', 1231, 3.90, '东亭站', '武汉小学学区', 0, '2025-12-01 20:14:33', 2);
+INSERT INTO `tb_second_house_community` VALUES (6, 'tt1', 't', 't', 't', 't', '/project/16.jpg', 2022, 't1', 123, 3.00, '12', '123', 0, '2025-12-07 21:05:59', 2);
+INSERT INTO `tb_second_house_community` VALUES (7, '11', '1', '1', '1', '1', NULL, 2021, '11', 1, 1.00, '1', '1', 2, '2025-12-11 01:28:15', 4);
+INSERT INTO `tb_second_house_community` VALUES (9, '1231', '32131', '312311', '12311', '3211', '/community/COMM_123_20251213012622_6617.jpg', 2010, '1231', 2131, 2311.00, '1231', '1231', 0, '2025-12-13 01:26:22', 1);
+INSERT INTO `tb_second_house_community` VALUES (11, '12123', '12123', '12123', '12123', '12123', '/community/COMM_12_20251214024914_6232.jpg', 2023, '12132', 12123, 12123.00, '12123', '21321', 2, '2025-12-14 02:49:14', 1);
 
 -- ----------------------------
 -- Table structure for tb_second_house_info
@@ -1489,8 +1667,10 @@ CREATE TABLE `tb_second_house_info`  (
   `mortgage_status` tinyint NULL DEFAULT NULL COMMENT '抵押状态：0=无抵押，1=有抵押',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_house_id`(`house_id` ASC) USING BTREE,
-  CONSTRAINT `fk_second_house_house` FOREIGN KEY (`house_id`) REFERENCES `tb_house` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 30 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '二手房扩展信息表' ROW_FORMAT = DYNAMIC;
+  INDEX `idx_community_id`(`community_id` ASC) USING BTREE,
+  CONSTRAINT `fk_second_house_house` FOREIGN KEY (`house_id`) REFERENCES `tb_house` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT `fk_second_house_community` FOREIGN KEY (`community_id`) REFERENCES `tb_second_house_community` (`id`) ON DELETE SET NULL ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 34 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '二手房扩展信息表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_second_house_info
@@ -1518,7 +1698,7 @@ INSERT INTO `tb_second_house_info` VALUES (25, 90, NULL, NULL, NULL, NULL, 0, 0,
 INSERT INTO `tb_second_house_info` VALUES (26, 91, 2022, '2025-12-03 00:00:00', NULL, NULL, 0, 0, 0, '住宅', '2025-12-08 15:48:50', '2025-12-08 15:48:50', NULL, 0);
 INSERT INTO `tb_second_house_info` VALUES (27, 93, 2021, '2025-12-16 00:00:00', NULL, NULL, 0, 0, 0, '住宅', '2025-12-11 01:24:08', '2025-12-11 01:24:08', NULL, 0);
 INSERT INTO `tb_second_house_info` VALUES (28, 94, 2023, '2025-12-15 00:00:00', NULL, NULL, 0, 0, 0, '住宅', '2025-12-11 01:42:11', '2025-12-11 01:42:11', NULL, 0);
-INSERT INTO `tb_second_house_info` VALUES (29, 95, 2025, '2025-12-02 00:00:00', NULL, NULL, 0, 0, 0, '住宅', '2025-12-11 23:02:25', '2025-12-11 23:02:25', NULL, 0);
+INSERT INTO `tb_second_house_info` VALUES (29, 95, 2022, '2025-12-15 00:00:00', NULL, NULL, 0, 0, 0, '住宅', '2025-12-11 23:02:25', '2025-12-11 23:02:25', NULL, 0);
 
 -- ----------------------------
 -- Table structure for tb_team
@@ -1537,21 +1717,22 @@ CREATE TABLE `tb_team`  (
   UNIQUE INDEX `uk_team_name`(`team_name` ASC) USING BTREE,
   INDEX `idx_manager_id`(`manager_id` ASC) USING BTREE,
   CONSTRAINT `fk_team_manager` FOREIGN KEY (`manager_id`) REFERENCES `tb_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '销售团队表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '销售团队表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_team
 -- ----------------------------
 INSERT INTO `tb_team` VALUES (1, '精英销售一部', 2, '2024-01-15', 5, 5000000.00, '2025-10-30 00:31:05', '2025-12-11 01:53:09');
 INSERT INTO `tb_team` VALUES (2, '精英销售二部', 3, '2024-02-20', 4, 4000000.00, '2025-10-30 00:31:05', '2025-12-11 01:53:01');
-INSERT INTO `tb_team` VALUES (3, '金牌销售团队', 2, '2024-03-10', 2, 4500000.00, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
+INSERT INTO `tb_team` VALUES (3, '金牌销售团队', 2, '2024-03-10', 1, 4500000.00, '2025-10-30 00:31:05', '2025-12-13 01:44:05');
 INSERT INTO `tb_team` VALUES (4, '卓越销售团队', 3, '2024-04-05', 1, 3500000.00, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
-INSERT INTO `tb_team` VALUES (5, '先锋销售团队', 2, '2024-05-12', 2, 4200000.00, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
+INSERT INTO `tb_team` VALUES (5, '先锋销售团队', 2, '2024-05-12', 1, 4200000.00, '2025-10-30 00:31:05', '2025-12-13 02:15:48');
 INSERT INTO `tb_team` VALUES (6, '创新销售团队', 3, '2024-06-18', 1, 3800000.00, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
 INSERT INTO `tb_team` VALUES (7, '高效销售团队', 2, '2024-07-22', 2, 4800000.00, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
 INSERT INTO `tb_team` VALUES (8, '优质服务团队', 3, '2024-08-30', 1, 3600000.00, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
 INSERT INTO `tb_team` VALUES (9, '雄鹰突击队', 2, '2025-09-01', 5, 6000000.00, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
 INSERT INTO `tb_team` VALUES (10, '战狼销售部', 3, '2025-09-15', 4, 5500000.00, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
+INSERT INTO `tb_team` VALUES (12, '21', 4, '2025-12-13', 6, NULL, '2025-12-13 02:15:18', '2025-12-13 02:15:40');
 
 -- ----------------------------
 -- Table structure for tb_team_member
@@ -1569,16 +1750,14 @@ CREATE TABLE `tb_team_member`  (
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
   CONSTRAINT `fk_member_team` FOREIGN KEY (`team_id`) REFERENCES `tb_team` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_member_user` FOREIGN KEY (`user_id`) REFERENCES `tb_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 37 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '团队成员关联表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 45 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '团队成员关联表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_team_member
 -- ----------------------------
 INSERT INTO `tb_team_member` VALUES (6, 3, 4, '2024-03-10', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
-INSERT INTO `tb_team_member` VALUES (7, 3, 5, '2024-03-10', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
 INSERT INTO `tb_team_member` VALUES (8, 4, 6, '2024-04-05', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
 INSERT INTO `tb_team_member` VALUES (9, 5, 4, '2024-05-12', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
-INSERT INTO `tb_team_member` VALUES (10, 5, 6, '2024-05-12', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
 INSERT INTO `tb_team_member` VALUES (11, 6, 5, '2024-06-18', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
 INSERT INTO `tb_team_member` VALUES (12, 7, 4, '2024-07-22', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
 INSERT INTO `tb_team_member` VALUES (13, 7, 5, '2024-07-22', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
@@ -1595,6 +1774,12 @@ INSERT INTO `tb_team_member` VALUES (33, 1, 6, '2025-12-11', '2025-12-11 01:53:0
 INSERT INTO `tb_team_member` VALUES (34, 1, 13, '2025-12-11', '2025-12-11 01:53:09', '2025-12-11 01:53:09');
 INSERT INTO `tb_team_member` VALUES (35, 1, 14, '2025-12-11', '2025-12-11 01:53:09', '2025-12-11 01:53:09');
 INSERT INTO `tb_team_member` VALUES (36, 1, 16, '2025-12-11', '2025-12-11 01:53:09', '2025-12-11 01:53:09');
+INSERT INTO `tb_team_member` VALUES (39, 12, 13, '2025-12-13', '2025-12-13 02:15:18', '2025-12-13 02:15:18');
+INSERT INTO `tb_team_member` VALUES (40, 12, 14, '2025-12-13', '2025-12-13 02:15:18', '2025-12-13 02:15:18');
+INSERT INTO `tb_team_member` VALUES (41, 12, 5, '2025-12-13', '2025-12-13 02:15:40', '2025-12-13 02:15:40');
+INSERT INTO `tb_team_member` VALUES (42, 12, 6, '2025-12-13', '2025-12-13 02:15:40', '2025-12-13 02:15:40');
+INSERT INTO `tb_team_member` VALUES (43, 12, 15, '2025-12-13', '2025-12-13 02:15:40', '2025-12-13 02:15:40');
+INSERT INTO `tb_team_member` VALUES (44, 12, 17, '2025-12-13', '2025-12-13 02:15:40', '2025-12-13 02:15:40');
 
 -- ----------------------------
 -- Table structure for tb_transaction
@@ -1627,7 +1812,7 @@ CREATE TABLE `tb_transaction`  (
   CONSTRAINT `fk_trans_customer` FOREIGN KEY (`customer_id`) REFERENCES `tb_customer` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_trans_house` FOREIGN KEY (`house_id`) REFERENCES `tb_house` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_trans_sales` FOREIGN KEY (`sales_id`) REFERENCES `tb_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 14 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '交易信息表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 22 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '交易信息表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_transaction
@@ -1636,15 +1821,23 @@ INSERT INTO `tb_transaction` VALUES (1, 'JY20240001', 5, 5, 5, 5100000.00, 10000
 INSERT INTO `tb_transaction` VALUES (2, 'JY20240002', 4, 4, 4, 2750000.00, 50000.00, '2024-10-20 11:00:00', 1000000.00, '2024-10-27 15:00:00', 1700000.00, 2, '2024-11-20 10:00:00', 4, 1, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
 INSERT INTO `tb_transaction` VALUES (3, 'JY20240003', 1, 1, 4, 4450000.00, 80000.00, '2024-10-22 09:30:00', NULL, NULL, NULL, 0, NULL, 1, 1, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
 INSERT INTO `tb_transaction` VALUES (4, 'JY20240004', 2, 2, 5, 6750000.00, 150000.00, '2024-10-24 13:00:00', 2500000.00, '2024-10-30 16:00:00', 4100000.00, 1, NULL, 2, 1, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
-INSERT INTO `tb_transaction` VALUES (5, 'JY20240005', 3, 3, 6, 3180000.00, 60000.00, '2024-10-26 10:30:00', NULL, NULL, NULL, 0, NULL, 1, 1, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
+INSERT INTO `tb_transaction` VALUES (5, 'JY20240005', 3, 3, 6, 3180000.00, 60000.00, '2024-10-26 10:30:00', 1120000.00, NULL, NULL, 0, NULL, 4, 0, '2025-10-30 00:31:05', '2025-12-12 16:48:45');
 INSERT INTO `tb_transaction` VALUES (6, 'JY20240006', 7, 7, 4, 8400000.00, 200000.00, '2024-10-28 14:00:00', 3200000.00, '2024-11-05 11:00:00', 5000000.00, 1, NULL, 2, 1, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
-INSERT INTO `tb_transaction` VALUES (7, 'JY20240007', 8, 8, 5, 1780000.00, 30000.00, '2024-10-30 15:00:00', 700000.00, '2024-11-08 10:30:00', 1050000.00, 0, NULL, 0, 0, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
+INSERT INTO `tb_transaction` VALUES (7, 'JY20240007', 8, 8, 5, 1780000.00, 30000.00, '2024-10-30 15:00:00', 700000.00, '2024-11-08 10:30:00', 1050000.00, 0, NULL, 1, 0, '2025-10-30 00:31:05', '2025-12-12 16:47:46');
 INSERT INTO `tb_transaction` VALUES (8, 'JY20240008', 6, 6, 6, 3450000.00, 70000.00, '2024-11-01 09:00:00', 1300000.00, '2024-11-10 14:00:00', 2080000.00, 1, NULL, 2, 1, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
-INSERT INTO `tb_transaction` VALUES (9, 'JY20240009', 30, 9, 4, 4500000.00, 1000000.00, '2025-11-02 10:00:00', 1000000.00, '2025-11-05 14:00:00', 2500000.00, 1, NULL, 2, 0, '2025-12-08 22:00:45', '2025-12-11 01:36:36');
+INSERT INTO `tb_transaction` VALUES (9, 'JY20240009', 30, 9, 4, 4500000.00, 1000000.00, '2025-11-02 10:00:00', 1000000.00, '2025-11-05 14:00:00', 2500000.00, 2, NULL, 4, 1, '2025-12-08 22:00:45', '2025-12-14 17:26:55');
 INSERT INTO `tb_transaction` VALUES (10, 'JY20240010', 40, 13, 5, 10125000.00, 500000.00, '2025-11-06 09:30:00', NULL, NULL, NULL, 0, NULL, 1, 1, '2025-12-08 22:00:45', '2025-12-08 22:00:45');
 INSERT INTO `tb_transaction` VALUES (11, 'JY20240011', 55, 14, 6, 782000.00, 50000.00, '2025-11-08 11:00:00', 234600.00, '2025-11-10 15:00:00', 497400.00, 2, '2025-11-25 10:00:00', 4, 1, '2025-12-08 22:00:45', '2025-12-08 22:00:45');
 INSERT INTO `tb_transaction` VALUES (12, 'JY20240012', 62, 10, 5, 552500.00, 30000.00, '2025-11-03 16:00:00', NULL, NULL, NULL, 0, NULL, 5, 0, '2025-12-08 22:00:45', '2025-12-08 22:00:45');
 INSERT INTO `tb_transaction` VALUES (13, 'JY20240013', 25, 11, 6, 3542000.00, 100000.00, '2025-11-12 10:00:00', 1062600.00, '2025-11-15 11:00:00', 2379400.00, 1, NULL, 2, 0, '2025-12-08 22:00:45', '2025-12-08 22:00:45');
+INSERT INTO `tb_transaction` VALUES (14, 'JY20251212161029535', 93, 15, 19, 1000000.00, 100000.00, NULL, 100000.00, NULL, 800000.00, 2, NULL, 3, 1, '2025-12-12 16:10:29', '2025-12-12 17:14:05');
+INSERT INTO `tb_transaction` VALUES (15, 'JY20251212170644102', 93, 15, 16, 12000000.00, 2000000.00, NULL, 7000000.00, NULL, 0.00, 0, NULL, 2, 1, '2025-12-12 17:06:45', '2025-12-12 17:13:23');
+INSERT INTO `tb_transaction` VALUES (16, 'JY20251212171929750', 95, 11, 18, 900000.00, 100000.00, '2025-12-12 17:19:41', 500000.00, '2025-12-12 17:19:52', 300000.00, 2, '2025-12-12 17:20:25', 3, 1, '2025-12-12 17:19:30', '2025-12-12 17:20:31');
+INSERT INTO `tb_transaction` VALUES (17, 'JY20251213021005185', 94, 17, 17, 109000.00, 10000.00, NULL, 100000.00, NULL, 0.00, 0, NULL, 0, 1, '2025-12-13 02:10:06', '2025-12-13 02:10:29');
+INSERT INTO `tb_transaction` VALUES (18, 'JY20251213021202966', 94, 19, 16, 1321312.00, 123.00, NULL, 1231.00, NULL, 42342.00, 2, '2025-12-13 02:12:27', 3, 1, '2025-12-13 02:12:03', '2025-12-13 02:12:44');
+INSERT INTO `tb_transaction` VALUES (19, 'JY20251214214042957', 98, 22, 6, 1000000.00, 100000.00, NULL, 0.00, NULL, 0.00, 0, NULL, 0, 0, '2025-12-14 21:40:42', '2025-12-14 21:40:42');
+INSERT INTO `tb_transaction` VALUES (20, 'JY20251214215320556', 9, 15, 19, 1000000.00, 100000.00, '2025-12-14 21:50:00', 0.00, NULL, 0.00, 0, NULL, 1, 0, '2025-12-14 21:53:20', '2025-12-14 21:53:20');
+INSERT INTO `tb_transaction` VALUES (21, 'JY20251215022657128', 75, 15, 4, 2000000.00, 0.00, NULL, 0.00, NULL, 0.00, 0, NULL, 0, 0, '2025-12-15 02:26:57', '2025-12-15 02:26:57');
 
 -- ----------------------------
 -- Table structure for tb_user
@@ -1658,37 +1851,36 @@ CREATE TABLE `tb_user`  (
   `phone` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '联系电话（唯一）',
   `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '邮箱',
   `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '头像地址',
-  `role_type` tinyint NOT NULL DEFAULT 5 COMMENT '角色类型：1=系统管理员，2=销售顾问，3=销售经理，4=财务人员,5普通用户',
   `status` tinyint NOT NULL DEFAULT 1 COMMENT '账号状态：0=禁用，1=正常',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_username`(`username` ASC) USING BTREE,
-  UNIQUE INDEX `uk_phone`(`phone` ASC) USING BTREE,
-  INDEX `idx_role_type`(`role_type` ASC) USING BTREE COMMENT '按角色类型查询索引'
-) ENGINE = InnoDB AUTO_INCREMENT = 21 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '房产销售系统用户表' ROW_FORMAT = DYNAMIC;
+  UNIQUE INDEX `uk_phone`(`phone` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 32 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '房产销售系统用户表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_user
 -- ----------------------------
-INSERT INTO `tb_user` VALUES (1, 'zhangsan', '123456', '系统管理', '13800000001', NULL, '/avatars/default.jpg', 1, 1, '2025-10-30 00:31:05', '2025-12-11 17:19:01');
-INSERT INTO `tb_user` VALUES (2, 'mg1', '123456', '张经理', '13800000002', NULL, '/avatars/default.jpg', 3, 1, '2025-10-30 00:31:05', '2025-12-11 17:19:01');
-INSERT INTO `tb_user` VALUES (3, 'manager2', '123456', '李经理', '13800000003', '11@qq.com', '/avatars/default.jpg', 3, 1, '2025-10-30 00:31:05', '2025-12-11 17:19:01');
-INSERT INTO `tb_user` VALUES (4, 'ss1', '123456', '王销售', '13800000004', NULL, '/avatars/default.jpg', 3, 1, '2025-10-30 00:31:05', '2025-12-11 17:19:01');
-INSERT INTO `tb_user` VALUES (5, 'ss3', '123456', '赵销售', '13800000005', NULL, '/avatars/default.jpg', 2, 1, '2025-10-30 00:31:05', '2025-12-11 17:19:01');
-INSERT INTO `tb_user` VALUES (6, 'ss4', '123456', '刘销售', '13800000006', '111@qq.com', '/avatars/default.jpg', 2, 1, '2025-10-30 00:31:05', '2025-12-11 17:19:01');
-INSERT INTO `tb_user` VALUES (7, 'ff1', '123456', '陈财务', '13800000007', NULL, '/avatars/default.jpg', 4, 1, '2025-10-30 00:31:05', '2025-12-11 17:19:01');
-INSERT INTO `tb_user` VALUES (8, 'finance2', '123456', '杨财务', '13800000008', NULL, '/avatars/default.jpg', 4, 1, '2025-10-30 00:31:05', '2025-12-11 17:19:01');
-INSERT INTO `tb_user` VALUES (9, 'uu1', '123456', '普通用户1', '13800000009', NULL, '/avatars/default.jpg', 5, 1, '2025-10-30 00:31:05', '2025-12-11 17:19:01');
-INSERT INTO `tb_user` VALUES (10, 'user2', '123456', '普通用户2', '13800000010', NULL, '/avatars/default.jpg', 5, 1, '2025-10-30 00:31:05', '2025-12-11 17:19:01');
-INSERT INTO `tb_user` VALUES (13, 'ss5', '123456', 's销售', '19200000001', '', '/avatars/default.jpg', 2, 1, '2025-12-11 01:48:21', '2025-12-11 17:19:01');
-INSERT INTO `tb_user` VALUES (14, 'ss6', '123456', 'q销售', '18790000000', '', '/avatars/default.jpg', 2, 1, '2025-12-11 01:48:58', '2025-12-11 17:19:01');
-INSERT INTO `tb_user` VALUES (15, 'ss7', '123456', 'w销售', '19200002000', '', '/avatars/default.jpg', 3, 1, '2025-12-11 01:49:33', '2025-12-11 17:19:01');
-INSERT INTO `tb_user` VALUES (16, 'sale_zhangwei', '$2a$10$ABC123DEF456', '张伟', '13800138001', 'zhangwei@example.com', '/avatars/default.jpg', 2, 1, '2025-12-11 01:51:28', '2025-12-11 17:19:01');
-INSERT INTO `tb_user` VALUES (17, 'sale_lihua', '$2a$10$GHI789JKL012', '李华', '13800138002', 'lihua@example.com', '/avatars/default.jpg', 2, 1, '2025-12-11 01:51:28', '2025-12-11 17:19:01');
-INSERT INTO `tb_user` VALUES (18, 'sale_wangfang', '$2a$10$MNO345PQR678', '王芳', '13800138003', 'wangfang@example.com', '/avatars/default.jpg', 2, 1, '2025-12-11 01:51:28', '2025-12-11 17:19:01');
-INSERT INTO `tb_user` VALUES (19, 'sale_liuming', '$2a$10$STU901VWX234', '刘明', '13800138004', 'liuming@example.com', '/avatars/default.jpg', 2, 1, '2025-12-11 01:51:28', '2025-12-11 17:19:01');
-INSERT INTO `tb_user` VALUES (20, 'sale_zhaoyang', '$2a$10$YZA567BCD890', '赵阳', '13800138005', 'zhaoyang@example.com', '/avatars/default.jpg', 2, 1, '2025-12-11 01:51:28', '2025-12-11 17:19:01');
+INSERT INTO `tb_user` VALUES (1, 'zhangsan', '123456', '系统管理', '13800000001', '122@cm.com', '/avatars/2.jpg', 1, '2025-10-30 00:31:05', '2025-12-13 02:24:07');
+INSERT INTO `tb_user` VALUES (2, 'mg1', '123456', '张经理', '13800000002', NULL, '/avatars/default.jpg', 1, '2025-10-30 00:31:05', '2025-12-15 02:31:07');
+INSERT INTO `tb_user` VALUES (3, 'manager2', '123456', '李经理', '13800000003', '11@qq.com', '/avatars/1.jpg', 1, '2025-10-30 00:31:05', '2025-12-12 22:45:56');
+INSERT INTO `tb_user` VALUES (4, 'ss1', '123456', '王销售', '13800000004', NULL, '/avatars/default.jpg', 1, '2025-10-30 00:31:05', '2025-12-15 00:53:21');
+INSERT INTO `tb_user` VALUES (5, 'ss3', '123456', '赵销售', '13800000005', NULL, '/avatars/default.jpg', 1, '2025-10-30 00:31:05', '2025-12-11 17:19:01');
+INSERT INTO `tb_user` VALUES (6, 'ss4', '123456', '刘销售', '13800000006', '111@qq.com', '/avatars/default.jpg', 1, '2025-10-30 00:31:05', '2025-12-11 17:19:01');
+INSERT INTO `tb_user` VALUES (7, 'ff1', '123456', '陈财务', '13800000007', NULL, '/avatars/default.jpg', 1, '2025-10-30 00:31:05', '2025-12-11 17:19:01');
+INSERT INTO `tb_user` VALUES (8, 'finance2', '123456', '杨财务', '13800000008', NULL, '/avatars/default.jpg', 1, '2025-10-30 00:31:05', '2025-12-11 17:19:01');
+INSERT INTO `tb_user` VALUES (9, 'uu1', '123456', '普通用户1', '13800000009', NULL, '/avatars/default.jpg', 1, '2025-10-30 00:31:05', '2025-12-11 17:19:01');
+INSERT INTO `tb_user` VALUES (10, 'user2', '123456', '普通用户2', '13800000010', NULL, '/avatars/default.jpg', 1, '2025-10-30 00:31:05', '2025-12-11 17:19:01');
+INSERT INTO `tb_user` VALUES (13, 'ss5', '123456', 's销售', '19200000001', '', '/avatars/default.jpg', 1, '2025-12-11 01:48:21', '2025-12-11 17:19:01');
+INSERT INTO `tb_user` VALUES (14, 'ss6', '123456', 'q销售', '18790000000', '', '/avatars/default.jpg', 1, '2025-12-11 01:48:58', '2025-12-13 16:02:50');
+INSERT INTO `tb_user` VALUES (15, 'ss7', '123456', 'w销售', '19200002000', '', '/avatars/default.jpg', 1, '2025-12-11 01:49:33', '2025-12-13 02:15:04');
+INSERT INTO `tb_user` VALUES (16, 'sale_zhangwei', '123456', '张伟强', '13800138021', 'zhangwei@cc.com', '/avatars/default.jpg', 1, '2025-12-11 01:51:28', '2025-12-13 01:29:58');
+INSERT INTO `tb_user` VALUES (17, 'sale_lihua', '$2a$10$GHI789JKL012', '李华', '13800138002', 'lihua@example.com', '/avatars/default.jpg', 1, '2025-12-11 01:51:28', '2025-12-14 17:52:40');
+INSERT INTO `tb_user` VALUES (18, 'sale_wangfang', '$2a$10$MNO345PQR678', '王芳', '13800138003', 'wangfang@example.com', '/avatars/default.jpg', 1, '2025-12-11 01:51:28', '2025-12-14 17:55:57');
+INSERT INTO `tb_user` VALUES (19, 'sale_liuming', '$2a$10$STU901VWX234', '刘明', '13800138004', 'liuming@example.com', '/avatars/default.jpg', 1, '2025-12-11 01:51:28', '2025-12-14 17:52:49');
+INSERT INTO `tb_user` VALUES (20, 'sale_zhaoyang', '$2a$10$YZA567BCD890', '赵阳', '13800138005', 'zhaoyang@example.com', '/avatars/default.jpg', 1, '2025-12-11 01:51:28', '2025-12-14 17:52:53');
+INSERT INTO `tb_user` VALUES (23, 'test1', '123456', 'test1', '18178321234', '', '/uploads/avatars/default.jpg', 1, '2025-12-14 00:56:52', '2025-12-14 17:52:09');
 
 -- ----------------------------
 -- Table structure for tb_user_role
@@ -1697,31 +1889,37 @@ DROP TABLE IF EXISTS `tb_user_role`;
 CREATE TABLE `tb_user_role`  (
   `id` int NOT NULL AUTO_INCREMENT COMMENT '关联ID',
   `user_id` int NOT NULL COMMENT '用户ID',
-  `role_id` int NOT NULL COMMENT '角色ID',
+  `role_id` int NOT NULL DEFAULT 5 COMMENT '角色ID 1=系统管理员 2=销售顾问 3=销售经理 4=财务人员 5=普通用户',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_user_role`(`user_id` ASC, `role_id` ASC) USING BTREE,
   INDEX `idx_role_id`(`role_id` ASC) USING BTREE,
   CONSTRAINT `fk_user_role_role` FOREIGN KEY (`role_id`) REFERENCES `tb_role` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `fk_user_role_user` FOREIGN KEY (`user_id`) REFERENCES `tb_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 25 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户角色关联表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 68 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户角色关联表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_user_role
 -- ----------------------------
-INSERT INTO `tb_user_role` VALUES (2, 2, 2, '2025-10-30 00:31:05');
-INSERT INTO `tb_user_role` VALUES (5, 5, 3, '2025-10-30 00:31:05');
+INSERT INTO `tb_user_role` VALUES (5, 5, 2, '2025-10-30 00:31:05');
 INSERT INTO `tb_user_role` VALUES (7, 7, 4, '2025-10-30 00:31:05');
 INSERT INTO `tb_user_role` VALUES (8, 8, 4, '2025-10-30 00:31:05');
 INSERT INTO `tb_user_role` VALUES (9, 9, 5, '2025-10-30 00:31:05');
 INSERT INTO `tb_user_role` VALUES (10, 10, 5, '2025-10-30 00:31:05');
-INSERT INTO `tb_user_role` VALUES (12, 4, 3, '2025-12-06 01:26:14');
-INSERT INTO `tb_user_role` VALUES (17, 6, 2, '2025-12-06 22:05:20');
+INSERT INTO `tb_user_role` VALUES (17, 6, 3, '2025-12-06 22:05:20');
 INSERT INTO `tb_user_role` VALUES (20, 1, 1, '2025-12-10 17:43:45');
-INSERT INTO `tb_user_role` VALUES (21, 3, 3, '2025-12-10 18:09:54');
-INSERT INTO `tb_user_role` VALUES (22, 13, 2, '2025-12-11 01:48:21');
-INSERT INTO `tb_user_role` VALUES (23, 14, 2, '2025-12-11 01:48:58');
-INSERT INTO `tb_user_role` VALUES (24, 15, 3, '2025-12-11 01:49:33');
+INSERT INTO `tb_user_role` VALUES (21, 3, 2, '2025-12-10 18:09:54');
+INSERT INTO `tb_user_role` VALUES (22, 13, 3, '2025-12-11 01:48:21');
+INSERT INTO `tb_user_role` VALUES (24, 15, 2, '2025-12-11 01:49:33');
+INSERT INTO `tb_user_role` VALUES (30, 16, 3, '2025-12-12 20:42:02');
+INSERT INTO `tb_user_role` VALUES (32, 14, 2, '2025-12-13 16:02:50');
+INSERT INTO `tb_user_role` VALUES (43, 23, 3, '2025-12-14 17:52:09');
+INSERT INTO `tb_user_role` VALUES (44, 17, 3, '2025-12-14 17:52:40');
+INSERT INTO `tb_user_role` VALUES (46, 19, 4, '2025-12-14 17:52:49');
+INSERT INTO `tb_user_role` VALUES (47, 20, 5, '2025-12-14 17:52:53');
+INSERT INTO `tb_user_role` VALUES (48, 18, 3, '2025-12-14 17:55:57');
+INSERT INTO `tb_user_role` VALUES (65, 4, 2, '2025-12-15 00:53:21');
+INSERT INTO `tb_user_role` VALUES (67, 2, 3, '2025-12-15 02:31:07');
 
 -- ----------------------------
 -- Table structure for tb_view_record
@@ -1733,8 +1931,11 @@ CREATE TABLE `tb_view_record`  (
   `house_id` int NOT NULL COMMENT '房源ID（关联tb_house表）',
   `sales_id` int NOT NULL COMMENT '销售ID（关联tb_user表）',
   `view_time` datetime NOT NULL COMMENT '带看时间',
+  `status` tinyint NOT NULL DEFAULT 2 COMMENT '状态：0=待确认, 1=已预约, 2=已完成, 3=已取消',
+  `appoint_type` tinyint NOT NULL DEFAULT 1 COMMENT '预约方式：1=销售录入, 2=客户线上申请',
   `customer_feedback` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '客户反馈（如\"价格偏高，户型满意\"）',
   `follow_advice` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '跟进建议（如\"下周推送同小区低价房源\"）',
+  `cancel_reason` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '取消原因',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
@@ -1744,24 +1945,43 @@ CREATE TABLE `tb_view_record`  (
   CONSTRAINT `fk_view_customer` FOREIGN KEY (`customer_id`) REFERENCES `tb_customer` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_view_house` FOREIGN KEY (`house_id`) REFERENCES `tb_house` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_view_sales` FOREIGN KEY (`sales_id`) REFERENCES `tb_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 14 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '带看记录表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 35 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '带看记录表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_view_record
 -- ----------------------------
-INSERT INTO `tb_view_record` VALUES (1, 1, 1, 4, '2024-10-10 09:00:00', '户型满意，价格偏高', '继续寻找同小区低价房源', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
-INSERT INTO `tb_view_record` VALUES (2, 1, 4, 4, '2024-10-12 14:00:00', '面积偏小，装修不错', '推荐更大户型房源', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
-INSERT INTO `tb_view_record` VALUES (3, 2, 2, 5, '2024-10-11 10:30:00', '非常满意，考虑购买', '尽快安排二次看房', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
-INSERT INTO `tb_view_record` VALUES (4, 3, 3, 6, '2024-10-13 15:00:00', '楼层太高，价格合适', '推荐中低楼层房源', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
-INSERT INTO `tb_view_record` VALUES (5, 4, 4, 4, '2024-10-14 11:00:00', '性价比高，位置便利', '准备签约材料', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
-INSERT INTO `tb_view_record` VALUES (6, 5, 5, 5, '2024-10-15 16:00:00', '学区房优势明显', '联系教育部门确认学区政策', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
-INSERT INTO `tb_view_record` VALUES (7, 6, 6, 6, '2024-10-16 13:30:00', '环境优美，交通便利', '提供周边配套设施介绍', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
-INSERT INTO `tb_view_record` VALUES (8, 7, 7, 4, '2024-10-17 10:00:00', '海景房视野开阔', '安排业主洽谈价格', '2025-10-30 00:31:05', '2025-10-30 00:31:05');
-INSERT INTO `tb_view_record` VALUES (9, 9, 30, 4, '2025-10-28 10:00:00', '采光很好，户型方正', '重点跟进，意向度高', '2025-12-08 22:00:45', '2025-12-08 22:00:45');
-INSERT INTO `tb_view_record` VALUES (10, 9, 31, 4, '2025-10-28 11:30:00', '位置有点偏', '推荐同价位其他区域', '2025-12-08 22:00:45', '2025-12-08 22:00:45');
-INSERT INTO `tb_view_record` VALUES (11, 10, 62, 5, '2025-11-01 14:00:00', '总价符合预算，学区不错', '催促下定', '2025-12-08 22:00:45', '2025-12-08 22:00:45');
-INSERT INTO `tb_view_record` VALUES (12, 11, 25, 6, '2025-11-02 09:00:00', '装修风格喜欢', '安排复看', '2025-12-08 22:00:45', '2025-12-08 22:00:45');
-INSERT INTO `tb_view_record` VALUES (13, 12, 64, 4, '2025-11-05 16:00:00', '虽然是毛坯但地段好', '计算装修成本给客户', '2025-12-08 22:00:45', '2025-12-08 22:00:45');
+INSERT INTO `tb_view_record` VALUES (1, 1, 1, 4, '2024-10-10 09:00:00', 2, 1, '户型满意，价格偏高', '继续寻找同小区低价房源', NULL, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
+INSERT INTO `tb_view_record` VALUES (2, 1, 4, 4, '2024-10-12 14:00:00', 2, 1, '面积偏小，装修不错', '推荐更大户型房源', NULL, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
+INSERT INTO `tb_view_record` VALUES (3, 2, 2, 5, '2024-10-11 10:30:00', 2, 1, '非常满意，考虑购买', '尽快安排二次看房', NULL, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
+INSERT INTO `tb_view_record` VALUES (4, 3, 3, 6, '2024-10-13 15:00:00', 2, 1, '楼层太高，价格合适', '推荐中低楼层房源', NULL, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
+INSERT INTO `tb_view_record` VALUES (5, 4, 4, 4, '2024-10-14 11:00:00', 2, 1, '性价比高，位置便利', '准备签约材料', NULL, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
+INSERT INTO `tb_view_record` VALUES (6, 5, 5, 5, '2024-10-15 16:00:00', 2, 1, '学区房优势明显', '联系教育部门确认学区政策', NULL, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
+INSERT INTO `tb_view_record` VALUES (7, 6, 6, 6, '2024-10-16 13:30:00', 2, 1, '环境优美，交通便利', '提供周边配套设施介绍', NULL, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
+INSERT INTO `tb_view_record` VALUES (8, 7, 7, 4, '2024-10-17 10:00:00', 2, 1, '海景房视野开阔', '安排业主洽谈价格', NULL, '2025-10-30 00:31:05', '2025-10-30 00:31:05');
+INSERT INTO `tb_view_record` VALUES (9, 9, 30, 4, '2025-10-28 10:00:00', 2, 1, '采光很好，户型方正', '重点跟进，意向度高', NULL, '2025-12-08 22:00:45', '2025-12-08 22:00:45');
+INSERT INTO `tb_view_record` VALUES (10, 9, 31, 4, '2025-10-28 11:30:00', 2, 1, '位置有点偏', '推荐同价位其他区域', NULL, '2025-12-08 22:00:45', '2025-12-08 22:00:45');
+INSERT INTO `tb_view_record` VALUES (11, 10, 62, 5, '2025-11-01 14:00:00', 2, 1, '总价符合预算，学区不错', '催促下定', NULL, '2025-12-08 22:00:45', '2025-12-08 22:00:45');
+INSERT INTO `tb_view_record` VALUES (12, 11, 25, 6, '2025-11-02 09:00:00', 2, 1, '装修风格喜欢', '安排复看', NULL, '2025-12-08 22:00:45', '2025-12-08 22:00:45');
+INSERT INTO `tb_view_record` VALUES (13, 12, 64, 4, '2025-11-05 16:00:00', 2, 1, '虽然是毛坯但地段好', '计算装修成本给客户', NULL, '2025-12-08 22:00:45', '2025-12-08 22:00:45');
+INSERT INTO `tb_view_record` VALUES (14, 1, 39, 4, '2025-12-13 01:25:33', 2, 2, '3213123', NULL, NULL, '2025-12-12 01:25:33', '2025-12-12 01:25:33');
+INSERT INTO `tb_view_record` VALUES (15, 2, 40, 4, '2025-12-14 01:25:33', 2, 2, 'buzd', NULL, NULL, '2025-12-12 01:25:33', '2025-12-12 01:25:33');
+INSERT INTO `tb_view_record` VALUES (16, 3, 41, 5, '2025-12-12 04:25:33', 1, 2, NULL, NULL, NULL, '2025-12-12 01:25:33', '2025-12-12 01:25:33');
+INSERT INTO `tb_view_record` VALUES (17, 4, 42, 6, '2025-12-13 01:25:33', 1, 1, NULL, NULL, NULL, '2025-12-12 01:25:33', '2025-12-12 01:25:33');
+INSERT INTO `tb_view_record` VALUES (18, 1, 45, 4, '2025-12-11 01:25:33', 3, 2, NULL, NULL, '客户临时有事无法前往', '2025-12-10 01:25:33', '2025-12-12 01:25:33');
+INSERT INTO `tb_view_record` VALUES (19, 2, 46, 5, '2025-12-10 01:25:33', 3, 1, NULL, NULL, '房源已售出', '2025-12-09 01:25:33', '2025-12-12 01:25:33');
+INSERT INTO `tb_view_record` VALUES (20, 1, 1, 1, '2025-12-03 00:00:00', 3, 1, NULL, NULL, 'test', '2025-12-12 02:13:39', '2025-12-12 02:13:39');
+INSERT INTO `tb_view_record` VALUES (21, 1, 1, 1, '2025-12-13 00:00:00', 1, 1, NULL, NULL, NULL, '2025-12-12 02:14:24', '2025-12-12 02:14:24');
+INSERT INTO `tb_view_record` VALUES (22, 2, 16, 20, '2025-12-17 16:13:00', 2, 1, 'test', 'test', NULL, '2025-12-12 10:37:03', '2025-12-12 10:37:03');
+INSERT INTO `tb_view_record` VALUES (23, 16, 94, 18, '2025-12-13 00:00:00', 1, 1, NULL, NULL, NULL, '2025-12-13 01:27:28', '2025-12-13 01:27:28');
+INSERT INTO `tb_view_record` VALUES (25, 16, 95, 16, '2025-12-03 00:00:00', 1, 1, NULL, NULL, NULL, '2025-12-13 02:01:59', '2025-12-13 02:01:59');
+INSERT INTO `tb_view_record` VALUES (26, 17, 95, 18, '2025-12-13 02:02:27', 3, 1, NULL, NULL, 'yous', '2025-12-13 02:02:28', '2025-12-13 02:02:28');
+INSERT INTO `tb_view_record` VALUES (27, 16, 94, 13, '2025-12-13 02:02:52', 2, 1, '231131', NULL, NULL, '2025-12-13 02:02:53', '2025-12-13 02:02:53');
+INSERT INTO `tb_view_record` VALUES (28, 19, 94, 15, '2025-12-13 02:04:16', 2, 1, '房子太小不适合', NULL, NULL, '2025-12-13 02:04:17', '2025-12-13 02:04:17');
+INSERT INTO `tb_view_record` VALUES (29, 17, 94, 19, '2025-12-02 00:00:00', 1, 1, NULL, NULL, NULL, '2025-12-14 16:21:43', '2025-12-14 16:21:43');
+INSERT INTO `tb_view_record` VALUES (31, 21, 91, 18, '2025-12-11 00:00:00', 1, 1, NULL, NULL, NULL, '2025-12-14 16:29:08', '2025-12-14 16:29:08');
+INSERT INTO `tb_view_record` VALUES (32, 21, 76, 14, '2025-12-31 00:00:00', 2, 1, '12312', '3123123', NULL, '2025-12-14 16:29:28', '2025-12-14 16:29:28');
+INSERT INTO `tb_view_record` VALUES (33, 21, 94, 18, '2025-12-16 00:00:00', 3, 1, NULL, NULL, 'dasd', '2025-12-14 17:26:14', '2025-12-14 17:26:14');
+INSERT INTO `tb_view_record` VALUES (34, 23, 75, 4, '2025-12-31 00:00:00', 1, 1, NULL, NULL, NULL, '2025-12-15 01:40:15', '2025-12-15 01:40:15');
 
 -- ----------------------------
 -- Table structure for tb_work_notice
@@ -1795,14 +2015,14 @@ CREATE TABLE `tb_work_notice`  (
   INDEX `idx_sender_id`(`sender_id` ASC) USING BTREE,
   INDEX `idx_notice_type`(`notice_type` ASC) USING BTREE,
   INDEX `idx_send_time`(`send_time` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 52 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '工作通知表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 135 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '工作通知表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tb_work_notice
 -- ----------------------------
-INSERT INTO `tb_work_notice` VALUES (1, '月度销售目标通知', '各位销售同事，本月销售目标已设定，请登录系统查看并努力完成。', 1, NULL, 5, NULL, NULL, NULL, 2, '张经理', 2, '[3]', 2, 4, 3, 1, NULL, '2025-11-30 23:59:59', '2025-10-30 09:00:00', '2025-10-30 00:31:05', '2025-12-10 17:19:41', NULL);
+INSERT INTO `tb_work_notice` VALUES (1, '月度销售目标通知', '各位销售同事，本月销售目标已设定，请登录系统查看并努力完成。', 1, NULL, 5, NULL, NULL, NULL, 2, '张经理', 2, '[3]', 2, 5, 3, 1, NULL, '2025-11-30 23:59:59', '2025-10-30 09:00:00', '2025-10-30 00:31:05', '2025-12-12 21:01:02', NULL);
 INSERT INTO `tb_work_notice` VALUES (2, '新交易待审核', '您有新的交易申请需要审核，请及时处理。', 1, NULL, 3, NULL, NULL, NULL, 4, '王销售', 1, '[2]', 1, 2, 1, 1, NULL, '2025-11-01 23:59:59', '2025-10-30 10:30:00', '2025-10-30 00:31:05', '2025-12-10 16:54:09', NULL);
-INSERT INTO `tb_work_notice` VALUES (3, '佣金已发放', '您的佣金已经发放，请查收银行账户。', 1, NULL, 4, NULL, NULL, NULL, 7, '陈财务', 1, '[4]', 2, 1, 1, 1, NULL, NULL, '2025-10-30 14:00:00', '2025-10-30 00:31:05', '2025-10-30 00:31:05', NULL);
+INSERT INTO `tb_work_notice` VALUES (3, '佣金已发放', '您的佣金已经发放，请查收银行账户。', 1, NULL, 4, NULL, NULL, NULL, 7, '陈财务', 1, '[4]', 2, 2, 1, 1, NULL, NULL, '2025-10-30 14:00:00', '2025-10-30 00:31:05', '2025-12-12 21:01:01', NULL);
 INSERT INTO `tb_work_notice` VALUES (4, '系统维护通知', '系统将于今晚22:00-24:00进行维护，期间可能无法访问。', 1, NULL, 1, NULL, NULL, NULL, 1, '系统管理员', 4, '[]', 2, 11, 10, 1, NULL, '2025-10-31 23:59:59', '2025-10-30 16:00:00', '2025-10-30 00:31:05', '2025-12-10 18:19:04', NULL);
 INSERT INTO `tb_work_notice` VALUES (5, '第四季度销售冲刺大会', '请全体销售人员于周五上午9点在大会议室集合，进行季度动员。', 1, NULL, 5, NULL, NULL, NULL, 2, '张经理', 3, '[9, 10]', 1, 2, 9, 1, NULL, NULL, '2025-11-20 08:30:00', '2025-12-08 22:00:45', '2025-12-11 01:25:35', NULL);
 INSERT INTO `tb_work_notice` VALUES (6, '关于最新房贷利率调整的通知', '央行最新政策已出，请各位熟读并告知客户。', 1, NULL, 1, NULL, NULL, NULL, 1, '系统管理员', 4, '[]', 2, 9, 20, 1, NULL, NULL, '2025-11-22 10:00:00', '2025-12-08 22:00:45', '2025-12-10 17:24:16', NULL);
@@ -1812,45 +2032,126 @@ INSERT INTO `tb_work_notice` VALUES (9, '交易审核驳回通知', '您提交�
 INSERT INTO `tb_work_notice` VALUES (10, '预约带看提醒', '客户【陈十六】预约了明日上午10:00看房（房源：FC20250013），请提前做好准备。', 1, NULL, 2, 'view_record', NULL, '/customer/detail?id=14', 1, '系统管理员', 1, '[6]', 1, 1, 1, 1, NULL, '2025-12-10 21:53:26', '2025-12-09 21:53:26', '2025-12-09 21:53:26', '2025-12-10 16:54:07', NULL);
 INSERT INTO `tb_work_notice` VALUES (11, '佣金核算完成通知', '恭喜！您负责的交易【JY20240010】佣金已核算完成，金额：¥5000.00，等待财务发放。', 1, NULL, 4, 'commission', 10, '/commission/detail?id=10', 7, '陈财务', 1, '[5]', 2, 1, 1, 1, NULL, NULL, '2025-12-09 21:53:26', '2025-12-09 21:53:26', '2025-12-10 16:54:09', NULL);
 INSERT INTO `tb_work_notice` VALUES (12, '季度销售复盘会议', '请所有销售顾问于本周五下午14:00在第一会议室参加季度复盘会，请携带业绩报表。', 1, '[\"meeting_agenda.pdf\"]', 5, 'team', 1, NULL, 2, '张经理', 2, '[3]', 2, 8, 20, 1, NULL, '2025-12-12 21:53:26', '2025-12-09 21:53:26', '2025-12-09 21:53:26', '2025-12-10 18:19:05', NULL);
-INSERT INTO `tb_work_notice` VALUES (13, '待确认收款提醒', '系统中有 3 笔新的收款记录待确认，请及时处理。', 1, NULL, 2, 'payment', NULL, '/payment/list?status=0', 1, '系统管理员', 2, '[2]', 1, 1, 2, 1, NULL, NULL, '2025-12-09 21:53:26', '2025-12-09 21:53:26', '2025-12-10 16:54:07', NULL);
+INSERT INTO `tb_work_notice` VALUES (13, '待确认收款提醒', '系统中有 3 笔新的收款记录待确认，请及时处理。', 1, NULL, 2, 'payment', NULL, '/payment/list?status=0', 1, '系统管理员', 2, '[2]', 1, 2, 2, 1, NULL, NULL, '2025-12-09 21:53:26', '2025-12-09 21:53:26', '2025-12-14 21:14:15', NULL);
 INSERT INTO `tb_work_notice` VALUES (14, '房源下架通知', '您维护的房源【FC20240005】因业主暂时不卖已下架，请知悉。', 1, NULL, 2, 'house', 5, '/house/detail?id=5', 2, '张经理', 1, '[6]', 3, 1, 1, 1, NULL, NULL, '2025-12-09 21:53:26', '2025-12-09 21:53:26', '2025-12-11 01:35:26', NULL);
 INSERT INTO `tb_work_notice` VALUES (15, 'test', 'test', 1, NULL, 2, NULL, NULL, NULL, 1, 'zhangsan', 4, '[]', 2, 5, 0, 2, NULL, NULL, '2025-12-10 16:54:47', '2025-12-10 16:54:47', '2025-12-11 01:35:18', NULL);
 INSERT INTO `tb_work_notice` VALUES (16, '123', '1231321', 1, NULL, 1, NULL, NULL, NULL, 1, 'zhangsan', 4, '[]', 1, 4, 0, 2, NULL, NULL, '2025-12-10 16:55:08', '2025-12-10 16:55:08', '2025-12-10 21:43:26', NULL);
-INSERT INTO `tb_work_notice` VALUES (17, 'test', 'test', 1, NULL, 5, NULL, NULL, NULL, 1, 'zhangsan', 3, '[]', 3, 0, 0, 1, NULL, NULL, '2025-12-10 21:43:22', '2025-12-10 21:43:22', '2025-12-10 21:43:21', NULL);
+INSERT INTO `tb_work_notice` VALUES (17, 'test', 'test', 1, NULL, 5, NULL, NULL, NULL, 1, 'zhangsan', 3, '[]', 3, 1, 0, 1, NULL, NULL, '2025-12-10 21:43:22', '2025-12-10 21:43:22', '2025-12-12 21:00:58', NULL);
 INSERT INTO `tb_work_notice` VALUES (18, '11', '11', 1, NULL, 1, NULL, NULL, NULL, 4, 'ss1', 3, '[2]', 2, 0, 0, 2, NULL, NULL, '2025-12-10 22:12:02', '2025-12-10 22:12:02', '2025-12-11 01:35:13', NULL);
 INSERT INTO `tb_work_notice` VALUES (19, '房源待审核', '刘销售 提交了新房源【FC202512110001 (test)】，请及时审核。', 1, NULL, 1, 'house_audit', 93, '/house/audit', 0, '系统', 2, '[1]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:24:09', '2025-12-11 01:24:09', '2025-12-11 01:56:19', NULL);
 INSERT INTO `tb_work_notice` VALUES (20, '房源审核通过', '您的房源【FC202512110001 (test)】已审核通过，已上架。', 1, NULL, 1, 'house_audit_result', 93, '/house/my', 2, '张经理', 1, '[6]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:25:15', '2025-12-11 01:25:15', '2025-12-11 01:34:23', NULL);
 INSERT INTO `tb_work_notice` VALUES (21, '小区待审核', '王销售 提交了新小区【11】，请及时审核。', 1, NULL, 1, 'community_audit', 7, '/community/list', 0, '系统', 2, '[1]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:28:15', '2025-12-11 01:28:15', '2025-12-11 01:34:20', NULL);
-INSERT INTO `tb_work_notice` VALUES (22, '房源待审核', '刘销售 提交了新房源【FC202512110002 (11)】，请及时审核。', 1, NULL, 1, 'house_audit', 94, '/house/audit', 0, '系统', 2, '[1]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:42:11', '2025-12-11 01:42:11', '2025-12-11 01:42:10', NULL);
-INSERT INTO `tb_work_notice` VALUES (23, '团队变动通知', '您已被加入团队【精英销售一部】。', 1, NULL, 1, 'team_change', 13, '/account/profile', 1, '系统管理', 1, '[13]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:52:01', '2025-12-11 01:52:01', '2025-12-11 01:52:01', NULL);
-INSERT INTO `tb_work_notice` VALUES (24, '团队变动通知', '您已被加入团队【精英销售一部】。', 1, NULL, 1, 'team_change', 14, '/account/profile', 1, '系统管理', 1, '[14]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:52:01', '2025-12-11 01:52:01', '2025-12-11 01:52:01', NULL);
-INSERT INTO `tb_work_notice` VALUES (25, '团队变动通知', '您已被加入团队【精英销售一部】。', 1, NULL, 1, 'team_change', 16, '/account/profile', 1, '系统管理', 1, '[16]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:52:01', '2025-12-11 01:52:01', '2025-12-11 01:52:01', NULL);
-INSERT INTO `tb_work_notice` VALUES (26, '团队变动通知', '您已被加入团队【精英销售二部】。', 1, NULL, 1, 'team_change', 17, '/account/profile', 1, '系统管理', 1, '[17]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:52:15', '2025-12-11 01:52:15', '2025-12-11 01:52:14', NULL);
-INSERT INTO `tb_work_notice` VALUES (27, '团队变动通知', '您已被加入团队【精英销售二部】。', 1, NULL, 1, 'team_change', 18, '/account/profile', 1, '系统管理', 1, '[18]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:52:15', '2025-12-11 01:52:15', '2025-12-11 01:52:14', NULL);
-INSERT INTO `tb_work_notice` VALUES (28, '团队变动通知', '您已被加入团队【精英销售二部】。', 1, NULL, 1, 'team_change', 19, '/account/profile', 1, '系统管理', 1, '[19]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:52:15', '2025-12-11 01:52:15', '2025-12-11 01:52:14', NULL);
-INSERT INTO `tb_work_notice` VALUES (29, '团队变动通知', '您已被移出团队【精英销售一部】。', 1, NULL, 1, 'team_change', 5, '/account/profile', 1, '系统管理', 1, '[5]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:52:35', '2025-12-11 01:52:35', '2025-12-11 01:52:34', NULL);
-INSERT INTO `tb_work_notice` VALUES (30, '团队变动通知', '您已被移出团队【精英销售一部】。', 1, NULL, 1, 'team_change', 6, '/account/profile', 1, '系统管理', 1, '[6]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:52:35', '2025-12-11 01:52:35', '2025-12-11 01:52:34', NULL);
-INSERT INTO `tb_work_notice` VALUES (31, '团队变动通知', '您已被移出团队【精英销售一部】。', 1, NULL, 1, 'team_change', 13, '/account/profile', 1, '系统管理', 1, '[13]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:52:35', '2025-12-11 01:52:35', '2025-12-11 01:52:34', NULL);
-INSERT INTO `tb_work_notice` VALUES (32, '团队变动通知', '您已被移出团队【精英销售一部】。', 1, NULL, 1, 'team_change', 14, '/account/profile', 1, '系统管理', 1, '[14]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:52:35', '2025-12-11 01:52:35', '2025-12-11 01:52:34', NULL);
-INSERT INTO `tb_work_notice` VALUES (33, '团队变动通知', '您已被移出团队【精英销售一部】。', 1, NULL, 1, 'team_change', 16, '/account/profile', 1, '系统管理', 1, '[16]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:52:35', '2025-12-11 01:52:35', '2025-12-11 01:52:34', NULL);
-INSERT INTO `tb_work_notice` VALUES (34, '团队变动通知', '您已被移出团队【精英销售二部】。', 1, NULL, 1, 'team_change', 5, '/account/profile', 1, '系统管理', 1, '[5]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:52:41', '2025-12-11 01:52:41', '2025-12-11 01:52:41', NULL);
-INSERT INTO `tb_work_notice` VALUES (35, '团队变动通知', '您已被移出团队【精英销售二部】。', 1, NULL, 1, 'team_change', 6, '/account/profile', 1, '系统管理', 1, '[6]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:52:41', '2025-12-11 01:52:41', '2025-12-11 01:52:41', NULL);
-INSERT INTO `tb_work_notice` VALUES (36, '团队变动通知', '您已被移出团队【精英销售二部】。', 1, NULL, 1, 'team_change', 17, '/account/profile', 1, '系统管理', 1, '[17]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:52:41', '2025-12-11 01:52:41', '2025-12-11 01:52:41', NULL);
-INSERT INTO `tb_work_notice` VALUES (37, '团队变动通知', '您已被移出团队【精英销售二部】。', 1, NULL, 1, 'team_change', 18, '/account/profile', 1, '系统管理', 1, '[18]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:52:41', '2025-12-11 01:52:41', '2025-12-11 01:52:41', NULL);
-INSERT INTO `tb_work_notice` VALUES (38, '团队变动通知', '您已被移出团队【精英销售二部】。', 1, NULL, 1, 'team_change', 19, '/account/profile', 1, '系统管理', 1, '[19]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:52:41', '2025-12-11 01:52:41', '2025-12-11 01:52:41', NULL);
-INSERT INTO `tb_work_notice` VALUES (39, '团队变动通知', '您已被加入团队【精英销售二部】。', 1, NULL, 1, 'team_change', 17, '/account/profile', 1, '系统管理', 1, '[17]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:53:01', '2025-12-11 01:53:01', '2025-12-11 01:53:01', NULL);
-INSERT INTO `tb_work_notice` VALUES (40, '团队变动通知', '您已被加入团队【精英销售二部】。', 1, NULL, 1, 'team_change', 18, '/account/profile', 1, '系统管理', 1, '[18]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:53:01', '2025-12-11 01:53:01', '2025-12-11 01:53:01', NULL);
-INSERT INTO `tb_work_notice` VALUES (41, '团队变动通知', '您已被加入团队【精英销售二部】。', 1, NULL, 1, 'team_change', 19, '/account/profile', 1, '系统管理', 1, '[19]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:53:01', '2025-12-11 01:53:01', '2025-12-11 01:53:01', NULL);
-INSERT INTO `tb_work_notice` VALUES (42, '团队变动通知', '您已被加入团队【精英销售二部】。', 1, NULL, 1, 'team_change', 20, '/account/profile', 1, '系统管理', 1, '[20]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:53:01', '2025-12-11 01:53:01', '2025-12-11 01:53:01', NULL);
-INSERT INTO `tb_work_notice` VALUES (43, '团队变动通知', '您已被加入团队【精英销售一部】。', 1, NULL, 1, 'team_change', 5, '/account/profile', 1, '系统管理', 1, '[5]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:53:09', '2025-12-11 01:53:09', '2025-12-11 01:53:09', NULL);
-INSERT INTO `tb_work_notice` VALUES (44, '团队变动通知', '您已被加入团队【精英销售一部】。', 1, NULL, 1, 'team_change', 6, '/account/profile', 1, '系统管理', 1, '[6]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:53:09', '2025-12-11 01:53:09', '2025-12-11 01:53:09', NULL);
-INSERT INTO `tb_work_notice` VALUES (45, '团队变动通知', '您已被加入团队【精英销售一部】。', 1, NULL, 1, 'team_change', 13, '/account/profile', 1, '系统管理', 1, '[13]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:53:09', '2025-12-11 01:53:09', '2025-12-11 01:53:09', NULL);
-INSERT INTO `tb_work_notice` VALUES (46, '团队变动通知', '您已被加入团队【精英销售一部】。', 1, NULL, 1, 'team_change', 14, '/account/profile', 1, '系统管理', 1, '[14]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:53:09', '2025-12-11 01:53:09', '2025-12-11 01:53:09', NULL);
-INSERT INTO `tb_work_notice` VALUES (47, '团队变动通知', '您已被加入团队【精英销售一部】。', 1, NULL, 1, 'team_change', 16, '/account/profile', 1, '系统管理', 1, '[16]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 01:53:09', '2025-12-11 01:53:09', '2025-12-11 01:53:09', NULL);
-INSERT INTO `tb_work_notice` VALUES (48, '楼盘待审核', '系统管理 提交了新楼盘【1】，请及时审核。', 1, NULL, 1, 'project_audit', 30, '/project/list', 0, '系统', 2, '[1]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 02:03:30', '2025-12-11 02:03:30', '2025-12-11 02:03:29', NULL);
-INSERT INTO `tb_work_notice` VALUES (49, '楼盘待审核', '系统管理 提交了新楼盘【1】，请及时审核。', 1, NULL, 1, 'project_audit', 31, '/project/list', 0, '系统', 2, '[1]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 17:14:25', '2025-12-11 17:14:25', '2025-12-11 17:14:25', NULL);
-INSERT INTO `tb_work_notice` VALUES (50, '房源待审核', '刘销售 提交了新房源【FC202512110003 (test)】，请及时审核。', 1, NULL, 1, 'house_audit', 95, '/house/audit', 0, '系统', 2, '[1]', 2, 0, 0, 1, NULL, NULL, '2025-12-11 23:02:25', '2025-12-11 23:02:25', '2025-12-11 23:02:25', NULL);
-INSERT INTO `tb_work_notice` VALUES (51, 'test', '12312', 1, NULL, 2, NULL, NULL, NULL, 1, 'zhangsan', 3, '[4]', 1, 0, 0, 1, NULL, NULL, '2025-12-12 00:47:18', '2025-12-12 00:47:18', '2025-12-12 00:47:18', NULL);
+INSERT INTO `tb_work_notice` VALUES (22, '房源待审核', '刘销售 提交了新房源【FC202512110002 (11)】，请及时审核。', 1, NULL, 1, 'house_audit', 94, '/house/audit', 0, '系统', 2, '[1]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:42:11', '2025-12-11 01:42:11', '2025-12-12 21:02:05', NULL);
+INSERT INTO `tb_work_notice` VALUES (23, '团队变动通知', '您已被加入团队【精英销售一部】。', 1, NULL, 1, 'team_change', 13, '/account/profile', 1, '系统管理', 1, '[13]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:52:01', '2025-12-11 01:52:01', '2025-12-12 21:00:55', NULL);
+INSERT INTO `tb_work_notice` VALUES (24, '团队变动通知', '您已被加入团队【精英销售一部】。', 1, NULL, 1, 'team_change', 14, '/account/profile', 1, '系统管理', 1, '[14]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:52:01', '2025-12-11 01:52:01', '2025-12-12 21:02:03', NULL);
+INSERT INTO `tb_work_notice` VALUES (25, '团队变动通知', '您已被加入团队【精英销售一部】。', 1, NULL, 1, 'team_change', 16, '/account/profile', 1, '系统管理', 1, '[16]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:52:01', '2025-12-11 01:52:01', '2025-12-12 21:00:54', NULL);
+INSERT INTO `tb_work_notice` VALUES (26, '团队变动通知', '您已被加入团队【精英销售二部】。', 1, NULL, 1, 'team_change', 17, '/account/profile', 1, '系统管理', 1, '[17]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:52:15', '2025-12-11 01:52:15', '2025-12-12 21:00:53', NULL);
+INSERT INTO `tb_work_notice` VALUES (27, '团队变动通知', '您已被加入团队【精英销售二部】。', 1, NULL, 1, 'team_change', 18, '/account/profile', 1, '系统管理', 1, '[18]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:52:15', '2025-12-11 01:52:15', '2025-12-12 21:00:51', NULL);
+INSERT INTO `tb_work_notice` VALUES (28, '团队变动通知', '您已被加入团队【精英销售二部】。', 1, NULL, 1, 'team_change', 19, '/account/profile', 1, '系统管理', 1, '[19]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:52:15', '2025-12-11 01:52:15', '2025-12-12 21:00:50', NULL);
+INSERT INTO `tb_work_notice` VALUES (29, '团队变动通知', '您已被移出团队【精英销售一部】。', 1, NULL, 1, 'team_change', 5, '/account/profile', 1, '系统管理', 1, '[5]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:52:35', '2025-12-11 01:52:35', '2025-12-12 21:00:49', NULL);
+INSERT INTO `tb_work_notice` VALUES (30, '团队变动通知', '您已被移出团队【精英销售一部】。', 1, NULL, 1, 'team_change', 6, '/account/profile', 1, '系统管理', 1, '[6]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:52:35', '2025-12-11 01:52:35', '2025-12-12 21:00:48', NULL);
+INSERT INTO `tb_work_notice` VALUES (31, '团队变动通知', '您已被移出团队【精英销售一部】。', 1, NULL, 1, 'team_change', 13, '/account/profile', 1, '系统管理', 1, '[13]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:52:35', '2025-12-11 01:52:35', '2025-12-12 21:02:00', NULL);
+INSERT INTO `tb_work_notice` VALUES (32, '团队变动通知', '您已被移出团队【精英销售一部】。', 1, NULL, 1, 'team_change', 14, '/account/profile', 1, '系统管理', 1, '[14]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:52:35', '2025-12-11 01:52:35', '2025-12-12 21:00:46', NULL);
+INSERT INTO `tb_work_notice` VALUES (33, '团队变动通知', '您已被移出团队【精英销售一部】。', 1, NULL, 1, 'team_change', 16, '/account/profile', 1, '系统管理', 1, '[16]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:52:35', '2025-12-11 01:52:35', '2025-12-12 21:02:01', NULL);
+INSERT INTO `tb_work_notice` VALUES (34, '团队变动通知', '您已被移出团队【精英销售二部】。', 1, NULL, 1, 'team_change', 5, '/account/profile', 1, '系统管理', 1, '[5]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:52:41', '2025-12-11 01:52:41', '2025-12-12 21:01:17', NULL);
+INSERT INTO `tb_work_notice` VALUES (35, '团队变动通知', '您已被移出团队【精英销售二部】。', 1, NULL, 1, 'team_change', 6, '/account/profile', 1, '系统管理', 1, '[6]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:52:41', '2025-12-11 01:52:41', '2025-12-12 21:01:15', NULL);
+INSERT INTO `tb_work_notice` VALUES (36, '团队变动通知', '您已被移出团队【精英销售二部】。', 1, NULL, 1, 'team_change', 17, '/account/profile', 1, '系统管理', 1, '[17]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:52:41', '2025-12-11 01:52:41', '2025-12-12 21:01:14', NULL);
+INSERT INTO `tb_work_notice` VALUES (37, '团队变动通知', '您已被移出团队【精英销售二部】。', 1, NULL, 1, 'team_change', 18, '/account/profile', 1, '系统管理', 1, '[18]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:52:41', '2025-12-11 01:52:41', '2025-12-12 21:01:12', NULL);
+INSERT INTO `tb_work_notice` VALUES (38, '团队变动通知', '您已被移出团队【精英销售二部】。', 1, NULL, 1, 'team_change', 19, '/account/profile', 1, '系统管理', 1, '[19]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:52:41', '2025-12-11 01:52:41', '2025-12-12 21:01:11', NULL);
+INSERT INTO `tb_work_notice` VALUES (39, '团队变动通知', '您已被加入团队【精英销售二部】。', 1, NULL, 1, 'team_change', 17, '/account/profile', 1, '系统管理', 1, '[17]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:53:01', '2025-12-11 01:53:01', '2025-12-12 21:01:58', NULL);
+INSERT INTO `tb_work_notice` VALUES (40, '团队变动通知', '您已被加入团队【精英销售二部】。', 1, NULL, 1, 'team_change', 18, '/account/profile', 1, '系统管理', 1, '[18]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:53:01', '2025-12-11 01:53:01', '2025-12-12 21:01:06', NULL);
+INSERT INTO `tb_work_notice` VALUES (41, '团队变动通知', '您已被加入团队【精英销售二部】。', 1, NULL, 1, 'team_change', 19, '/account/profile', 1, '系统管理', 1, '[19]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:53:01', '2025-12-11 01:53:01', '2025-12-12 21:01:09', NULL);
+INSERT INTO `tb_work_notice` VALUES (42, '团队变动通知', '您已被加入团队【精英销售二部】。', 1, NULL, 1, 'team_change', 20, '/account/profile', 1, '系统管理', 1, '[20]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:53:01', '2025-12-11 01:53:01', '2025-12-12 21:01:10', NULL);
+INSERT INTO `tb_work_notice` VALUES (43, '团队变动通知', '您已被加入团队【精英销售一部】。', 1, NULL, 1, 'team_change', 5, '/account/profile', 1, '系统管理', 1, '[5]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:53:09', '2025-12-11 01:53:09', '2025-12-12 21:01:30', NULL);
+INSERT INTO `tb_work_notice` VALUES (44, '团队变动通知', '您已被加入团队【精英销售一部】。', 1, NULL, 1, 'team_change', 6, '/account/profile', 1, '系统管理', 1, '[6]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:53:09', '2025-12-11 01:53:09', '2025-12-12 21:01:28', NULL);
+INSERT INTO `tb_work_notice` VALUES (45, '团队变动通知', '您已被加入团队【精英销售一部】。', 1, NULL, 1, 'team_change', 13, '/account/profile', 1, '系统管理', 1, '[13]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:53:09', '2025-12-11 01:53:09', '2025-12-12 21:01:25', NULL);
+INSERT INTO `tb_work_notice` VALUES (46, '团队变动通知', '您已被加入团队【精英销售一部】。', 1, NULL, 1, 'team_change', 14, '/account/profile', 1, '系统管理', 1, '[14]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:53:09', '2025-12-11 01:53:09', '2025-12-12 21:01:27', NULL);
+INSERT INTO `tb_work_notice` VALUES (47, '团队变动通知', '您已被加入团队【精英销售一部】。', 1, NULL, 1, 'team_change', 16, '/account/profile', 1, '系统管理', 1, '[16]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 01:53:09', '2025-12-11 01:53:09', '2025-12-12 21:01:57', NULL);
+INSERT INTO `tb_work_notice` VALUES (48, '楼盘待审核', '系统管理 提交了新楼盘【1】，请及时审核。', 1, NULL, 1, 'project_audit', 30, '/project/list', 0, '系统', 2, '[1]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 02:03:30', '2025-12-11 02:03:30', '2025-12-12 21:01:23', NULL);
+INSERT INTO `tb_work_notice` VALUES (49, '楼盘待审核', '系统管理 提交了新楼盘【1】，请及时审核。', 1, NULL, 1, 'project_audit', 31, '/project/list', 0, '系统', 2, '[1]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 17:14:25', '2025-12-11 17:14:25', '2025-12-12 21:01:22', NULL);
+INSERT INTO `tb_work_notice` VALUES (50, '房源待审核', '刘销售 提交了新房源【FC202512110003 (test)】，请及时审核。', 1, NULL, 1, 'house_audit', 95, '/house/audit', 0, '系统', 2, '[1]', 2, 1, 0, 1, NULL, NULL, '2025-12-11 23:02:25', '2025-12-11 23:02:25', '2025-12-12 21:01:20', NULL);
+INSERT INTO `tb_work_notice` VALUES (51, 'test', '12312', 1, NULL, 2, NULL, NULL, NULL, 1, 'zhangsan', 3, '[4]', 1, 1, 0, 1, NULL, NULL, '2025-12-12 00:47:18', '2025-12-12 00:47:18', '2025-12-12 21:01:19', NULL);
+INSERT INTO `tb_work_notice` VALUES (52, '小区审核未通过', '您提交的小区【11】未通过审核，原因：test', 1, NULL, 1, 'community_audit_result', 7, '/community/list', 1, '系统管理', 1, '[4]', 1, 2, 0, 1, NULL, NULL, '2025-12-12 15:24:00', '2025-12-12 15:24:00', '2025-12-13 16:42:30', NULL);
+INSERT INTO `tb_work_notice` VALUES (53, '交易状态更新', '您的交易【JY20251212161029535】状态已更新为：新建交易', 1, NULL, 3, 'transaction_update', 14, '/transaction/detail/14', 1, '系统管理', 1, '[19]', 2, 1, 0, 1, NULL, NULL, '2025-12-12 16:10:29', '2025-12-12 16:10:29', '2025-12-12 21:01:55', NULL);
+INSERT INTO `tb_work_notice` VALUES (54, '交易状态更新', '您的交易【JY20251212161029535】状态已更新为：已付定金', 1, NULL, 3, 'transaction_update', 14, '/transaction/detail/14', 1, '系统管理', 1, '[19]', 2, 1, 0, 1, NULL, NULL, '2025-12-12 16:13:11', '2025-12-12 16:13:11', '2025-12-12 20:56:26', NULL);
+INSERT INTO `tb_work_notice` VALUES (55, '交易状态更新', '您的交易【JY20240009】状态已更新为：已完成', 1, NULL, 3, 'transaction_update', 9, '/transaction/detail/9', 1, '系统管理', 1, '[4]', 2, 2, 0, 1, NULL, NULL, '2025-12-12 16:47:12', '2025-12-12 16:47:12', '2025-12-13 16:42:29', NULL);
+INSERT INTO `tb_work_notice` VALUES (56, '交易状态更新', '您的交易【JY20240007】状态已更新为：已付定金', 1, NULL, 3, 'transaction_update', 7, '/transaction/detail/7', 1, '系统管理', 1, '[5]', 2, 1, 0, 1, NULL, NULL, '2025-12-12 16:47:46', '2025-12-12 16:47:46', '2025-12-12 20:56:24', NULL);
+INSERT INTO `tb_work_notice` VALUES (57, '交易状态更新', '您的交易【JY20240005】状态已更新为：已完成', 1, NULL, 3, 'transaction_update', 5, '/transaction/detail/5', 1, '系统管理', 1, '[6]', 2, 1, 0, 1, NULL, NULL, '2025-12-12 16:48:45', '2025-12-12 16:48:45', '2025-12-12 20:56:22', NULL);
+INSERT INTO `tb_work_notice` VALUES (58, '交易状态更新', '您的交易【JY20251212170644102】状态已更新为：新建交易', 1, NULL, 3, 'transaction_update', 15, '/transaction/detail/15', 1, '系统管理', 1, '[16]', 2, 1, 0, 1, NULL, NULL, '2025-12-12 17:06:45', '2025-12-12 17:06:45', '2025-12-12 20:56:23', NULL);
+INSERT INTO `tb_work_notice` VALUES (59, '交易状态更新', '您的交易【JY20251212170644102】状态已更新为：已付定金', 1, NULL, 3, 'transaction_update', 15, '/transaction/detail/15', 1, '系统管理', 1, '[16]', 2, 1, 0, 1, NULL, NULL, '2025-12-12 17:07:08', '2025-12-12 17:07:08', '2025-12-12 20:56:21', NULL);
+INSERT INTO `tb_work_notice` VALUES (60, '交易状态更新', '您的交易【JY20251212170644102】状态已更新为：已付首付', 1, NULL, 3, 'transaction_update', 15, '/transaction/detail/15', 1, '系统管理', 1, '[16]', 2, 1, 0, 1, NULL, NULL, '2025-12-12 17:07:36', '2025-12-12 17:07:36', '2025-12-12 20:56:18', NULL);
+INSERT INTO `tb_work_notice` VALUES (61, '交易状态更新', '您的交易【JY20251212170644102】状态已更新为：已付定金', 1, NULL, 3, 'transaction_update', 15, '/transaction/detail/15', 1, '系统管理', 1, '[16]', 2, 1, 0, 1, NULL, NULL, '2025-12-12 17:07:46', '2025-12-12 17:07:46', '2025-12-12 20:56:19', NULL);
+INSERT INTO `tb_work_notice` VALUES (62, '交易状态更新', '您的交易【JY20251212161029535】状态已更新为：已付首付', 1, NULL, 3, 'transaction_update', 14, '/transaction/detail/14', 1, '系统管理', 1, '[19]', 2, 1, 0, 1, NULL, NULL, '2025-12-12 17:12:57', '2025-12-12 17:12:57', '2025-12-12 20:58:51', NULL);
+INSERT INTO `tb_work_notice` VALUES (63, '交易状态更新', '您的交易【JY20251212170644102】状态已更新为：已付首付', 1, NULL, 3, 'transaction_update', 15, '/transaction/detail/15', 1, '系统管理', 1, '[16]', 2, 1, 0, 1, NULL, NULL, '2025-12-12 17:13:23', '2025-12-12 17:13:23', '2025-12-12 20:58:48', NULL);
+INSERT INTO `tb_work_notice` VALUES (64, '交易状态更新', '您的交易【JY20251212161029535】状态已更新为：已完成', 1, NULL, 3, 'transaction_update', 14, '/transaction/detail/14', 1, '系统管理', 1, '[19]', 2, 1, 0, 1, NULL, NULL, '2025-12-12 17:14:01', '2025-12-12 17:14:01', '2025-12-12 20:56:13', NULL);
+INSERT INTO `tb_work_notice` VALUES (65, '交易状态更新', '您的交易【JY20251212161029535】状态已更新为：已过户', 1, NULL, 3, 'transaction_update', 14, '/transaction/detail/14', 1, '系统管理', 1, '[19]', 2, 1, 0, 1, NULL, NULL, '2025-12-12 17:14:05', '2025-12-12 17:14:05', '2025-12-12 20:56:12', NULL);
+INSERT INTO `tb_work_notice` VALUES (66, '交易状态更新', '您的交易【JY20251212171929750】状态已更新为：新建交易', 1, NULL, 3, 'transaction_update', 16, '/transaction/detail/16', 1, '系统管理', 1, '[18]', 2, 1, 0, 1, NULL, NULL, '2025-12-12 17:19:30', '2025-12-12 17:19:30', '2025-12-12 20:56:11', NULL);
+INSERT INTO `tb_work_notice` VALUES (67, '交易状态更新', '您的交易【JY20251212171929750】状态已更新为：已付定金', 1, NULL, 3, 'transaction_update', 16, '/transaction/detail/16', 1, '系统管理', 1, '[18]', 2, 1, 0, 1, NULL, NULL, '2025-12-12 17:19:41', '2025-12-12 17:19:41', '2025-12-12 20:56:09', NULL);
+INSERT INTO `tb_work_notice` VALUES (68, '交易状态更新', '您的交易【JY20251212171929750】状态已更新为：已付首付', 1, NULL, 3, 'transaction_update', 16, '/transaction/detail/16', 1, '系统管理', 1, '[18]', 2, 1, 0, 1, NULL, NULL, '2025-12-12 17:19:52', '2025-12-12 17:19:52', '2025-12-12 20:56:08', NULL);
+INSERT INTO `tb_work_notice` VALUES (69, '交易状态更新', '您的交易【JY20251212171929750】状态已更新为：已过户', 1, NULL, 3, 'transaction_update', 16, '/transaction/detail/16', 1, '系统管理', 1, '[18]', 2, 1, 0, 1, NULL, NULL, '2025-12-12 17:20:25', '2025-12-12 17:20:25', '2025-12-12 20:55:54', NULL);
+INSERT INTO `tb_work_notice` VALUES (70, '收款已作废', '交易关联的一笔收款已被作废，原因：test', 1, NULL, 3, 'payment_voided', 23, '/transaction/detail/16', 1, '系统管理', 1, '[18]', 1, 1, 0, 1, NULL, NULL, '2025-12-12 17:39:26', '2025-12-12 17:39:26', '2025-12-12 20:55:49', NULL);
+INSERT INTO `tb_work_notice` VALUES (71, '房源审核未通过', '您的房源【FC202512110003 (test)】未通过审核，原因：1111', 1, NULL, 1, 'house_audit_result', 95, '/house/my', 1, '系统管理', 1, '[6]', 1, 1, 0, 1, NULL, NULL, '2025-12-12 17:53:54', '2025-12-12 17:53:54', '2025-12-12 20:55:48', NULL);
+INSERT INTO `tb_work_notice` VALUES (72, '小区待审核', '系统管理 提交了新小区【12·2】，请及时审核。', 1, NULL, 1, 'community_audit', 8, '/community/list', 0, '系统', 2, '[1]', 2, 1, 0, 1, NULL, NULL, '2025-12-12 18:19:05', '2025-12-12 18:19:05', '2025-12-12 20:55:47', NULL);
+INSERT INTO `tb_work_notice` VALUES (73, '楼盘待审核', '系统管理 提交了新楼盘【11】，请及时审核。', 1, NULL, 1, 'project_audit', 32, '/project/list', 0, '系统', 2, '[1]', 2, 1, 0, 1, NULL, NULL, '2025-12-12 18:42:25', '2025-12-12 18:42:25', '2025-12-12 20:55:44', NULL);
+INSERT INTO `tb_work_notice` VALUES (74, '楼盘待审核', '系统管理 提交了新楼盘【231】，请及时审核。', 1, NULL, 1, 'project_audit', 33, '/project/list', 0, '系统', 2, '[1]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 01:10:31', '2025-12-13 01:10:31', '2025-12-14 16:43:35', NULL);
+INSERT INTO `tb_work_notice` VALUES (75, '小区待审核', '系统管理 提交了新小区【123】，请及时审核。', 1, NULL, 1, 'community_audit', 9, '/community/list', 0, '系统', 2, '[1]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 01:26:22', '2025-12-13 01:26:22', '2025-12-14 16:44:03', NULL);
+INSERT INTO `tb_work_notice` VALUES (76, '团队变动通知', '您已被移出团队【金牌销售团队】。', 1, NULL, 1, 'team_change', 5, '/account/profile', 1, '系统管理', 1, '[5]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 01:43:55', '2025-12-13 01:43:55', '2025-12-14 16:44:02', NULL);
+INSERT INTO `tb_work_notice` VALUES (77, '楼盘待审核', '系统管理 提交了新楼盘【21】，请及时审核。', 1, NULL, 1, 'project_audit', 34, '/project/list', 0, '系统', 2, '[1]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 01:53:14', '2025-12-13 01:53:14', '2025-12-14 16:44:00', NULL);
+INSERT INTO `tb_work_notice` VALUES (78, '楼盘审核通过', '您提交的楼盘【21】已审核通过，当前状态：待售。', 1, NULL, 1, 'project_audit_result', 34, '/project/list', 1, '系统管理', 1, '[1]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 01:53:59', '2025-12-13 01:53:59', '2025-12-14 16:43:59', NULL);
+INSERT INTO `tb_work_notice` VALUES (79, '小区审核通过', '您提交的小区【1231】已审核通过。', 1, NULL, 1, 'community_audit_result', 9, '/community/list', 1, '系统管理', 1, '[1]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 01:56:42', '2025-12-13 01:56:42', '2025-12-14 16:43:50', NULL);
+INSERT INTO `tb_work_notice` VALUES (80, '交易状态更新', '您的交易【JY20251213021005185】状态已更新为：新建交易', 1, NULL, 3, 'transaction_update', 17, '/transaction/detail/17', 1, '系统管理', 1, '[17]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 02:10:06', '2025-12-13 02:10:06', '2025-12-14 16:43:48', NULL);
+INSERT INTO `tb_work_notice` VALUES (81, '交易状态更新', '您的交易【JY20251213021202966】状态已更新为：新建交易', 1, NULL, 3, 'transaction_update', 18, '/transaction/detail/18', 1, '系统管理', 1, '[16]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 02:12:03', '2025-12-13 02:12:03', '2025-12-14 16:43:47', NULL);
+INSERT INTO `tb_work_notice` VALUES (82, '交易状态更新', '您的交易【JY20251213021202966】状态已更新为：已付首付', 1, NULL, 3, 'transaction_update', 18, '/transaction/detail/18', 1, '系统管理', 1, '[16]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 02:12:13', '2025-12-13 02:12:13', '2025-12-14 16:43:45', NULL);
+INSERT INTO `tb_work_notice` VALUES (83, '交易状态更新', '您的交易【JY20251213021202966】状态已更新为：已过户', 1, NULL, 3, 'transaction_update', 18, '/transaction/detail/18', 1, '系统管理', 1, '[16]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 02:12:27', '2025-12-13 02:12:27', '2025-12-14 16:43:44', NULL);
+INSERT INTO `tb_work_notice` VALUES (84, '交易状态更新', '您的交易【JY20251213021202966】状态已更新为：已完成', 1, NULL, 3, 'transaction_update', 18, '/transaction/detail/18', 1, '系统管理', 1, '[16]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 02:12:39', '2025-12-13 02:12:39', '2025-12-14 16:43:42', NULL);
+INSERT INTO `tb_work_notice` VALUES (85, '交易状态更新', '您的交易【JY20251213021202966】状态已更新为：已过户', 1, NULL, 3, 'transaction_update', 18, '/transaction/detail/18', 1, '系统管理', 1, '[16]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 02:12:44', '2025-12-13 02:12:44', '2025-12-14 16:43:32', NULL);
+INSERT INTO `tb_work_notice` VALUES (86, '团队变动通知', '您已被加入团队【21】。', 1, NULL, 1, 'team_change', 5, '/account/profile', 1, '系统管理', 1, '[5]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 02:15:18', '2025-12-13 02:15:18', '2025-12-14 16:43:26', NULL);
+INSERT INTO `tb_work_notice` VALUES (87, '团队变动通知', '您已被加入团队【21】。', 1, NULL, 1, 'team_change', 6, '/account/profile', 1, '系统管理', 1, '[6]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 02:15:18', '2025-12-13 02:15:18', '2025-12-14 16:43:27', NULL);
+INSERT INTO `tb_work_notice` VALUES (88, '团队变动通知', '您已被加入团队【21】。', 1, NULL, 1, 'team_change', 13, '/account/profile', 1, '系统管理', 1, '[13]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 02:15:18', '2025-12-13 02:15:18', '2025-12-14 16:43:28', NULL);
+INSERT INTO `tb_work_notice` VALUES (89, '团队变动通知', '您已被加入团队【21】。', 1, NULL, 1, 'team_change', 14, '/account/profile', 1, '系统管理', 1, '[14]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 02:15:18', '2025-12-13 02:15:18', '2025-12-14 16:43:30', NULL);
+INSERT INTO `tb_work_notice` VALUES (90, '团队变动通知', '您已被移出团队【21】。', 1, NULL, 1, 'team_change', 5, '/account/profile', 1, '系统管理', 1, '[5]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 02:15:33', '2025-12-13 02:15:33', '2025-12-14 16:43:23', NULL);
+INSERT INTO `tb_work_notice` VALUES (91, '团队变动通知', '您已被移出团队【21】。', 1, NULL, 1, 'team_change', 6, '/account/profile', 1, '系统管理', 1, '[6]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 02:15:33', '2025-12-13 02:15:33', '2025-12-14 16:43:24', NULL);
+INSERT INTO `tb_work_notice` VALUES (92, '团队变动通知', '您已被加入团队【21】。', 1, NULL, 1, 'team_change', 5, '/account/profile', 1, '系统管理', 1, '[5]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 02:15:40', '2025-12-13 02:15:40', '2025-12-13 16:06:45', NULL);
+INSERT INTO `tb_work_notice` VALUES (93, '团队变动通知', '您已被加入团队【21】。', 1, NULL, 1, 'team_change', 6, '/account/profile', 1, '系统管理', 1, '[6]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 02:15:40', '2025-12-13 02:15:40', '2025-12-14 16:43:18', NULL);
+INSERT INTO `tb_work_notice` VALUES (94, '团队变动通知', '您已被加入团队【21】。', 1, NULL, 1, 'team_change', 15, '/account/profile', 1, '系统管理', 1, '[15]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 02:15:40', '2025-12-13 02:15:40', '2025-12-14 16:43:20', NULL);
+INSERT INTO `tb_work_notice` VALUES (95, '团队变动通知', '您已被加入团队【21】。', 1, NULL, 1, 'team_change', 17, '/account/profile', 1, '系统管理', 1, '[17]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 02:15:40', '2025-12-13 02:15:40', '2025-12-14 16:43:22', NULL);
+INSERT INTO `tb_work_notice` VALUES (96, '团队变动通知', '您已被移出团队【先锋销售团队】。', 1, NULL, 1, 'team_change', 6, '/account/profile', 1, '系统管理', 1, '[6]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 02:15:48', '2025-12-13 02:15:48', '2025-12-13 16:06:44', NULL);
+INSERT INTO `tb_work_notice` VALUES (97, '收款已作废', '交易关联的一笔收款已被作废，原因：12', 1, NULL, 3, 'payment_voided', 24, '/transaction/detail/16', 1, '系统管理', 1, '[18]', 1, 1, 0, 1, NULL, NULL, '2025-12-13 02:18:43', '2025-12-13 02:18:43', '2025-12-13 16:06:43', NULL);
+INSERT INTO `tb_work_notice` VALUES (98, '收款已确认', '交易关联的收款（￥123.00）已确认到账。', 1, NULL, 3, 'payment_confirmed', 30, '/transaction/detail/14', 1, '系统管理', 1, '[19]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 02:18:48', '2025-12-13 02:18:48', '2025-12-13 16:06:41', NULL);
+INSERT INTO `tb_work_notice` VALUES (99, '13123', '13213', 1, NULL, 1, NULL, NULL, NULL, 1, 'zhangsan', 4, '[]', 1, 3, 0, 1, NULL, NULL, '2025-12-13 02:20:42', '2025-12-13 02:20:42', '2025-12-13 17:13:04', NULL);
+INSERT INTO `tb_work_notice` VALUES (100, '12313', '123123', 1, NULL, 1, NULL, NULL, NULL, 1, 'zhangsan', 3, '[12]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 02:20:51', '2025-12-13 02:20:51', '2025-12-13 16:06:36', NULL);
+INSERT INTO `tb_work_notice` VALUES (101, '1231', '123113', 1, NULL, 2, NULL, NULL, NULL, 1, 'zhangsan', 3, '[5]', 1, 2, 0, 1, NULL, NULL, '2025-12-13 02:21:03', '2025-12-13 02:21:03', '2025-12-13 16:42:27', NULL);
+INSERT INTO `tb_work_notice` VALUES (103, '123', '123', 1, NULL, 5, NULL, NULL, NULL, 1, 'zhangsan', 1, '[17]', 2, 0, 0, 2, NULL, NULL, '2025-12-13 02:21:34', '2025-12-13 02:21:34', '2025-12-13 02:21:37', NULL);
+INSERT INTO `tb_work_notice` VALUES (104, '小区待审核', '系统管理 提交了新小区【admuin】，请及时审核。', 1, NULL, 1, 'community_audit', 10, '/community/list', 0, '系统', 2, '[1]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 15:48:47', '2025-12-13 15:48:47', '2025-12-13 16:06:33', NULL);
+INSERT INTO `tb_work_notice` VALUES (105, '小区审核通过', '您提交的小区【admuin】已审核通过。', 1, NULL, 1, 'community_audit_result', 10, '/community/list', 1, '系统管理', 1, '[1]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 15:50:46', '2025-12-13 15:50:46', '2025-12-13 16:06:31', NULL);
+INSERT INTO `tb_work_notice` VALUES (106, '楼盘待审核', '张经理 提交了新楼盘【test1】，请及时审核。', 1, NULL, 1, 'project_audit', 35, '/project/list', 0, '系统', 2, '[1]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 16:04:09', '2025-12-13 16:04:09', '2025-12-13 16:04:19', NULL);
+INSERT INTO `tb_work_notice` VALUES (107, '楼盘审核通过', '您提交的楼盘【test1】已审核通过，当前状态：待售。', 1, NULL, 1, 'project_audit_result', 35, '/project/list', 1, '系统管理', 1, '[2]', 2, 2, 0, 1, NULL, NULL, '2025-12-13 16:07:08', '2025-12-13 16:07:08', '2025-12-13 17:10:49', NULL);
+INSERT INTO `tb_work_notice` VALUES (108, '楼盘审核未通过', '您提交的楼盘【231】未通过审核，原因：项目已经存在', 1, NULL, 1, 'project_audit_result', 33, '/project/list', 1, '系统管理', 1, '[1]', 1, 1, 0, 1, NULL, NULL, '2025-12-13 16:07:23', '2025-12-13 16:07:23', '2025-12-13 16:07:47', NULL);
+INSERT INTO `tb_work_notice` VALUES (109, '房源审核通过', '您的房源【FC202512110003 (test)】已审核通过，已上架。', 1, NULL, 1, 'house_audit_result', 95, '/house/my', 4, '王销售', 1, '[5]', 2, 1, 0, 1, NULL, NULL, '2025-12-13 22:55:04', '2025-12-13 22:55:04', '2025-12-14 16:43:11', NULL);
+INSERT INTO `tb_work_notice` VALUES (110, '楼盘待审核', '系统管理 提交了新楼盘【12】，请及时审核。', 1, NULL, 1, 'project_audit', 36, '/project/list', 0, '系统', 2, '[1]', 2, 1, 0, 1, NULL, NULL, '2025-12-14 02:46:16', '2025-12-14 02:46:16', '2025-12-14 16:43:09', NULL);
+INSERT INTO `tb_work_notice` VALUES (111, '小区待审核', '系统管理 提交了新小区【12】，请及时审核。', 1, NULL, 1, 'community_audit', 11, '/community/list', 0, '系统', 2, '[1]', 2, 0, 0, 2, NULL, NULL, '2025-12-14 02:49:14', '2025-12-14 02:49:14', '2025-12-14 16:43:08', NULL);
+INSERT INTO `tb_work_notice` VALUES (113, '房源待审核', '赵销售 提交了新房源【FC202512140001 (11)】，请及时审核。', 1, NULL, 1, 'house_audit', 96, '/house/audit', 0, '系统', 2, '[1]', 2, 1, 0, 1, NULL, NULL, '2025-12-14 16:50:14', '2025-12-14 16:50:14', '2025-12-14 17:00:08', NULL);
+INSERT INTO `tb_work_notice` VALUES (114, '小区审核未通过', '您提交的小区【12】未通过审核，原因：3213', 1, NULL, 1, 'community_audit_result', 11, '/community/list', 1, '系统管理', 1, '[1]', 1, 0, 0, 1, NULL, NULL, '2025-12-14 17:23:29', '2025-12-14 17:23:29', '2025-12-14 17:23:28', NULL);
+INSERT INTO `tb_work_notice` VALUES (115, '小区审核通过', '您提交的小区【tt1】已审核通过。', 1, NULL, 1, 'community_audit_result', 6, '/community/list', 1, '系统管理', 1, '[2]', 2, 1, 0, 1, NULL, NULL, '2025-12-14 17:24:00', '2025-12-14 17:24:00', '2025-12-14 21:14:17', NULL);
+INSERT INTO `tb_work_notice` VALUES (116, '楼盘待审核', '系统管理 提交了新楼盘【3213】，请及时审核。', 1, NULL, 1, 'project_audit', 37, '/project/list', 0, '系统', 2, '[1]', 2, 0, 0, 1, NULL, NULL, '2025-12-14 17:24:43', '2025-12-14 17:24:43', '2025-12-14 17:24:42', NULL);
+INSERT INTO `tb_work_notice` VALUES (117, '楼盘审核通过', '您提交的楼盘【3213】已审核通过，当前状态：待售。', 1, NULL, 1, 'project_audit_result', 37, '/project/list', 1, '系统管理', 1, '[1]', 2, 0, 0, 1, NULL, NULL, '2025-12-14 17:24:50', '2025-12-14 17:24:50', '2025-12-14 17:24:49', NULL);
+INSERT INTO `tb_work_notice` VALUES (118, '新客户分配提醒', '您已分配新客户【12】，请尽快跟进。', 1, NULL, 1, 'customer_assign', 22, '/customer/my', 1, '系统管理', 1, '[1]', 2, 0, 0, 1, NULL, NULL, '2025-12-14 17:26:04', '2025-12-14 17:26:04', '2025-12-14 17:26:03', NULL);
+INSERT INTO `tb_work_notice` VALUES (119, '收款已作废', '交易关联的一笔收款已被作废，原因：``', 1, NULL, 3, 'payment_voided', 30, '/transaction/detail/14', 1, '系统管理', 1, '[19]', 1, 0, 0, 1, NULL, NULL, '2025-12-14 17:27:54', '2025-12-14 17:27:54', '2025-12-14 17:27:53', NULL);
+INSERT INTO `tb_work_notice` VALUES (120, '房源审核通过', '您的房源【FC202512140001 (11)】已审核通过，已上架。', 1, NULL, 1, 'house_audit_result', 96, '/house/my', 1, '系统管理', 1, '[5]', 2, 0, 0, 1, NULL, NULL, '2025-12-14 17:30:51', '2025-12-14 17:30:51', '2025-12-14 17:30:51', NULL);
+INSERT INTO `tb_work_notice` VALUES (121, '房源待审核', '系统管理 提交了新房源【FC202512140002 (123)】，请及时审核。', 1, NULL, 1, 'house_audit', 97, '/house/audit', 0, '系统', 2, '[1]', 2, 0, 0, 1, NULL, NULL, '2025-12-14 17:34:42', '2025-12-14 17:34:42', '2025-12-14 17:34:42', NULL);
+INSERT INTO `tb_work_notice` VALUES (122, '房源待审核', '刘销售 提交了新房源【FC202512140002 (3123)】，请及时审核。', 1, NULL, 1, 'house_audit', 98, '/house/audit', 0, '系统', 2, '[1]', 2, 0, 0, 1, NULL, NULL, '2025-12-14 17:35:19', '2025-12-14 17:35:19', '2025-12-14 17:35:19', NULL);
+INSERT INTO `tb_work_notice` VALUES (123, '房源待审核', 'test1 提交了新房源【FC202512140003 (31212)】，请及时审核。', 1, NULL, 1, 'house_audit', 99, '/house/audit', 0, '系统', 2, '[1]', 2, 0, 0, 1, NULL, NULL, '2025-12-14 18:11:48', '2025-12-14 18:11:48', '2025-12-14 18:11:48', NULL);
+INSERT INTO `tb_work_notice` VALUES (124, '房源待审核', '王销售 提交了新房源【FC202512140004 (12)】，请及时审核。', 1, NULL, 1, 'house_audit', 100, '/house/audit', 0, '系统', 2, '[1]', 2, 0, 0, 1, NULL, NULL, '2025-12-14 19:01:04', '2025-12-14 19:01:04', '2025-12-14 19:01:04', NULL);
+INSERT INTO `tb_work_notice` VALUES (125, '房源审核通过', '您的房源【FC202512140004 (12)】已审核通过，已上架。', 1, NULL, 1, 'house_audit_result', 100, '/house/my', 4, '王销售', 1, '[4]', 2, 0, 0, 1, NULL, NULL, '2025-12-14 19:06:47', '2025-12-14 19:06:47', '2025-12-14 19:06:46', NULL);
+INSERT INTO `tb_work_notice` VALUES (126, '房源审核通过', '您的房源【FC202512140002 (3123)】已审核通过，已上架。', 1, NULL, 1, 'house_audit_result', 98, '/house/my', 4, '王销售', 1, '[6]', 2, 0, 0, 1, NULL, NULL, '2025-12-14 19:45:08', '2025-12-14 19:45:08', '2025-12-14 19:45:08', NULL);
+INSERT INTO `tb_work_notice` VALUES (127, '交易状态更新', '您的交易【JY20251214214042957】状态已更新为：新建交易', 1, NULL, 3, 'transaction_update', 19, '/transaction/detail/19', 1, '系统管理', 1, '[6]', 2, 0, 0, 1, NULL, NULL, '2025-12-14 21:40:42', '2025-12-14 21:40:42', '2025-12-14 21:40:42', NULL);
+INSERT INTO `tb_work_notice` VALUES (128, '交易状态更新', '您的交易【JY20251214215320556】状态已更新为：新建交易', 1, NULL, 3, 'transaction_update', 20, '/transaction/detail/20', 0, '系统', 1, '[19]', 2, 0, 0, 1, NULL, NULL, '2025-12-14 21:53:20', '2025-12-14 21:53:20', '2025-12-14 21:53:20', NULL);
+INSERT INTO `tb_work_notice` VALUES (129, '房源待审核', '李华 提交了新房源【FC202512140003 (test)】，请及时审核。', 1, NULL, 1, 'house_audit', 101, '/house/audit', 0, '系统', 2, '[1]', 2, 0, 0, 1, NULL, NULL, '2025-12-14 22:05:29', '2025-12-14 22:05:29', '2025-12-14 22:05:29', NULL);
+INSERT INTO `tb_work_notice` VALUES (130, '交易状态更新', '您的交易【JY20251214215320556】状态已更新为：已付定金', 1, NULL, 3, 'transaction_update', 20, '/transaction/detail/20', 1, '系统管理', 1, '[19]', 2, 0, 0, 1, NULL, NULL, '2025-12-14 22:14:59', '2025-12-14 22:14:59', '2025-12-14 22:14:59', NULL);
+INSERT INTO `tb_work_notice` VALUES (131, '收款已确认', '交易关联的收款（￥100,000.00）已确认到账。', 1, NULL, 3, 'payment_confirmed', 31, '/transaction/detail/20', 1, '系统管理', 1, '[19]', 2, 0, 0, 1, NULL, NULL, '2025-12-14 22:14:59', '2025-12-14 22:14:59', '2025-12-14 22:14:59', NULL);
+INSERT INTO `tb_work_notice` VALUES (132, '房源审核通过', '您的房源【FC202512110002 (11)】已审核通过，已上架。', 1, NULL, 1, 'house_audit_result', 94, '/house/my', 4, '王销售', 1, '[6]', 2, 0, 0, 1, NULL, NULL, '2025-12-14 22:37:50', '2025-12-14 22:37:50', '2025-12-14 22:37:50', NULL);
+INSERT INTO `tb_work_notice` VALUES (133, '新客户分配提醒', '您已分配新客户【21】，请尽快跟进。', 1, NULL, 1, 'customer_assign', 23, '/customer/my', 4, '王销售', 1, '[4]', 2, 0, 0, 1, NULL, NULL, '2025-12-15 01:26:44', '2025-12-15 01:26:44', '2025-12-15 01:26:44', NULL);
+INSERT INTO `tb_work_notice` VALUES (134, '交易状态更新', '您的交易【JY20251215022657128】状态已更新为：新建交易', 1, NULL, 3, 'transaction_update', 21, '/transaction/detail/21', 4, '王销售', 1, '[4]', 2, 0, 0, 1, NULL, NULL, '2025-12-15 02:26:57', '2025-12-15 02:26:57', '2025-12-15 02:26:57', NULL);
 
 -- ----------------------------
 -- Function structure for fn_check_user_permission

@@ -32,6 +32,7 @@ export interface TransactionVO {
   loanStatus: number;   // 0=未申请，1=审核中，2=已放款，3=未通过
   status: number;       // 0=待付定金，1=已付定金，2=已付首付，3=已过户，4=已完成，5=已取消
   managerAudit: number; // 0=待审核，1=已通过，2=已驳回
+  finishAudit?: number; // 0=未申请，1=待审核，2=已通过，3=已驳回
   createTime: string;
   updateTime?: string;
 }
@@ -47,6 +48,7 @@ export interface TransactionForm {
   loanStatus: number;
   status: number;
   managerAudit: number;
+  finishAudit?: number;
 }
 
 // 4. 分页响应数据结构

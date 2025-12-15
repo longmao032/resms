@@ -1,1 +1,248 @@
+/* 全局主题样式 */
 
+/* 字体大小设置 */
+html.font-small {
+  font-size: 12px;
+}
+
+html.font-medium {
+  font-size: 14px;
+}
+
+html.font-large {
+  font-size: 16px;
+}
+
+/* 深色主题 */
+html.dark {
+  --el-bg-color: #141414;
+  --el-bg-color-page: #0a0a0a;
+  --el-bg-color-overlay: #1d1d1d;
+  --el-text-color-primary: rgba(255, 255, 255, 0.85);
+  --el-text-color-regular: rgba(255, 255, 255, 0.65);
+  --el-text-color-secondary: rgba(255, 255, 255, 0.45);
+  --el-text-color-placeholder: rgba(255, 255, 255, 0.25);
+  --el-border-color: #434343;
+  --el-border-color-light: #303030;
+  --el-border-color-lighter: #262626;
+  --el-fill-color: rgba(255, 255, 255, 0.04);
+  --el-fill-color-light: rgba(255, 255, 255, 0.06);
+  --el-fill-color-lighter: rgba(255, 255, 255, 0.08);
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #0a0a0a;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+html.dark .admin-layout .header {
+  background-color: #141414;
+  border-bottom: 1px solid #303030;
+}
+
+html.dark .admin-layout .sidebar {
+  background-color: #141414;
+  border-right: 1px solid #303030;
+}
+
+html.dark .admin-layout .sidebar .menu {
+  background-color: transparent;
+}
+
+html.dark .admin-layout .main-content {
+  background-color: #0a0a0a;
+}
+
+html.dark .admin-layout .breadcrumb-header {
+  background-color: #141414;
+  border-bottom: 1px solid #303030;
+}
+
+html.dark .el-card {
+  background-color: #1d1d1d;
+  border-color: #303030;
+}
+
+html.dark .el-table {
+  --el-table-bg-color: #1d1d1d;
+  --el-table-header-bg-color: #262626;
+  --el-table-row-hover-bg-color: #262626;
+  --el-table-border-color: #303030;
+}
+
+html.dark .el-menu {
+  background-color: transparent;
+  border-right: none;
+}
+
+html.dark .el-menu-item,
+html.dark .el-sub-menu__title {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+html.dark .el-menu-item:hover,
+html.dark .el-sub-menu__title:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .el-menu-item.is-active {
+  background-color: rgba(24, 144, 255, 0.2);
+  color: #409eff;
+}
+
+html.dark .el-input__wrapper {
+  background-color: #262626;
+  box-shadow: 0 0 0 1px #434343 inset;
+}
+
+html.dark .el-button--default {
+  background-color: #262626;
+  border-color: #434343;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+html.dark .el-dialog {
+  background-color: #1d1d1d;
+}
+
+html.dark .el-form-item__label {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* ==========================================================================
+   Google Material Design 3 (Material You) Overrides
+   ========================================================================== */
+
+/* 1. Global Background & Colors */
+body {
+  background-color: #f8f9fa;
+  /* Google Main Background */
+  color: #1f1f1f;
+  /* Google On Surface */
+  font-family: 'Google Sans', 'Roboto', 'Arial', sans-serif;
+}
+
+/* 2. Cards (Material 3 Card) */
+.el-card {
+  border: 1px solid #e0e2e0 !important;
+  /* M3 Outline */
+  border-radius: 24px !important;
+  /* M3 Corner Radius */
+  box-shadow: none !important;
+  /* Flat by default */
+  background-color: #ffffff;
+  overflow: visible !important;
+  /* Allow custom elements to pop out if needed */
+  margin-bottom: 24px;
+}
+
+.el-card__header {
+  border-bottom: none !important;
+  padding: 24px 24px 12px 24px !important;
+  font-size: 22px;
+  font-weight: 400;
+  /* Google style is often lighter weight for large text */
+}
+
+.el-card__body {
+  padding: 12px 24px 24px 24px !important;
+}
+
+/* 3. Buttons (M3 Filled/Outlined/Text Buttons) */
+.el-button {
+  border-radius: 20px !important;
+  /* Capsule shape */
+  font-weight: 500;
+  padding: 0 24px !important;
+  /* Remove top/bottom fixed padding allowing centered vertically */
+  height: 40px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Fix for Link Buttons and Icon-only Buttons */
+.el-button.is-link,
+.el-button.el-button--text {
+  padding: 8px !important;
+  height: auto !important;
+  border-radius: 50% !important;
+  /* Circular for ripple effect */
+  width: 32px !important;
+  /* Fixed width for icon buttons */
+  /* Fixed width for icon buttons */
+  height: 32px !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.el-button.is-link:hover,
+.el-button.el-button--text:hover {
+  background-color: rgba(64, 158, 255, 0.1) !important;
+  /* Slight hover effect */
+  box-shadow: none !important;
+}
+
+.el-button--small {
+  height: 32px !important;
+  padding: 0 16px !important;
+  border-radius: 16px !important;
+}
+
+/* Exclude link buttons from small button override if necessary, or ensure link rule has higher specificity */
+.el-button--small.is-link {
+  padding: 4px !important;
+  width: 28px !important;
+  height: 28px !important;
+}
+
+/* Primary Button (Filled) */
+.el-button--primary {
+  background-color: #00ddfa !important;
+  /* Google Blue
+  border-color: #409EFF !important; */
+}
+
+.el-button--primary:hover {
+  background-color: #409EFF !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
+}
+
+/* 4. Inputs (M3 Text Field - Approximate) */
+.el-input__wrapper {
+  border-radius: 4px 4px 0 0 !important;
+  /* M3 logic often uses just bottom border, but we stick to rounded rect for Element Plus compatibility but softer */
+  border-radius: 8px !important;
+  box-shadow: 0 0 0 1px #747775 inset !important;
+  background-color: #f1f3f4 !important;
+  /* Google Input Grey */
+}
+
+.el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 2px #0b57d0 inset !important;
+  background-color: #ffffff !important;
+}
+
+/* 5. Dialogs */
+.el-dialog {
+  border-radius: 28px !important;
+  background-color: #ffffff;
+}
+
+/* 6. Dark Mode Adjustments for M3 */
+html.dark body {
+  background-color: #131314;
+  /* Google Dark Background */
+}
+
+html.dark .el-card {
+  background-color: #1e1f20;
+  border-color: #444746 !important;
+}
+
+html.dark .el-input__wrapper {
+  background-color: #1e1f20 !important;
+  box-shadow: 0 0 0 1px #8e918f inset !important;
+}

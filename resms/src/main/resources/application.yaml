@@ -16,9 +16,22 @@ server:
 
 mybatis-plus:
   configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  mapper-locations: classpath*:com/guang/resms/module/**/mapper/*.xml
+
+logging:
+  level:
+    org.mybatis: warn
+    com.baomidou.mybatisplus: warn
+    com.guang.resms.config.MybatisPlusConfig: warn
+
+feature:
+  chat:
+    enabled: true
+  notice:
+    enabled: true
 
 # File Upload Configuration
 file:
   upload:
-    path: resms/uploads
+    path: uploads

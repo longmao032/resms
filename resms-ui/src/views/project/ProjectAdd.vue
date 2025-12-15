@@ -351,44 +351,46 @@ const handleFileChange = (uploadFile: UploadFile) => {
 // 提交表单
 const handleSubmit = async () => {
   if (!formRef.value) return
-  
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
-      submitting.value = true
-      try {
-        // 准备FormData
-        const formDataToSend = new FormData()
-        
-        // 添加项目信息（作为JSON字符串）
-        formDataToSend.append('project', new Blob([JSON.stringify(formData)], { type: 'application/json' }))
-        
-        // 添加封面图片（如果有）
-        if (coverImageFile.value) {
-          formDataToSend.append('coverImage', coverImageFile.value)
-        }
-        
-        const res = await addProject(formDataToSend)
-        if (res.status) {
-          ElMessage.success('项目添加成功')
-          router.push('/project/list')
-        } else {
-          ElMessage.error(res.message || '项目添加失败')
-        }
-      } catch (error: any) {
-        console.error('添加项目失败:', error)
-        ElMessage.error(error.response?.data?.message || error.message || '项目添加失败')
-      } finally {
-        submitting.value = false
-      }
-    } else {
-      ElMessage.warning('请填写必填项')
-      // 滚动到第一个错误
-      const errorInputs = document.querySelectorAll('.is-error')
-      if (errorInputs.length > 0) {
-        errorInputs[0].scrollIntoView({ behavior: 'smooth', block: 'center' })
-      }
+
+  try {
+    await formRef.value.validate()
+  } catch (err) {
+    ElMessage.warning('请填写必填项')
+    // 滚动到第一个错误
+    const errorInputs = document.querySelectorAll('.is-error')
+    if (errorInputs.length > 0) {
+      errorInputs[0].scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
-  })
+    return
+  }
+
+  submitting.value = true
+  try {
+    // 准备FormData
+    const formDataToSend = new FormData()
+
+    // 添加项目信息（作为JSON字符串）
+    formDataToSend.append('project', new Blob([JSON.stringify(formData)], { type: 'application/json' }))
+
+    // 添加封面图片（如果有）
+    if (coverImageFile.value) {
+      formDataToSend.append('coverImage', coverImageFile.value)
+    }
+
+    const resAny: any = await addProject(formDataToSend)
+    const apiResp = resAny.data ?? resAny
+    if (apiResp.status) {
+      ElMessage.success('项目添加成功')
+      router.push('/project/list')
+    } else {
+      ElMessage.error(apiResp.message || '项目添加失败')
+    }
+  } catch (error: any) {
+    console.error('添加项目失败:', error)
+    ElMessage.error(error.response?.data?.message || error.message || '项目添加失败')
+  } finally {
+    submitting.value = false
+  }
 }
 
 // 取消

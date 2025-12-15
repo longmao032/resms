@@ -20,6 +20,7 @@ export interface CommissionVO {
   financeName?: string;
   calculateTime?: string;
   issueTime?: string;
+  updateTime?: string;
 }
 
 // 分页响应

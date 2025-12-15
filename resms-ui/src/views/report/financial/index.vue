@@ -49,7 +49,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { getFinancialReport } from '@/api/report';
+import { getFinancialReport, exportFinancialReport } from '@/api/report';
 import { ElMessage } from 'element-plus';
 
 const loading = ref(false);
@@ -90,20 +90,41 @@ const fetchData = async () => {
       // Note: simplistic handling.
     }
     const res: any = await getFinancialReport(params);
-    if (res.code === 200) {
-      tableData.value = res.data;
-    } else {
-      ElMessage.error(res.message);
-    }
-  } catch (error) {
+    tableData.value = res.data;
+  } catch (error: any) {
     console.error(error);
+    const msg = error?.response?.data?.message || error?.message || '加载失败';
+    ElMessage.error(msg);
   } finally {
     loading.value = false;
   }
 };
 
 const handleExport = () => {
-  ElMessage.success('报表导出功能开发中...');
+  doExport();
+};
+
+const doExport = async () => {
+  try {
+    const params: any = {};
+    if (dateRange.value && dateRange.value.length === 2) {
+      params.startDate = dateRange.value[0];
+      params.endDate = dateRange.value[1];
+    }
+    const blob: any = await exportFinancialReport(params);
+    const fileBlob = blob instanceof Blob ? blob : new Blob([blob]);
+    const url = window.URL.createObjectURL(fileBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `财务报表_${Date.now()}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (error: any) {
+    const msg = error?.response?.data?.message || error?.message || '导出失败';
+    ElMessage.error(msg);
+  }
 };
 
 onMounted(() => {

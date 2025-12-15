@@ -6,7 +6,6 @@ import type {
   UserOption,
   PageResult,
   ApiResponse,
-  TeamPerformanceQuery, // 新增
   TeamPerformanceVO     // 新增
 } from './type'
 
@@ -65,7 +64,7 @@ export function deleteTeam(id: number) {
 
 /**
  * 获取可用用户列表（用于选择经理或成员）
- * @param roleType 角色类型：2=销售顾问, 3=销售经理
+ * @param roleType 角色类型：2=销售经理, 3=销售顾问
  */
 export function getEnableUsers(roleType: number) {
   return request<ApiResponse<UserOption[]>>({

@@ -265,59 +265,55 @@ const handleCoverChange = (uploadFile: UploadFile) => {
 // 提交表单
 const handleSubmit = async () => {
   if (!formRef.value) return
-  
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
-      submitting.value = true
-      try {
-        let finalCoverUrl = ''
-        
-        // 1. 如果有选择图片，先上传图片
-        if (selectedCoverFile.value) {
-            try {
-                const uploadRes = await uploadCommunityCover(selectedCoverFile.value, formData.communityName) as any
-                if (uploadRes.code === 200 && uploadRes.data) {
-                    finalCoverUrl = uploadRes.data
-                } else {
-                    ElMessage.warning('封面上传失败，将使用默认封面')
-                }
-            } catch (err) {
-                console.error('封面上传异常', err)
-                ElMessage.warning('封面上传异常')
-            }
-        }
+  try {
+    await formRef.value.validate()
+  } catch (err) {
+    ElMessage.warning('请填写必填项')
+    return
+  }
 
-        // 2. 提交小区信息
-        // 将年份字符串转换为整数
-        const submitData = {
-          ...formData,
-          coverUrl: finalCoverUrl,
-          buildYear: formData.buildYear ? parseInt(formData.buildYear) : undefined
-        }
-        
-        const res = await addCommunity(submitData) as any
-        // 注意：根据后端返回结构调整判断
-        if (res.code === 200 || res.status) {
-          ElMessage.success('小区添加成功')
-          router.push('/community/list')
+  submitting.value = true
+  try {
+    let finalCoverUrl = ''
+
+    // 1. 如果有选择图片，先上传图片
+    if (selectedCoverFile.value) {
+      try {
+        const uploadResAny: any = await uploadCommunityCover(selectedCoverFile.value, formData.communityName)
+        const uploadResp = uploadResAny.data ?? uploadResAny
+        if (uploadResp.code === 200 && uploadResp.data) {
+          finalCoverUrl = uploadResp.data
         } else {
-          ElMessage.error(res.message || '小区添加失败')
+          ElMessage.warning('封面上传失败，将使用默认封面')
         }
-      } catch (error) {
-        console.error('添加小区失败:', error)
-        ElMessage.error('小区添加失败')
-      } finally {
-        submitting.value = false
-      }
-    } else {
-      ElMessage.warning('请检查必填项是否完整')
-      // 滚动到第一个错误
-      const errorInputs = document.querySelectorAll('.is-error')
-      if (errorInputs.length > 0) {
-        errorInputs[0].scrollIntoView({ behavior: 'smooth', block: 'center' })
+      } catch (err) {
+        console.error('封面上传异常', err)
+        ElMessage.warning('封面上传异常')
       }
     }
-  })
+
+    // 2. 提交小区信息
+    // 将年份字符串转换为整数
+    const submitData = {
+      ...formData,
+      coverUrl: finalCoverUrl,
+      buildYear: formData.buildYear ? parseInt(formData.buildYear) : undefined
+    }
+
+    const resAny: any = await addCommunity(submitData)
+    const apiResp = resAny.data ?? resAny
+    if (apiResp.code === 200 || apiResp.status) {
+      ElMessage.success('小区添加成功')
+      router.push('/community/list')
+    } else {
+      ElMessage.error(apiResp.message || '小区添加失败')
+    }
+  } catch (error) {
+    console.error('添加小区失败:', error)
+    ElMessage.error('小区添加失败')
+  } finally {
+    submitting.value = false
+  }
 }
 
 // 取消

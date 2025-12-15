@@ -9,7 +9,7 @@
             <span class="title">小区详情</span>
           </div>
           <div class="header-right">
-            <el-button type="primary" @click="handleEdit" icon="Edit">编辑小区</el-button>
+            <el-button type="primary" @click="handleEdit" icon="Edit" v-if="canEdit">编辑小区</el-button>
           </div>
         </div>
       </template>
@@ -100,22 +100,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getCommunityById } from '@/api/community'
 import { ArrowLeft, Edit, Picture, Location, House, Van } from '@element-plus/icons-vue'
+import { getImageUrl } from '@/utils/image'
+import { useUserStore } from '@/stores/userStore'
 
 const router = useRouter()
 const route = useRoute()
 const loading = ref(false)
 const communityData = ref<any>(null)
+const userStore = useUserStore()
+const roleType = computed(() => userStore.userInfo?.roleType)
+const isAdmin = computed(() => roleType.value === 1)
+const isManager = computed(() => roleType.value === 3)
+const canEdit = computed(() => isAdmin.value || isManager.value)
 
-// 获取图片地址
-const getImageUrl = (url: string) => {
-  if (!url) return ''
-  return `http://localhost:8080/uploads${url}`
-}
+// 使用统一图片工具
 
 // 获取小区详情
 const fetchCommunityDetail = async () => {

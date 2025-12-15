@@ -129,6 +129,8 @@ export function auditHouse(id: number, approved: boolean, reason?: string) {
   })
 }
 
+// ... (existing code)
+
 /**
  * 分页查询房源（用于下拉选择器）
  */
@@ -137,5 +139,20 @@ export function reqHousePage(params: any) {
     url: '/house/list',
     method: 'get',
     params
+  })
+}
+
+/**
+ * 上传房源图片
+ */
+export function uploadHouseImages(files: File[]) {
+  const formData = new FormData()
+  files.forEach((file) => {
+    formData.append('files', file)
+  })
+  return request<ApiResponse<string[]>>({
+    url: '/house/upload',
+    method: 'post',
+    data: formData
   })
 }

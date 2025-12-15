@@ -1,18 +1,14 @@
 <template>
   <div class="house-edit-container">
     <el-page-header @back="goBack" content="编辑房源" />
-    
+
     <el-card v-loading="loading" shadow="never" style="margin-top: 20px;">
-      <el-form
-        ref="formRef"
-        :model="formData"
-        :rules="formRules"
-        label-width="120px"
-        status-icon
-      >
+      <el-form ref="formRef" :model="formData" :rules="formRules" label-width="120px" status-icon>
         <!-- 基本信息 -->
         <el-divider content-position="left">
-          <el-icon><House /></el-icon>
+          <el-icon>
+            <House />
+          </el-icon>
           <span class="divider-text">基本信息</span>
         </el-divider>
 
@@ -24,7 +20,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="房源类型" prop="houseType">
-              <el-radio-group v-model="formData.houseType" @change="handleHouseTypeChange">
+              <el-radio-group v-model="formData.houseType" @change="handleHouseTypeChange" disabled>
                 <el-radio :label="1">二手房</el-radio>
                 <el-radio :label="2">新房</el-radio>
               </el-radio-group>
@@ -35,25 +31,15 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="所属项目" prop="projectId">
-              <el-select
-                v-model="formData.projectId"
-                placeholder="请选择项目"
-                filterable
-                clearable
-                style="width: 100%"
-              >
-                <el-option
-                  v-for="project in projectList"
-                  :key="project.id"
-                  :label="project.projectName"
-                  :value="project.id"
-                />
+              <el-select v-model="formData.projectId" filterable clearable style="width: 100%">
+                <el-option v-for="project in projectList" :key="project.id" :label="project.projectName"
+                  :value="project.id" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="房源状态" prop="status">
-              <el-select v-model="formData.status" placeholder="请选择" style="width: 100%">
+              <el-select v-model="formData.status" placeholder="请选择" style="width: 100%" :disabled="isSalesConsultant()">
                 <el-option label="待审核" :value="0" />
                 <el-option label="在售" :value="1" />
                 <el-option label="已预订" :value="2" />
@@ -77,15 +63,8 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="建筑面积(㎡)" prop="area">
-              <el-input-number
-                v-model="formData.area"
-                :min="0"
-                :max="99999.99"
-                :precision="2"
-                :step="0.01"
-                controls-position="right"
-                style="width: 100%"
-              />
+              <el-input-number v-model="formData.area" :min="0" :max="99999.99" :precision="2" :step="0.01"
+                controls-position="right" style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -93,37 +72,20 @@
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="所在楼层" prop="floor">
-              <el-input-number
-                v-model="formData.floor"
-                :min="-5"
-                :max="200"
-                controls-position="right"
-                style="width: 100%"
-              />
+              <el-input-number v-model="formData.floor" :min="-5" :max="200" controls-position="right"
+                style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="总楼层" prop="totalFloor">
-              <el-input-number
-                v-model="formData.totalFloor"
-                :min="1"
-                :max="200"
-                controls-position="right"
-                style="width: 100%"
-              />
+              <el-input-number v-model="formData.totalFloor" :min="1" :max="200" controls-position="right"
+                style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="挂牌价(元)" prop="price">
-              <el-input-number
-                v-model="formData.price"
-                :min="0"
-                :max="999999999.99"
-                :precision="2"
-                :step="10000"
-                controls-position="right"
-                style="width: 100%"
-              />
+              <el-input-number v-model="formData.price" :min="0" :max="999999999.99" :precision="2" :step="10000"
+                controls-position="right" style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -157,13 +119,8 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="楼栋号" prop="buildingNo">
-              <el-input-number
-                v-model="formData.buildingNo"
-                :min="1"
-                :max="999"
-                controls-position="right"
-                style="width: 100%"
-              />
+              <el-input-number v-model="formData.buildingNo" :min="1" :max="999" controls-position="right"
+                style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -176,19 +133,8 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="负责销售" prop="salesId">
-              <el-select
-                v-model="formData.salesId"
-                placeholder="请选择销售"
-                filterable
-                clearable
-                style="width: 100%"
-              >
-                <el-option
-                  v-for="sales in salesList"
-                  :key="sales.id"
-                  :label="sales.realName"
-                  :value="sales.id"
-                />
+              <el-select v-model="formData.salesId" placeholder="请选择销售" filterable clearable style="width: 100%" :disabled="isSalesConsultant()">
+                <el-option v-for="sales in salesList" :key="sales.id" :label="sales.realName" :value="sales.id" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -197,44 +143,36 @@
         <el-row :gutter="20">
           <el-col :span="24">
             <el-form-item label="房源描述" prop="description">
-              <el-input
-                v-model="formData.description"
-                type="textarea"
-                :rows="3"
-                placeholder="请输入房源描述，如：近地铁、学区房、采光好等"
-                maxlength="500"
-                show-word-limit
-              />
+              <el-input v-model="formData.description" type="textarea" :rows="3" placeholder="请输入房源描述，如：近地铁、学区房、采光好等"
+                maxlength="500" show-word-limit />
             </el-form-item>
           </el-col>
         </el-row>
 
         <!-- 图片上传 -->
         <el-divider content-position="left">
-          <el-icon><Picture /></el-icon>
+          <el-icon>
+            <Picture />
+          </el-icon>
           <span class="divider-text">房源图片</span>
         </el-divider>
 
         <el-row :gutter="20">
           <el-col :span="24">
             <el-form-item label="房源图片">
-              <el-upload
-                v-model:file-list="fileList"
-                action="#"
-                list-type="picture-card"
-                :auto-upload="false"
-                :on-preview="handlePictureCardPreview"
-                :on-remove="handleRemove"
-                :limit="10"
-                accept="image/*"
-              >
-                <el-icon><Plus /></el-icon>
+              <el-upload v-model:file-list="fileList" action="#" list-type="picture-card" :auto-upload="false"
+                :on-preview="handlePictureCardPreview" :on-remove="handleRemove" :limit="10" accept="image/*">
+                <el-icon>
+                  <Plus />
+                </el-icon>
               </el-upload>
               <el-dialog v-model="dialogVisible">
                 <img w-full :src="dialogImageUrl" alt="预览图片" style="width: 100%" />
               </el-dialog>
               <div class="upload-tip">
-                <el-icon><InfoFilled /></el-icon>
+                <el-icon>
+                  <InfoFilled />
+                </el-icon>
                 <span>最多上传10张图片，第一张将作为封面图。重新上传将替换所有旧图片</span>
               </div>
             </el-form-item>
@@ -244,26 +182,22 @@
         <!-- 新房扩展信息 -->
         <template v-if="formData.houseType === 2">
           <el-divider content-position="left">
-            <el-icon><OfficeBuilding /></el-icon>
+            <el-icon>
+              <OfficeBuilding />
+            </el-icon>
             <span class="divider-text">新房扩展信息</span>
           </el-divider>
 
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="预售证号" prop="newHouseInfo.preSaleLicenseNo">
-                <el-input v-model="formData.newHouseInfo.preSaleLicenseNo" placeholder="请输入预售许可证号" clearable />
+                <el-input v-model="formData.newHouseInfo.preSaleLicenseNo" placeholder="请输入预售许可证号" disabled clearable />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="备案价(元)" prop="newHouseInfo.recordPrice">
-                <el-input-number
-                  v-model="formData.newHouseInfo.recordPrice"
-                  :min="0"
-                  :precision="2"
-                  :step="10000"
-                  controls-position="right"
-                  style="width: 100%"
-                />
+                <el-input-number v-model="formData.newHouseInfo.recordPrice" :min="0" :precision="2" :step="10000"
+                  controls-position="right" style="width: 100%" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -271,25 +205,14 @@
           <el-row :gutter="20">
             <el-col :span="8">
               <el-form-item label="产权年限" prop="newHouseInfo.propertyRightYears">
-                <el-input-number
-                  v-model="formData.newHouseInfo.propertyRightYears"
-                  :min="0"
-                  :max="100"
-                  controls-position="right"
-                  style="width: 100%"
-                />
+                <el-input-number v-model="formData.newHouseInfo.propertyRightYears" :min="0" :max="100"
+                  controls-position="right" style="width: 100%" />
               </el-form-item>
             </el-col>
             <el-col :span="8">
               <el-form-item label="得房率(%)" prop="newHouseInfo.actualAreaRate">
-                <el-input-number
-                  v-model="formData.newHouseInfo.actualAreaRate"
-                  :min="0"
-                  :max="100"
-                  :precision="2"
-                  controls-position="right"
-                  style="width: 100%"
-                />
+                <el-input-number v-model="formData.newHouseInfo.actualAreaRate" :min="0" :max="100" :precision="2"
+                  controls-position="right" style="width: 100%" />
               </el-form-item>
             </el-col>
             <el-col :span="8">
@@ -302,18 +225,14 @@
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="预计交房时间" prop="newHouseInfo.estimatedDeliveryTime">
-                <el-date-picker
-                  v-model="formData.newHouseInfo.estimatedDeliveryTime"
-                  type="date"
-                  placeholder="选择日期"
-                  style="width: 100%"
-                  value-format="YYYY-MM-DD"
-                />
+                <el-date-picker v-model="formData.newHouseInfo.estimatedDeliveryTime" type="date" placeholder="选择日期"
+                  style="width: 100%" value-format="YYYY-MM-DD" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="交付标准" prop="newHouseInfo.deliveryStandard">
-                <el-select v-model="formData.newHouseInfo.deliveryStandard" placeholder="请选择" clearable style="width: 100%">
+                <el-select v-model="formData.newHouseInfo.deliveryStandard" placeholder="请选择" clearable
+                  style="width: 100%">
                   <el-option label="毛坯" value="毛坯" />
                   <el-option label="精装修" value="精装修" />
                   <el-option label="豪华装修" value="豪华装修" />
@@ -326,31 +245,23 @@
         <!-- 二手房扩展信息 -->
         <template v-if="formData.houseType === 1">
           <el-divider content-position="left">
-            <el-icon><House /></el-icon>
+            <el-icon>
+              <House />
+            </el-icon>
             <span class="divider-text">二手房扩展信息</span>
           </el-divider>
 
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="建筑年代" prop="secondHouseInfo.buildYear">
-                <el-date-picker
-                  v-model="formData.secondHouseInfo.buildYear"
-                  type="year"
-                  placeholder="选择年份"
-                  style="width: 100%"
-                  value-format="YYYY"
-                />
+                <el-date-picker v-model="formData.secondHouseInfo.buildYear" type="year" placeholder="选择年份"
+                  style="width: 100%" value-format="YYYY" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="装修时间" prop="secondHouseInfo.decorationTime">
-                <el-date-picker
-                  v-model="formData.secondHouseInfo.decorationTime"
-                  type="date"
-                  placeholder="选择日期"
-                  style="width: 100%"
-                  value-format="YYYY-MM-DD"
-                />
+                <el-date-picker v-model="formData.secondHouseInfo.decorationTime" type="date" placeholder="选择日期"
+                  style="width: 100%" value-format="YYYY-MM-DD" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -393,7 +304,8 @@
             </el-col>
             <el-col :span="12">
               <el-form-item label="房屋用途" prop="secondHouseInfo.houseUsage">
-                <el-select v-model="formData.secondHouseInfo.houseUsage" placeholder="请选择" clearable style="width: 100%">
+                <el-select v-model="formData.secondHouseInfo.houseUsage" placeholder="请选择" clearable
+                  style="width: 100%">
                   <el-option label="住宅" value="住宅" />
                   <el-option label="商住" value="商住" />
                   <el-option label="商业" value="商业" />
@@ -406,14 +318,8 @@
           <el-row :gutter="20">
             <el-col :span="24">
               <el-form-item label="房源特色" prop="secondHouseInfo.description">
-                <el-input
-                  v-model="formData.secondHouseInfo.description"
-                  type="textarea"
-                  :rows="2"
-                  placeholder="如：满五唯一、税费低、南北通透等"
-                  maxlength="500"
-                  show-word-limit
-                />
+                <el-input v-model="formData.secondHouseInfo.description" type="textarea" :rows="2"
+                  placeholder="如：满五唯一、税费低、南北通透等" maxlength="500" show-word-limit />
               </el-form-item>
             </el-col>
           </el-row>
@@ -422,11 +328,15 @@
         <!-- 操作按钮 -->
         <el-form-item style="margin-top: 30px;">
           <el-button type="primary" :loading="submitLoading" @click="handleSubmit">
-            <el-icon><Check /></el-icon>
+            <el-icon>
+              <Check />
+            </el-icon>
             <span>保存</span>
           </el-button>
           <el-button @click="goBack">
-            <el-icon><Close /></el-icon>
+            <el-icon>
+              <Close />
+            </el-icon>
             <span>取消</span>
           </el-button>
         </el-form-item>
@@ -439,33 +349,30 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type UploadFile, type UploadUserFile } from 'element-plus'
-import { 
-  House, 
-  OfficeBuilding, 
-  Picture, 
-  Plus, 
-  Check, 
-  Close, 
+import {
+  House,
+  OfficeBuilding,
+  Picture,
+  Plus,
+  Check,
+  Close,
   InfoFilled
 } from '@element-plus/icons-vue'
-import { getHouseById, updateHouse } from '@/api/house'
+import { getHouseById, updateHouse, uploadHouseImages } from '@/api/house'
+import { getImageUrl } from '@/utils/image'
 import { getProjectList } from '@/api/project'
+import { getSalesList } from '@/api/user'
 import type { HouseFormData } from '@/api/house/type'
+import { useUserStore } from '@/stores/userStore'
 
 const router = useRouter()
 const route = useRoute()
 
-// 图片 URL 处理
-const getImageUrl = (url: string) => {
-  if (!url) return ''
-  if (url.startsWith('http')) return url
-  // 处理已包含 /uploads 的情况
-  if (url.startsWith('/uploads')) return `http://localhost:8080${url}`
-  // 处理以 / 开头的情况 (如 /project/1.jpg)
-  if (url.startsWith('/')) return `http://localhost:8080/uploads${url}`
-  // 处理相对路径 (如 temp_...)
-  return `http://localhost:8080/uploads/${url}`
-}
+const userStore = useUserStore()
+const isSalesConsultant = () => (userStore.currentUser?.roleType === 2)
+const isFinance = () => (userStore.currentUser?.roleType === 4)
+
+// 使用公共图片工具 getImageUrl
 
 // 表单引用
 const formRef = ref<FormInstance>()
@@ -557,8 +464,8 @@ const formRules = reactive<FormRules>({
   projectId: [
     { required: true, message: '请选择所属项目', trigger: 'change' }
   ],
-  buildingNo:[
-     { required: true, message: '请输入楼栋号', trigger: 'blur' }
+  buildingNo: [
+    { required: true, message: '请输入楼栋号', trigger: 'blur' }
   ],
   roomNo: [
     { required: true, message: '请输入房号', trigger: 'blur' }
@@ -606,7 +513,7 @@ const loadHouseDetail = async () => {
     }
 
     if (house) {
-      
+
       // 填充基本信息
       Object.assign(formData, {
         id: house.id,
@@ -690,18 +597,20 @@ const loadProjectList = async () => {
 // 加载销售列表
 const loadSalesList = async () => {
   try {
-    // TODO: 调用销售列表API
-    // const res = await getSalesList()
-    // salesList.value = res.data
-    
-    // 模拟数据
-    salesList.value = [
-      { id: 4, realName: '张三' },
-      { id: 5, realName: '李四' },
-      { id: 6, realName: '王五' }
-    ]
+    const res = await getSalesList()
+    const anyRes: any = res
+
+    // 兼容不同的响应结构
+    if (Array.isArray(anyRes)) {
+      salesList.value = anyRes
+    } else if (anyRes.data) {
+      salesList.value = Array.isArray(anyRes.data) ? anyRes.data : []
+    } else {
+      salesList.value = []
+    }
   } catch (error) {
     console.error('加载销售列表失败:', error)
+    ElMessage.error('加载销售列表失败')
   }
 }
 
@@ -778,7 +687,8 @@ const handleSubmit = async () => {
     // 构建提交数据
     const submitData = {
       ...formData,
-      images: imageUrls.length > 0 ? imageUrls : undefined
+      // images 必须传（即使为空数组），否则后端无法判断“清空图片”意图
+      images: imageUrls
     }
 
     const res = await updateHouse(submitData)
@@ -803,28 +713,22 @@ const handleSubmit = async () => {
 // 上传图片
 const uploadImages = async (): Promise<string[]> => {
   try {
-    const formDataUpload = new FormData()
-    
-    // 只添加新上传的图片文件
-    fileList.value.forEach((file) => {
-      if (file.raw) {
-        formDataUpload.append('files', file.raw)
-      }
-    })
+    const files = fileList.value
+      .filter((file) => file.raw)
+      .map((file) => file.raw!)
 
-    // 调用上传接口
-    const response = await fetch('http://localhost:8080/house/upload', {
-      method: 'POST',
-      body: formDataUpload
-    })
+    if (files.length === 0) return []
 
-    const result = await response.json()
-    
-    if (result.status && result.data) {
-      return result.data
-    } else {
-      throw new Error(result.message || '图片上传失败')
+    const res: any = await uploadHouseImages(files)
+    const payload = res?.data ?? res
+
+    if (Array.isArray(payload)) {
+      return payload
     }
+    if (payload && payload.status && Array.isArray(payload.data)) {
+      return payload.data
+    }
+    throw new Error(payload?.message || '图片上传失败')
   } catch (error) {
     console.error('上传图片失败:', error)
     throw new Error('图片上传失败')
@@ -849,6 +753,11 @@ const goBack = () => {
 }
 
 onMounted(() => {
+  if (isFinance()) {
+    ElMessage.error('无权限编辑房源')
+    router.push('/house/list')
+    return
+  }
   loadProjectList()
   loadSalesList()
   loadHouseDetail()

@@ -92,41 +92,36 @@ const rules = reactive<FormRules>({
 
 const handleSubmit = async () => {
   if (!formRef.value) return
-  
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
-      loading.value = true
-      try {
-        const userId = userStore.userInfo?.id
-        if (!userId) {
-          ElMessage.error('获取用户信息失败')
-          return
-        }
 
-        const res: any = await reqUserPasswordUpdate({
-          userId,
-          ...form
-        })
-        const apiResp = res.data ?? res
-        
-        if (apiResp.status) {
-          ElMessage.success('密码修改成功，请重新登录')
-          // 退出登录，清理状态
-          await userStore.logout()
-          // 强制刷新并跳转登录页，确保所有状态清除
-          // window.location.href = '/login' // userStore.logout通常会处理或我们需要手动push
-          router.push('/login')
-        } else {
-          ElMessage.error(apiResp.message || '密码修改失败')
-        }
-      } catch (error) {
-        console.error('修改密码失败:', error)
-        ElMessage.error('修改密码失败，请稍后重试')
-      } finally {
-        loading.value = false
-      }
+  try {
+    await formRef.value.validate()
+  } catch (err) {
+    return
+  }
+
+  loading.value = true
+  try {
+    const userId = (userStore.userInfo as any)?.userId ?? userStore.userInfo?.id
+    const resAny: any = await reqUserPasswordUpdate({
+      ...(userId ? { userId } : {}),
+      ...form
+    })
+    const apiResp = resAny.data ?? resAny
+
+    if (apiResp.status) {
+      ElMessage.success('密码修改成功，请重新登录')
+      // 退出登录，清理状态
+      await userStore.logout()
+      router.push('/login')
+    } else {
+      ElMessage.error(apiResp.message || '密码修改失败')
     }
-  })
+  } catch (error) {
+    console.error('修改密码失败:', error)
+    ElMessage.error('修改密码失败，请稍后重试')
+  } finally {
+    loading.value = false
+  }
 }
 
 const resetForm = () => {

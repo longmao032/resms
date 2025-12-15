@@ -7,14 +7,13 @@ enum API {
   BASE_URL = "/view-record",
 }
 
-export const reqViewRecordPage = (data: ViewRecordQuery) => 
+export const reqViewRecordPage = (data: ViewRecordQuery) =>
   request.post<any, ViewRecordPageResp>(API.PAGE_URL, data);
 
-export const reqSaveViewRecord = (data: ViewRecord) => 
-  request.post<any, boolean>(API.BASE_URL, data);
+// reqSaveViewRecord已删除 - 跟进记录由预约看房完成后自动生成
 
-export const reqUpdateViewRecord = (data: ViewRecord) => 
+export const reqUpdateViewRecord = (data: ViewRecord) =>
   request.put<any, boolean>(API.BASE_URL, data);
 
-export const reqDeleteViewRecord = (id: number) => 
+export const reqDeleteViewRecord = (id: number) =>
   request.delete<any, boolean>(`${API.BASE_URL}/${id}`);

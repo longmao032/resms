@@ -14,10 +14,22 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 
 @Configuration
-@MapperScan("com.guang.resms.mapper")
+@MapperScan({
+        "com.guang.resms.module.auth.mapper",
+        "com.guang.resms.module.user.mapper",
+        "com.guang.resms.module.chat.mapper",
+        "com.guang.resms.module.house.mapper",
+        "com.guang.resms.module.customer.mapper",
+        "com.guang.resms.module.transaction.mapper",
+        "com.guang.resms.module.payment.mapper",
+        "com.guang.resms.module.team.mapper",
+        "com.guang.resms.module.report.mapper",
+        "com.guang.resms.module.notice.mapper",
+        "com.guang.resms.shared.mapper"
+})
 @Slf4j
 @Component
-public class MybatisPlusConfig  implements MetaObjectHandler{
+public class MybatisPlusConfig implements MetaObjectHandler {
 
     /**
      * 添加分页插件

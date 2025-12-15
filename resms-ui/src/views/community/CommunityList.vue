@@ -4,37 +4,17 @@
     <el-card shadow="never" class="search-card">
       <el-form :model="queryParams" :inline="true">
         <el-form-item label="小区名称">
-          <el-input
-            v-model="queryParams.communityName"
-            placeholder="请输入小区名称"
-            clearable
-            style="width: 200px"
-            @keyup.enter="handleQuery"
-          />
+          <el-input v-model="queryParams.communityName" placeholder="请输入小区名称" clearable style="width: 200px"
+            @keyup.enter="handleQuery" />
         </el-form-item>
         <el-form-item label="城市">
-          <el-input
-            v-model="queryParams.city"
-            placeholder="请输入城市"
-            clearable
-            style="width: 150px"
-          />
+          <el-input v-model="queryParams.city" placeholder="请输入城市" clearable style="width: 150px" />
         </el-form-item>
         <el-form-item label="区县">
-          <el-input
-            v-model="queryParams.district"
-            placeholder="请输入区县"
-            clearable
-            style="width: 150px"
-          />
+          <el-input v-model="queryParams.district" placeholder="请输入区县" clearable style="width: 150px" />
         </el-form-item>
         <el-form-item label="开发商">
-          <el-input
-            v-model="queryParams.developer"
-            placeholder="请输入开发商"
-            clearable
-            style="width: 150px"
-          />
+          <el-input v-model="queryParams.developer" placeholder="请输入开发商" clearable style="width: 150px" />
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="queryParams.status" placeholder="请选择状态" clearable style="width: 120px">
@@ -44,23 +24,20 @@
           </el-select>
         </el-form-item>
         <el-form-item label="建成年代">
-          <el-date-picker
-            v-model="buildYearRange"
-            type="yearrange"
-            range-separator="-"
-            start-placeholder="开始年份"
-            end-placeholder="结束年份"
-            style="width: 220px"
-            @change="handleBuildYearChange"
-          />
+          <el-date-picker v-model="buildYearRange" type="yearrange" range-separator="-" start-placeholder="开始年份"
+            end-placeholder="结束年份" style="width: 220px" @change="handleBuildYearChange" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleQuery">
-            <el-icon><Search /></el-icon>
+            <el-icon>
+              <Search />
+            </el-icon>
             搜索
           </el-button>
           <el-button @click="handleReset">
-            <el-icon><Refresh /></el-icon>
+            <el-icon>
+              <Refresh />
+            </el-icon>
             重置
           </el-button>
         </el-form-item>
@@ -71,30 +48,24 @@
     <el-card shadow="never" style="margin-top: 20px">
       <!-- 操作按钮区 -->
       <div style="margin-bottom: 16px">
-        <el-button type="primary" @click="handleAdd">
-          <el-icon><Plus /></el-icon>
+        <el-button type="primary" @click="handleAdd" v-if="canAdd">
+          <el-icon>
+            <Plus />
+          </el-icon>
           新增小区
         </el-button>
       </div>
 
-      <el-table
-        v-loading="loading"
-        :data="communityList"
-        stripe
-        style="width: 100%"
-      >
+      <el-table v-loading="loading" :data="communityList" stripe style="width: 100%">
         <el-table-column label="封面图" width="100" align="center">
           <template #default="{ row }">
-            <el-image 
-              v-if="row.coverUrl" 
-              :src="getImageUrl(row.coverUrl)" 
-              :preview-src-list="[getImageUrl(row.coverUrl)]"
-              fit="cover"
-              style="width: 60px; height: 60px; border-radius: 4px; cursor: pointer;"
-              preview-teleported
-            />
+            <el-image v-if="row.coverUrl" :src="getImageUrl(row.coverUrl)"
+              :preview-src-list="[getImageUrl(row.coverUrl)]" fit="cover"
+              style="width: 60px; height: 60px; border-radius: 4px; cursor: pointer;" preview-teleported />
             <div v-else class="no-cover">
-              <el-icon :size="24" color="#c0c4cc"><Picture /></el-icon>
+              <el-icon :size="24" color="#c0c4cc">
+                <Picture />
+              </el-icon>
             </div>
           </template>
         </el-table-column>
@@ -124,45 +95,35 @@
         </el-table-column>
         <el-table-column prop="metroStation" label="最近地铁" width="120" show-overflow-tooltip />
         <el-table-column prop="schoolDistrict" label="所属学区" width="120" show-overflow-tooltip />
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
-             <el-button v-if="row.status === 1" link type="success" @click="handleAudit(row)">
-               <el-icon><Check /></el-icon>
-               审核
-             </el-button>
-            <el-button link type="primary" @click="handleView(row)">
-              <el-icon><View /></el-icon>
-              查看
-            </el-button>
-            <el-button link type="primary" @click="handleEdit(row)">
-              <el-icon><Edit /></el-icon>
-              编辑
-            </el-button>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <el-tooltip content="详情" placement="top" v-if="canView">
+                <el-button link type="primary" :icon="View" @click="handleView(row)" />
+              </el-tooltip>
+              <el-tooltip content="编辑" placement="top" v-if="canEdit">
+                <el-button link type="primary" :icon="Edit" @click="handleEdit(row)" />
+              </el-tooltip>
+              <el-tooltip content="删除" placement="top" v-if="canDelete">
+                <el-button link type="danger" :icon="Delete" @click="handleDelete(row)" />
+              </el-tooltip>
+              <el-tooltip content="审核" placement="top" v-if="row.status === 1 && canAudit">
+                <el-button link type="success" :icon="Check" @click="handleAudit(row)" />
+              </el-tooltip>
+            </div>
           </template>
         </el-table-column>
       </el-table>
 
       <!-- 分页 -->
-      <el-pagination
-        v-model:current-page="queryParams.pageNum"
-        v-model:page-size="queryParams.pageSize"
-        :total="total"
-        :page-sizes="[10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next, jumper"
-        style="margin-top: 20px; justify-content: flex-end"
-        @size-change="handleSizeChange"
-        @current-change="handlePageChange"
-      />
+      <el-pagination v-model:current-page="queryParams.pageNum" v-model:page-size="queryParams.pageSize" :total="total"
+        :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper"
+        style="margin-top: 20px; justify-content: flex-end" @size-change="handleSizeChange"
+        @current-change="handlePageChange" />
     </el-card>
 
-     <!-- 审核弹窗 -->
-    <el-dialog
-      v-model="auditVisible"
-      title="小区审核"
-      width="600px"
-      append-to-body
-      destroy-on-close
-    >
+    <!-- 审核弹窗 -->
+    <el-dialog v-model="auditVisible" title="小区审核" width="600px" append-to-body destroy-on-close>
       <div v-loading="auditLoading" class="audit-container">
         <div v-if="auditData" class="community-info">
           <!-- 小区没有图片字段，仅显示基本信息 -->
@@ -186,7 +147,7 @@
             </el-radio-group>
           </el-form-item>
           <el-form-item label="审核备注" v-if="auditForm.status === 2" required>
-             <el-input v-model="auditForm.reason" type="textarea" placeholder="请输入驳回原因" />
+            <el-input v-model="auditForm.reason" type="textarea" placeholder="请输入驳回原因" />
           </el-form-item>
         </el-form>
       </div>
@@ -201,13 +162,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Search, Refresh, View, Edit, Plus, Check, Picture } from '@element-plus/icons-vue'
+import { ref, reactive, onMounted, computed } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search, Refresh, View, Edit, Plus, Check, Picture, Delete } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { getCommunityPage, getCommunityById, auditCommunity } from '@/api/community'
+import { getCommunityPage, getCommunityById, auditCommunity, deleteCommunity } from '@/api/community'
+import { useUserStore } from '@/stores/userStore'
+import { getImageUrl } from '@/utils/image'
 
 const router = useRouter()
+const userStore = useUserStore()
+
+const roleType = computed(() => userStore.userInfo?.roleType)
+const isAdmin = computed(() => roleType.value === 1)
+const isManager = computed(() => roleType.value === 3)
+const isConsultant = computed(() => roleType.value === 2)
+
+const canAdd = computed(() => isAdmin.value || isManager.value)
+const canEdit = computed(() => isAdmin.value || isManager.value)
+const canDelete = computed(() => isAdmin.value)
+const canAudit = computed(() => isAdmin.value)
+const canView = computed(() => isAdmin.value || isConsultant.value)
 
 // 查询参数
 const queryParams = reactive({
@@ -331,18 +306,35 @@ const handleAudit = async (row: any) => {
   auditData.value = null
 
   try {
-     const res = await getCommunityById(row.id)
-     if(res.status) {
-         auditData.value = res.data
-     } else {
-         ElMessage.error('获取详情失败')
-     }
-  } catch(error) {
-      console.error(error)
+    const res = await getCommunityById(row.id)
+    if (res.status) {
+      auditData.value = res.data
+    } else {
       ElMessage.error('获取详情失败')
+    }
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('获取详情失败')
   } finally {
-      auditLoading.value = false
+    auditLoading.value = false
   }
+}
+
+// 删除
+const handleDelete = (row: any) => {
+  ElMessageBox.confirm('确认要删除该小区吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      await deleteCommunity(row.id)
+      ElMessage.success('删除成功')
+      loadCommunityList()
+    } catch (error: any) {
+      console.error('删除失败', error)
+    }
+  }).catch(() => { })
 }
 
 // 提交审核
@@ -351,7 +343,7 @@ const submitAudit = async () => {
     ElMessage.warning('请输入驳回原因')
     return
   }
-  
+
   auditLoading.value = true
   try {
     await auditCommunity(auditForm.id, auditForm.status, auditForm.reason)
@@ -367,12 +359,6 @@ const submitAudit = async () => {
 }
 
 // 组件挂载时加载数据
-
-// 获取图片地址
-const getImageUrl = (url: string) => {
-  if (!url) return ''
-  return `http://localhost:8080/uploads${url}`
-}
 
 onMounted(() => {
   loadCommunityList()
@@ -395,9 +381,9 @@ onMounted(() => {
 }
 
 .audit-container {
-    .community-info {
-        margin-bottom: 20px;
-    }
+  .community-info {
+    margin-bottom: 20px;
+  }
 }
 
 .no-cover {

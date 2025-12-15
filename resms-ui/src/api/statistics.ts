@@ -5,7 +5,7 @@ import request from '@/utils/request';
  */
 export function getHouseStats() {
     return request({
-        url: '/api/statistics/house',
+        url: '/statistics/house',
         method: 'get'
     });
 }
@@ -15,7 +15,7 @@ export function getHouseStats() {
  */
 export function getCustomerStats() {
     return request({
-        url: '/api/statistics/customer',
+        url: '/statistics/customer',
         method: 'get'
     });
 }
@@ -25,7 +25,7 @@ export function getCustomerStats() {
  */
 export function getTransactionStats() {
     return request({
-        url: '/api/statistics/transaction',
+        url: '/statistics/transaction',
         method: 'get'
     });
 }
@@ -35,7 +35,15 @@ export function getTransactionStats() {
  */
 export function getPaymentStats() {
     return request({
-        url: '/api/statistics/payment',
+        url: '/statistics/payment',
         method: 'get'
+    });
+}
+
+export function getCommissionStats(params?: any) {
+    return request({
+        url: '/statistics/commission',
+        method: 'get',
+        params
     });
 }

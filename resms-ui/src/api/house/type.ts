@@ -120,15 +120,13 @@ export interface ProjectInfo {
 export interface NewHouseInfo {
   id: number
   houseId: number
-  estateName?: string
-  building?: string
-  unit?: string
-  room?: string
-  openingDate?: string
-  deliveryDate?: string
-  saleStatus?: number
-  saleStatusText?: string
-  remark?: string
+  preSaleLicenseNo?: string
+  recordPrice?: number
+  propertyRightYears?: number
+  estimatedDeliveryTime?: string
+  deliveryStandard?: string
+  elevatorRatio?: string
+  actualAreaRate?: number
 }
 
 // 二手房扩展信息

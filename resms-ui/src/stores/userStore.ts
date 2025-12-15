@@ -24,7 +24,8 @@ export const useUserStore = defineStore('user', () => {
   const currentUser = computed(() => userInfo.value)
   const userMenus = computed(() => menus.value)
   const userPermissions = computed(() => permissions.value)
-  const hasPermission = (permission: string) => permissions.value.includes(permission)
+  const hasPermission = (permission: string) =>
+    permissions.value.includes('*') || permissions.value.includes(permission)
 
   // Actions
   const login = async (data: loginForm) => {
