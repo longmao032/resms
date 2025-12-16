@@ -92,7 +92,7 @@ public class TransactionServiceImpl extends ServiceImpl<TransactionMapper, Trans
         }
 
         // 校验房源存在且可交易
-        House house = houseMapper.selectById(dto.getHouseId());
+        House house = houseMapper.selectByIdForUpdate(dto.getHouseId());
         if (house == null) {
             throw new ServiceException("房源不存在");
         }
@@ -358,7 +358,7 @@ public class TransactionServiceImpl extends ServiceImpl<TransactionMapper, Trans
 
         // 交易状态：0=待付定金，1=已付定金，2=已付首付，3=已过户，4=已完成，5=已取消
         // 房源状态：0=待审核，1=在售，2=已预订，3=已成交，4=下架
-        if (newTxStatus == 1) {
+        if (newTxStatus == 1 || newTxStatus == 2 || newTxStatus == 3) {
             if (house.getStatus() != null && house.getStatus() == 1) {
                 house.setStatus(2);
                 houseMapper.updateById(house);

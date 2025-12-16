@@ -279,9 +279,9 @@
                   <el-select v-model="addForm.salesId" placeholder="请选择销售" filterable style="width: 100%" :disabled="roleType === 2">
                     <el-option
                       v-for="item in salesOptions"
-                      :key="item.id"
-                      :label="`${item.realName} (${item.id})`"
-                      :value="item.id"
+                      :key="item.id ?? item.userId"
+                      :label="`${item.realName} (${item.id ?? item.userId})`"
+                      :value="item.id ?? item.userId"
                     />
                   </el-select>
                 </el-form-item>
@@ -503,16 +503,16 @@ const salesOptions = ref<any[]>([]);
 
 // 获取下拉数据
 const getOptions = async () => {
-  if (customerOptions.value.length > 0) return; // cache
+  if (customerOptions.value.length > 0 && houseOptions.value.length > 0 && salesOptions.value.length > 0) return; // cache
   try {
     const [cRes, hRes, sRes] = await Promise.all([
       getCustomerList(),
       getHouseList(),
       getSalesList()
     ])
-    customerOptions.value = cRes.data.records || []
-    houseOptions.value = hRes.data.list || hRes.data.records || [] // handle different response structure
-    salesOptions.value = sRes.data.records || []
+    customerOptions.value = cRes.data?.records || []
+    houseOptions.value = hRes.data?.list || hRes.data?.records || [] // handle different response structure
+    salesOptions.value = sRes.data?.list || sRes.data?.records || (Array.isArray(sRes.data) ? sRes.data : [])
   } catch (error) {
     console.error('获取下拉数据失败', error)
   }

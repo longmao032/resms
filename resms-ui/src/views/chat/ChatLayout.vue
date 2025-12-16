@@ -270,12 +270,13 @@ onUnmounted(() => {
 <style scoped>
 .chat-container {
   display: flex;
-  height: calc(100vh - 100px);
+  height: calc(100% - 48px);
   /* Adjust based on layout header/padding */
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  min-height: 0;
 }
 
 .chat-sidebar {
@@ -284,6 +285,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   background-color: #f7f7f7;
+  min-height: 0;
 }
 
 .sidebar-header {
@@ -294,6 +296,7 @@ onUnmounted(() => {
 .session-list {
   flex: 1;
   overflow-y: auto;
+  min-height: 0;
 }
 
 .session-item {
@@ -380,6 +383,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   background-color: #fff;
+  min-height: 0;
 }
 
 .chat-empty {
@@ -405,6 +409,7 @@ onUnmounted(() => {
   padding: 20px;
   overflow-y: auto;
   background-color: #f5f7fa;
+  min-height: 0;
 }
 
 .message-row {
@@ -452,6 +457,7 @@ onUnmounted(() => {
 .chat-footer {
   padding: 15px;
   border-top: 1px solid #e6e6e6;
+  flex-shrink: 0;
 }
 
 .footer-bar {

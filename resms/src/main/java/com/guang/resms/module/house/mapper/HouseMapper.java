@@ -109,4 +109,6 @@ public interface HouseMapper extends BaseMapper<House> {
      * @return 项目详细信息
      */
     ProjectVO selectProjectInfo(@Param("projectId") Integer projectId);
+
+    House selectByIdForUpdate(@Param("id") Integer id);
 }
