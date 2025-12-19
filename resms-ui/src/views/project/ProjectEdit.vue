@@ -274,6 +274,14 @@ const coverImageUrl = ref('')
 const coverImageFile = ref<File | null>(null)
 const originalCoverUrl = ref('')
 
+const getCoverUrl = (row: any) => {
+  const base = getImageUrl(row?.coverUrl)
+  if (!base || base.startsWith('data:image')) return base
+  const v = row?.updateTime || row?.createTime || Date.now()
+  const sep = base.includes('?') ? '&' : '?'
+  return `${base}${sep}v=${encodeURIComponent(String(v))}`
+}
+
 // 表单数据
 const formData = reactive({
   id: null as number | null,
@@ -339,7 +347,7 @@ const fetchProjectDetail = async () => {
       Object.assign(formData, res.data)
       originalCoverUrl.value = res.data.coverUrl || ''
       if (res.data.coverUrl) {
-        coverImageUrl.value = getImageUrl(res.data.coverUrl)
+        coverImageUrl.value = getCoverUrl(res.data)
       }
     } else {
       ElMessage.error(res.message || '获取项目详情失败')
@@ -408,8 +416,7 @@ const handleSubmit = async () => {
       formDataToSend.append('coverImage', coverImageFile.value)
     }
 
-    const resAny: any = await updateProject(formDataToSend)
-    const apiResp = resAny.data ?? resAny
+    const apiResp: any = await updateProject(formDataToSend)
     if (apiResp.status) {
       ElMessage.success('项目更新成功')
       router.push('/project/list')

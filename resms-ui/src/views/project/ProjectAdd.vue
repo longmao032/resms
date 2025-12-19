@@ -377,8 +377,7 @@ const handleSubmit = async () => {
       formDataToSend.append('coverImage', coverImageFile.value)
     }
 
-    const resAny: any = await addProject(formDataToSend)
-    const apiResp = resAny.data ?? resAny
+    const apiResp: any = await addProject(formDataToSend)
     if (apiResp.status) {
       ElMessage.success('项目添加成功')
       router.push('/project/list')

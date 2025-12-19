@@ -66,8 +66,8 @@
         <el-table-column prop="projectNo" label="项目编号" width="120" />
         <el-table-column label="封面图" width="100" align="center">
           <template #default="{ row }">
-            <el-image v-if="row.coverUrl" :src="getImageUrl(row.coverUrl)"
-              :preview-src-list="[getImageUrl(row.coverUrl)]" fit="cover"
+            <el-image v-if="row.coverUrl" :src="getCoverUrl(row)"
+              :preview-src-list="[getCoverUrl(row)]" fit="cover"
               style="width: 60px; height: 60px; border-radius: 4px; cursor: pointer;" preview-teleported />
             <div v-else class="no-cover">
               <el-icon :size="24" color="#c0c4cc">
@@ -213,6 +213,13 @@ const queryParams = reactive({
 const projectList = ref<any[]>([])
 const total = ref(0)
 const loading = ref(false)
+
+const getCoverUrl = (row: any) => {
+  const base = getImageUrl(row?.coverUrl)
+  const v = row?.updateTime || row?.createTime || Date.now()
+  const sep = base.includes('?') ? '&' : '?'
+  return `${base}${sep}v=${encodeURIComponent(String(v))}`
+}
 
 // 审核相关
 const auditVisible = ref(false)

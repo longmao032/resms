@@ -60,7 +60,7 @@
           <template #default="{ row }">
             <el-image v-if="row.images && row.images.length > 0" :src="getImageUrl(row.images[0])"
               :preview-src-list="row.images.map((img: string) => getImageUrl(img))" fit="cover"
-              style="width: 80px; height: 60px; border-radius: 4px; cursor: pointer;">
+              style="width: 80px; height: 60px; border-radius: 4px; cursor: pointer;" preview-teleported :z-index="3000">
               <template #error>
                 <div
                   style="display: flex; align-items: center; justify-content: center; width: 80px; height: 60px; background: #f5f7fa; border-radius: 4px;">
@@ -164,7 +164,7 @@
         <div class="audit-images-section" v-if="currentAuditHouse?.images && currentAuditHouse.images.length > 0">
           <h4>房源图片</h4>
           <div class="images-grid">
-            <el-image v-for="(image, index) in currentAuditHouse.images" :key="index" :src="getImageUrl(image)"
+            <el-image v-for="(image, index) in currentAuditHouse.images" :key="index" :src="getImageUrl(image)" preview-teleported :z-index="3000"
               :preview-src-list="currentAuditHouse.images.map((img: string) => getImageUrl(img))" :initial-index="index"
               fit="cover" class="audit-image">
               <template #error>

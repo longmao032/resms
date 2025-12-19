@@ -7,6 +7,7 @@ import com.guang.resms.module.house.service.HouseService;
 import com.guang.resms.common.exception.HttpEnums;
 import com.guang.resms.common.exception.ResponseResult;
 import com.guang.resms.common.exception.ServiceException;
+import com.guang.resms.common.utils.FileUploadUtils;
 import com.guang.resms.common.utils.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -322,7 +323,7 @@ public class HouseController {
             
             // 创建临时目录（以时间戳命名）
             String tempDir = "temp_" + System.currentTimeMillis();
-            String tempDirPath = uploadPath + File.separator + tempDir;
+            String tempDirPath = FileUploadUtils.getUploadBasePath() + File.separator + tempDir;
             File dir = new File(tempDirPath);
             if (!dir.exists()) {
                 boolean created = dir.mkdirs();

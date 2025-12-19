@@ -6,6 +6,8 @@ import cn.hutool.core.util.ObjectUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -85,8 +87,11 @@ public class GlobalException {
      * 接口未实现
      */
     @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseResult handleNoResourceFoundException(NoResourceFoundException e, HttpServletRequest request) {
+    public Object handleNoResourceFoundException(NoResourceFoundException e, HttpServletRequest request) {
         String requestURI = request.getRequestURI();
+        if (requestURI != null && requestURI.startsWith("/uploads/")) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
         log.error("请求地址'{}',访问的路径不存在.", requestURI, e);
         return ResponseResult.fail(HttpEnums.NOT_FOUND);
     }

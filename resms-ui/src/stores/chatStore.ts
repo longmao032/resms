@@ -18,7 +18,7 @@ export const useChatStore = defineStore('chat', () => {
     // 获取会话列表
     const fetchSessionList = async () => {
         try {
-            const res = await getSessionList()
+            const res = await getSessionList({ silent: true })
             if (res.data) {
                 sessionList.value = res.data
                 // 如果当前有选中的会话，更新其信息（如最新消息）
@@ -92,7 +92,7 @@ export const useChatStore = defineStore('chat', () => {
         loading.value = true
         try {
             // 目前只拉取第一页，后续可做滚动加载
-            const res = await getMessageList({ sessionId, page: 1, size: 50 })
+            const res = await getMessageList({ sessionId, page: 1, size: 50 }, { silent: true })
             if (res.data) {
                 // 后端倒序返回，前端反转为正序显示
                 const records = res.data.records || []
@@ -162,7 +162,7 @@ export const useChatStore = defineStore('chat', () => {
         messageTimer.value = setInterval(async () => {
             if (currentSession.value && currentSession.value.id === sessionId) {
                 // 增量获取或全量刷新，这里简单做全量刷新
-                const res = await getMessageList({ sessionId, page: 1, size: 50 })
+                const res = await getMessageList({ sessionId, page: 1, size: 50 }, { silent: true })
                 if (res.data && res.data.records) {
                     const newMessages = res.data.records.reverse()
                     if (newMessages.length > messageList.value.length ||

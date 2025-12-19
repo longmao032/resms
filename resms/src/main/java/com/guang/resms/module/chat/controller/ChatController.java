@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.guang.resms.common.exception.HttpEnums;
 import com.guang.resms.common.exception.ResponseResult;
+import com.guang.resms.common.utils.FileUploadUtils;
 import com.guang.resms.common.utils.SecurityUtils;
 import com.guang.resms.module.chat.entity.ChatMessage;
 import com.guang.resms.module.chat.entity.ChatSession;
@@ -228,7 +229,7 @@ public class ChatController {
             String fileName = "chat_" + UUID.randomUUID().toString().replace("-", "") + ext;
 
             // 创建目录 - 使用绝对路径
-            Path chatDir = Paths.get(uploadPath, "chat").toAbsolutePath();
+            Path chatDir = Paths.get(FileUploadUtils.getUploadBasePath(), "chat");
             if (!Files.exists(chatDir)) {
                 Files.createDirectories(chatDir);
             }

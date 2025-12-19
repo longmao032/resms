@@ -38,6 +38,17 @@ public class FileUploadUtils {
      */
     private static String uploadBasePath = getDefaultUploadPath();
 
+    public static String getProjectRootPath() {
+        File dir = new File(System.getProperty("user.dir"));
+        while (dir != null) {
+            if (new File(dir, "pom.xml").exists() || new File(dir, ".mvn").exists()) {
+                return dir.getAbsolutePath();
+            }
+            dir = dir.getParentFile();
+        }
+        return System.getProperty("user.dir");
+    }
+
     /**
      * 设置上传路径（供Spring注入）
      */
@@ -49,11 +60,15 @@ public class FileUploadUtils {
         // 如果是相对路径，加上项目根目录
         File file = new File(path);
         if (!file.isAbsolute()) {
-            String projectPath = System.getProperty("user.dir");
+            String projectPath = getProjectRootPath();
             uploadBasePath = projectPath + File.separator + path;
         } else {
             uploadBasePath = path;
         }
+    }
+
+    public static String getUploadBasePath() {
+        return uploadBasePath;
     }
 
     /**
@@ -61,7 +76,7 @@ public class FileUploadUtils {
      */
     private static String getDefaultUploadPath() {
         // 获取项目根目录
-        String projectPath = System.getProperty("user.dir");
+        String projectPath = getProjectRootPath();
         return projectPath + File.separator + "uploads";
     }
 

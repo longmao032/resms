@@ -309,8 +309,7 @@ const handleSubmit = async () => {
     // 1. 如果有选择新图片，先上传图片
     if (selectedCoverFile.value) {
       try {
-        const uploadResAny: any = await uploadCommunityCover(selectedCoverFile.value, formData.communityName)
-        const uploadResp = uploadResAny.data ?? uploadResAny
+        const uploadResp: any = await uploadCommunityCover(selectedCoverFile.value, formData.communityName)
         if (uploadResp.code === 200 && uploadResp.data) {
           finalCoverUrl = uploadResp.data
         } else {

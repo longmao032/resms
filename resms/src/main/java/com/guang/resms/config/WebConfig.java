@@ -19,13 +19,24 @@ public class WebConfig implements WebMvcConfigurer {
     @org.springframework.beans.factory.annotation.Value("${file.upload.path:uploads}")
     private String uploadPath;
 
+    private static String getProjectRootPath() {
+        File dir = new File(System.getProperty("user.dir"));
+        while (dir != null) {
+            if (new File(dir, "pom.xml").exists() || new File(dir, ".mvn").exists()) {
+                return dir.getAbsolutePath();
+            }
+            dir = dir.getParentFile();
+        }
+        return System.getProperty("user.dir");
+    }
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // 获取所有配置的上传路径
         String fullPath;
         File file = new File(uploadPath);
         if (!file.isAbsolute()) {
-            fullPath = System.getProperty("user.dir") + File.separator + uploadPath;
+            fullPath = getProjectRootPath() + File.separator + uploadPath;
         } else {
             fullPath = uploadPath;
         }

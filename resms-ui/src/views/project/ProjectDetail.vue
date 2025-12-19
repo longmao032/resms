@@ -14,7 +14,7 @@
       <div v-if="projectData" class="detail-content">
         <!-- 封面图片 -->
         <div class="cover-section" v-if="projectData.coverUrl">
-          <img :src="getImageUrl(projectData.coverUrl)" class="cover-image" />
+          <img :src="getCoverUrl(projectData)" class="cover-image" />
         </div>
 
         <!-- 基本信息 -->
@@ -111,6 +111,14 @@ const roleType = computed(() => userStore.userInfo?.roleType)
 const isAdmin = computed(() => roleType.value === 1)
 const isManager = computed(() => roleType.value === 3)
 const canEdit = computed(() => isAdmin.value || isManager.value)
+
+const getCoverUrl = (row: any) => {
+  const base = getImageUrl(row?.coverUrl)
+  if (!base || base.startsWith('data:image')) return base
+  const v = row?.updateTime || row?.createTime || Date.now()
+  const sep = base.includes('?') ? '&' : '?'
+  return `${base}${sep}v=${encodeURIComponent(String(v))}`
+}
 
 // 获取项目详情
 const fetchProjectDetail = async () => {

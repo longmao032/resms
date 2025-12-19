@@ -21,7 +21,7 @@ enum API {
         USER_BY_ROLE_URL = "/user/listByRole",
 }
 
-export const reqLogin = (data: loginForm) => request.post<any, loginResp>(API.LOGIN_URL, data);
+export const reqLogin = (data: loginForm) => request.post<any, loginResp>(API.LOGIN_URL, data, { silent: true });
 
 export const reqUserInfo = () => request.get<any, loginResp>(API.USERINFO_URL);
 

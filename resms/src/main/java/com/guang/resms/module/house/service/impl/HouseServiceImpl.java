@@ -17,9 +17,11 @@ import com.guang.resms.module.house.mapper.SecondHouseInfoMapper;
 import com.guang.resms.module.house.service.HouseService;
 import com.guang.resms.module.chat.service.NotificationService;
 import com.guang.resms.common.exception.ServiceException;
+import com.guang.resms.common.utils.FileUploadUtils;
 import com.guang.resms.common.utils.SecurityUtils;
 import lombok.extern.slf4j.Slf4j;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.guang.resms.module.transaction.entity.Transaction;
 import com.guang.resms.module.transaction.mapper.TransactionMapper;
 import org.springframework.beans.BeanUtils;
@@ -438,8 +440,13 @@ public class HouseServiceImpl implements HouseService {
             return;
         }
 
+        String baseUploadPath = FileUploadUtils.getUploadBasePath();
+        Integer uploadUserId = SecurityUtils.requireUserId();
+        Integer roleType = SecurityUtils.getRoleType();
+        Date now = new Date();
+
         // 创建以房源编号命名的文件夹
-        String houseDirPath = uploadPath + File.separator + houseNo;
+        String houseDirPath = baseUploadPath + File.separator + houseNo;
         File houseDir = new File(houseDirPath);
         if (!houseDir.exists()) {
             boolean created = houseDir.mkdirs();
@@ -460,12 +467,17 @@ public class HouseServiceImpl implements HouseService {
                 normalized = normalized.substring(1);
             }
 
+            // 兼容前端/历史数据可能带的前缀
+            if (normalized.startsWith("uploads/")) {
+                normalized = normalized.substring("uploads/".length());
+            }
+
             // 如果图片还在临时目录中，移动到以 houseNo 命名的目录，避免 temp 目录堆积
             try {
                 if (normalized.startsWith("temp_") && normalized.contains("/")) {
                     String fileName = normalized.substring(normalized.lastIndexOf('/') + 1);
-                    Path source = Paths.get(uploadPath, normalized).toAbsolutePath();
-                    Path targetDir = Paths.get(uploadPath, houseNo).toAbsolutePath();
+                    Path source = Paths.get(baseUploadPath, normalized).toAbsolutePath();
+                    Path targetDir = Paths.get(baseUploadPath, houseNo).toAbsolutePath();
                     if (!Files.exists(targetDir)) {
                         Files.createDirectories(targetDir);
                     }
@@ -473,23 +485,51 @@ public class HouseServiceImpl implements HouseService {
                     if (Files.exists(source)) {
                         Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
                         normalized = houseNo + "/" + fileName;
+                    } else if (Files.exists(target)) {
+                        // 可能已经移动成功，但数据库/前端仍传了 temp 路径
+                        normalized = houseNo + "/" + fileName;
+                    } else {
+                        log.warn("临时图片不存在，跳过落库: url={}, houseNo={}", imageUrl, houseNo);
+                        continue;
                     }
                 }
             } catch (Exception e) {
                 log.warn("移动房源图片失败: url={}, houseNo={}, error={}", imageUrl, houseNo, e.getMessage());
+                // 搬运失败时，禁止将 temp 路径写入数据库
+                if (normalized.startsWith("temp_")) {
+                    continue;
+                }
             }
 
             HouseImage houseImage = new HouseImage();
             houseImage.setHouseId(houseId);
             houseImage.setImageUrl(normalized);
             // 第一张图为封面图，其他为室内图
-            houseImage.setImageType(i == 0 ? 1 : 2);
+            int imageType = (i == 0 ? 1 : 2);
+            String lower = normalized.toLowerCase();
+            if (imageType != 1) {
+                if (lower.contains("layout") || lower.contains("户型") || lower.contains("huxing")) {
+                    imageType = 3;
+                } else if (lower.contains("view") || lower.contains("river") || lower.contains("mountain")
+                        || lower.contains("university") || lower.contains("park")) {
+                    imageType = 4;
+                }
+            }
+            houseImage.setImageType(imageType);
             houseImage.setSortOrder(i + 1);
-            // 从当前登录用户获取uploadUserId
-            Integer uploadUserId = SecurityUtils.getUserId();
-            houseImage.setUploadUserId(uploadUserId != null ? uploadUserId : 1);
-            houseImage.setAuditStatus(0); // 默认待审核
-            houseImage.setCreateTime(new Date());
+            houseImage.setUploadUserId(uploadUserId);
+
+            // 管理员/销售经理上传的图片默认视为已审核通过，其余角色默认待审核
+            if (roleType != null && (roleType == 1 || roleType == 3)) {
+                houseImage.setAuditStatus(1);
+                houseImage.setAuditUserId(uploadUserId);
+                houseImage.setAuditTime(now);
+            } else {
+                houseImage.setAuditStatus(0);
+            }
+
+            houseImage.setCreateTime(now);
+            houseImage.setUpdateTime(now);
 
             int insertResult = houseImageMapper.insert(houseImage);
             if (insertResult <= 0) {
@@ -797,6 +837,20 @@ public class HouseServiceImpl implements HouseService {
         }
 
         int result = houseMapper.updateById(house);
+
+        if (result > 0) {
+            Date now = new Date();
+            Integer auditUserId = SecurityUtils.requireUserId();
+            Integer imageAuditStatus = approved ? 1 : 2;
+
+            houseImageMapper.update(null,
+                    new LambdaUpdateWrapper<HouseImage>()
+                            .eq(HouseImage::getHouseId, id)
+                            .set(HouseImage::getAuditStatus, imageAuditStatus)
+                            .set(HouseImage::getAuditUserId, auditUserId)
+                            .set(HouseImage::getAuditTime, now)
+                            .set(HouseImage::getUpdateTime, now));
+        }
 
         // 发送审核结果通知给销售
         String houseTitle = String.format("%s (%s)", house.getHouseNo(), house.getLayout());

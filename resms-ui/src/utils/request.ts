@@ -79,10 +79,12 @@ request.interceptors.response.use(
           const json = JSON.parse(text)
           const error = new Error(json.message || '请求失败')
           ;(error as any).response = { data: json }
+          ;(error as any).config = response.config
           throw error
         } catch {
           const error = new Error('请求失败')
           ;(error as any).response = { data: { message: text } }
+          ;(error as any).config = response.config
           throw error
         }
       }
@@ -93,8 +95,13 @@ request.interceptors.response.use(
     if (data && typeof data.code === 'number') {
       // 如果是业务错误，抛出错误让业务代码处理
       if (data.code !== 200 || !data.status) {
+        const showToast = !response?.config?.silent
+        if (showToast) {
+          ElMessage.error(data.message || '请求失败')
+        }
         const error = new Error(data.message || '请求失败')
         ;(error as any).response = { data }
+        ;(error as any).config = response.config
         throw error
       }
     }
@@ -104,6 +111,8 @@ request.interceptors.response.use(
   async (error: any) => {
     console.log('响应错误:', error)
 
+    const showToast = !error?.config?.silent
+
     if (error.response) {
       const { status, data } = error.response
 
@@ -111,15 +120,19 @@ request.interceptors.response.use(
       switch (status) {
         case 400:
           // 客户端错误
-          if (data?.message) {
-            ElMessage.error(data.message)
-          } else {
-            ElMessage.error('请求参数错误')
+          if (showToast) {
+            if (data?.message) {
+              ElMessage.error(data.message)
+            } else {
+              ElMessage.error('请求参数错误')
+            }
           }
           break
         case 401:
           // token过期或无效
-          ElMessage.warning(data?.message || '登录已过期，请重新登录')
+          if (showToast) {
+            ElMessage.warning(data?.message || '登录已过期，请重新登录')
+          }
           // 清除本地存储的用户信息
           localStorage.removeItem('token')
           localStorage.removeItem('userInfo')
@@ -135,46 +148,66 @@ request.interceptors.response.use(
           break
         case 403:
           // 权限不足
-          if (data?.message?.includes('CSRF')) {
-            ElMessage.error('安全验证失败，请刷新页面重试')
-            // 清除CSRF token，重新获取
-            csrfToken = null
-          } else {
-            ElMessage.error('没有权限访问此功能')
+          if (showToast) {
+            if (data?.message?.includes('CSRF')) {
+              ElMessage.error('安全验证失败，请刷新页面重试')
+              // 清除CSRF token，重新获取
+              csrfToken = null
+            } else {
+              ElMessage.error('没有权限访问此功能')
+            }
           }
           break
         case 404:
-          ElMessage.error('请求的资源不存在')
+          if (showToast) {
+            ElMessage.error('请求的资源不存在')
+          }
           break
         case 408:
-          ElMessage.error('请求超时，请稍后重试')
+          if (showToast) {
+            ElMessage.error('请求超时，请稍后重试')
+          }
           break
         case 429:
           // 太多次请求
-          ElMessage.warning('请求过于频繁，请稍后再试')
+          if (showToast) {
+            ElMessage.warning('请求过于频繁，请稍后再试')
+          }
           break
         case 500:
-          ElMessage.error('服务器内部错误，请联系管理员')
+          if (showToast) {
+            ElMessage.error('服务器内部错误，请联系管理员')
+          }
           break
         case 502:
         case 503:
         case 504:
-          ElMessage.error('服务器暂时不可用，请稍后重试')
+          if (showToast) {
+            ElMessage.error('服务器暂时不可用，请稍后重试')
+          }
           break
         default:
           // 其他错误
           const errorMessage = data?.message || `请求失败 (${status})`
-          ElMessage.error(errorMessage)
+          if (showToast) {
+            ElMessage.error(errorMessage)
+          }
       }
     } else if (error.code === 'ECONNABORTED') {
       // 请求超时
-      ElMessage.error('请求超时，请检查网络连接')
+      if (showToast) {
+        ElMessage.error('请求超时，请检查网络连接')
+      }
     } else if (error.request) {
       // 网络错误
-      ElMessage.error('网络连接失败，请检查网络设置')
+      if (showToast) {
+        ElMessage.error('网络连接失败，请检查网络设置')
+      }
     } else {
       // 其他错误
-      ElMessage.error(error.message || '请求失败')
+      if (showToast) {
+        ElMessage.error(error.message || '请求失败')
+      }
     }
 
     return Promise.reject(error)

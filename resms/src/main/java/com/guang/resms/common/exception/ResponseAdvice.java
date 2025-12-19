@@ -27,6 +27,10 @@ public class ResponseAdvice implements ResponseBodyAdvice<Object> {
     @SneakyThrows
     @Override
     public Object beforeBodyWrite(Object o, MethodParameter returnType, MediaType selectedContentType, Class selectedConverterType, ServerHttpRequest request, ServerHttpResponse response) {
+        String path = request.getURI() != null ? request.getURI().getPath() : null;
+        if (path != null && path.startsWith("/uploads/")) {
+            return o;
+        }
         //如果Controller返回String的话，SpringBoot不会帮我们自动封装而直接返回，因此我们需要手动转换成json。
         if (o instanceof String) {
             return objectMapper.writeValueAsString(ResponseResult.success(o));

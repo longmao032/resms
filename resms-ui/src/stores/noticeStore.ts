@@ -14,7 +14,7 @@ export const useNoticeStore = defineStore('notice', () => {
                 pageNum: 1,
                 pageSize: 5,
                 isRead: 0
-            })
+            }, { silent: true })
             if (res.data) { // Handle inconsistent API wrappers if any
                 const data = res.data || {}
                 unreadCount.value = data.total || 0

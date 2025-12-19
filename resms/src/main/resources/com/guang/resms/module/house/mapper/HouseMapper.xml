@@ -295,4 +295,30 @@
         WHERE id = #{projectId}
     </select>
 
+    <select id="selectByIdForUpdate" resultType="com.guang.resms.module.house.entity.House">
+        SELECT
+            id,
+            house_no,
+            area,
+            unit_name,
+            layout,
+            floor,
+            total_floor,
+            orientation,
+            decoration,
+            price,
+            status,
+            sales_id,
+            description,
+            house_type,
+            building_no,
+            project_id,
+            room_no,
+            create_time,
+            update_time
+        FROM tb_house
+        WHERE id = #{id}
+        FOR UPDATE
+    </select>
+
 </mapper>
