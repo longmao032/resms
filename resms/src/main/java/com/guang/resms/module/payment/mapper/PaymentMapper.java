@@ -30,4 +30,7 @@ public interface PaymentMapper extends BaseMapper<Payment> {
 
     // 统计销售回款排行 Top 10
     List<Map<String, Object>> selectSalesRanking();
+
+    // 汇总已确认收款（含退款冲减），按交易ID与款项类型分组
+    List<Map<String, Object>> selectConfirmedAmountGroupByType(@Param("transactionIds") List<Integer> transactionIds);
 }

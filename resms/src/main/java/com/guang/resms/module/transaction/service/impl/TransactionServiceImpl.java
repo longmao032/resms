@@ -10,6 +10,7 @@ import com.guang.resms.common.utils.SecurityUtils;
 import com.guang.resms.module.customer.mapper.CustomerMapper;
 import com.guang.resms.module.house.entity.House;
 import com.guang.resms.module.house.mapper.HouseMapper;
+import com.guang.resms.module.payment.mapper.PaymentMapper;
 import com.guang.resms.module.transaction.entity.Transaction;
 import com.guang.resms.module.transaction.entity.dto.TransactionPageDTO;
 import com.guang.resms.module.transaction.entity.dto.TransactionUpdateDTO;
@@ -21,6 +22,12 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -41,6 +48,9 @@ public class TransactionServiceImpl extends ServiceImpl<TransactionMapper, Trans
 
     @Autowired
     private CustomerMapper customerMapper;
+
+    @Autowired
+    private PaymentMapper paymentMapper;
 
     @Override
     public IPage<TransactionVO> getTransactionPage(TransactionPageDTO dto) {
@@ -72,7 +82,49 @@ public class TransactionServiceImpl extends ServiceImpl<TransactionMapper, Trans
                 throw new ServiceException(HttpEnums.FORBIDDEN.getCode(), "权限不足");
             }
         }
-        return baseMapper.selectDetailVO(id);
+        TransactionVO vo = baseMapper.selectDetailVO(id);
+        if (vo == null) {
+            return null;
+        }
+        fillPaymentDerivedAmounts(vo);
+        return vo;
+    }
+
+    private void fillPaymentDerivedAmounts(TransactionVO vo) {
+        if (vo == null || vo.getId() == null) {
+            return;
+        }
+        Map<Integer, Map<Integer, BigDecimal>> amounts = getConfirmedAmountsByTxIds(
+                Collections.singletonList(vo.getId()));
+        Map<Integer, BigDecimal> byType = amounts.getOrDefault(vo.getId(), Collections.emptyMap());
+
+        BigDecimal deposit = byType.getOrDefault(1, BigDecimal.ZERO);
+        BigDecimal down = byType.getOrDefault(2, BigDecimal.ZERO);
+        BigDecimal tail = byType.getOrDefault(3, BigDecimal.ZERO);
+        BigDecimal loan = byType.getOrDefault(5, BigDecimal.ZERO);
+
+        vo.setDeposit(deposit);
+        vo.setDownPayment(down);
+        vo.setTailAmount(tail);
+        vo.setLoanAmount(loan);
+
+        BigDecimal paid = deposit.add(down).add(tail).add(loan);
+        vo.setPaidAmount(paid);
+
+        if (vo.getDealPrice() != null) {
+            BigDecimal finalPayment = vo.getDealPrice().subtract(paid);
+            if (finalPayment.compareTo(BigDecimal.ZERO) < 0) {
+                finalPayment = BigDecimal.ZERO;
+            }
+            vo.setFinalPayment(finalPayment);
+        }
+
+        boolean canApplyFinish = vo.getStatus() != null
+                && (vo.getStatus() == 2 || vo.getStatus() == 3)
+                && vo.getDealPrice() != null
+                && paid.compareTo(vo.getDealPrice()) >= 0
+                && (vo.getFinishAudit() == null || vo.getFinishAudit() != 2);
+        vo.setCanApplyFinish(canApplyFinish);
     }
 
     @Override
@@ -116,6 +168,10 @@ public class TransactionServiceImpl extends ServiceImpl<TransactionMapper, Trans
 
         Transaction transaction = new Transaction();
         BeanUtils.copyProperties(dto, transaction);
+
+        if (transaction.getDeposit() == null) {
+            transaction.setDeposit(BigDecimal.ZERO);
+        }
 
         // 生成交易编号 JY + 时间戳 + 3位随机数
         String timestamp = java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
@@ -226,7 +282,6 @@ public class TransactionServiceImpl extends ServiceImpl<TransactionMapper, Trans
 
         // ========== 自动状态流转逻辑 ==========
         Integer autoStatus = null; // 自动计算的状态
-        boolean needAuditReset = false; // 是否需要重置审核状态
 
         // 获取原始值和新值
         java.math.BigDecimal originalDeposit = original.getDeposit();
@@ -247,7 +302,6 @@ public class TransactionServiceImpl extends ServiceImpl<TransactionMapper, Trans
                 throw new ServiceException("待付定金阶段必须经理审核通过后才允许录入定金");
             }
             autoStatus = 1; // 已付定金
-            needAuditReset = true;
             // 自动设置定金时间
             dto.setDepositTime(java.time.LocalDateTime.now());
         }
@@ -256,7 +310,6 @@ public class TransactionServiceImpl extends ServiceImpl<TransactionMapper, Trans
         // 条件：原来没有首付(null或0)，现在有首付(>0)，且当前状态为"已付定金"(1)
         if (isPositive(newDownPayment) && !isPositive(originalDownPayment) && originalStatus == 1) {
             autoStatus = 2; // 已付首付
-            needAuditReset = true;
             // 自动设置首付时间
             if (dto.getDownPaymentTime() == null) {
                 dto.setDownPaymentTime(java.time.LocalDateTime.now());
@@ -267,7 +320,6 @@ public class TransactionServiceImpl extends ServiceImpl<TransactionMapper, Trans
         // 条件：贷款状态从非"已放款"变为"已放款"(2)，且当前状态为"已付首付"(2)
         if (newLoanStatusInput != null && newLoanStatusInput == 2 && originalLoanStatus != 2 && originalStatus == 2) {
             autoStatus = 3; // 已过户
-            needAuditReset = true;
             // 自动设置过户时间
             dto.setTransferTime(java.time.LocalDateTime.now());
         }
@@ -278,7 +330,6 @@ public class TransactionServiceImpl extends ServiceImpl<TransactionMapper, Trans
                 && newLoanStatusInput != null && newLoanStatusInput == 2
                 && originalStatus == 2) {
             autoStatus = 3; // 已过户
-            needAuditReset = true;
             dto.setTransferTime(java.time.LocalDateTime.now());
         }
 
@@ -289,10 +340,6 @@ public class TransactionServiceImpl extends ServiceImpl<TransactionMapper, Trans
         // 应用自动状态变更
         if (autoStatus != null) {
             dto.setStatus(autoStatus);
-        }
-        // 如果需要重置审核状态
-        if (needAuditReset) {
-            dto.setManagerAudit(0); // 待审核
         }
         // ========== 状态流转逻辑结束 ==========
 
@@ -581,55 +628,85 @@ public class TransactionServiceImpl extends ServiceImpl<TransactionMapper, Trans
         }
 
         Integer status = transaction.getStatus();
+        if (status != null && status == 4) {
+            throw new ServiceException("该交易已完成，无需再次确认");
+        }
         if (status == null || (status != 2 && status != 3)) {
-            throw new ServiceException("只有已付首付/已过户状态的交易才能申请完成");
+            throw new ServiceException("只有已付首付/已过户状态的交易才能确认完成");
         }
 
-        if (!isTransactionFullyPaid(transaction)) {
-            throw new ServiceException("款项未结清，无法申请完成");
+        if (!isTransactionFullyPaid(transaction.getId(), transaction.getDealPrice())) {
+            throw new ServiceException("款项未结清，无法确认完成");
         }
 
-        Integer finishAudit = transaction.getFinishAudit();
-        if (finishAudit != null && finishAudit == 1) {
-            throw new ServiceException("该交易已提交完成申请，请等待管理员审核");
-        }
-        if (finishAudit != null && finishAudit == 2) {
-            throw new ServiceException("该交易已完成，无需再次申请");
+        Integer oldStatus = transaction.getStatus();
+
+        validateStatusConsistency(4, transaction.getLoanStatus());
+
+        transaction.setFinishAudit(2);
+        transaction.setStatus(4);
+
+        if (transaction.getManagerAudit() == null || transaction.getManagerAudit() == 0) {
+            transaction.setManagerAudit(1);
         }
 
-        transaction.setFinishAudit(1);
         boolean result = this.updateById(transaction);
 
         if (result) {
-            notificationService.notifyTransactionPendingAdminFinishAudit(
-                    transaction.getId(),
-                    transaction.getTransactionNo(),
-                    transaction.getSalesId());
+            syncHouseStatusOnTransactionStatusChanged(transaction.getHouseId(), oldStatus, transaction.getStatus());
 
             notificationService.notifyTransactionStatusChanged(
                     transaction.getId(),
                     transaction.getTransactionNo(),
                     transaction.getSalesId(),
-                    "已提交完成申请" + (reason != null ? ":" + reason : ""));
+                    "交易已完成" + (reason != null ? ":" + reason : ""));
         }
 
         return result;
     }
 
-    private boolean isTransactionFullyPaid(Transaction transaction) {
-        if (transaction == null) {
+    private boolean isTransactionFullyPaid(Integer transactionId, BigDecimal dealPrice) {
+        if (transactionId == null || dealPrice == null) {
             return false;
+        }
+        Map<Integer, Map<Integer, BigDecimal>> amounts = getConfirmedAmountsByTxIds(
+                Collections.singletonList(transactionId));
+        Map<Integer, BigDecimal> byType = amounts.getOrDefault(transactionId, Collections.emptyMap());
+
+        BigDecimal deposit = byType.getOrDefault(1, BigDecimal.ZERO);
+        BigDecimal down = byType.getOrDefault(2, BigDecimal.ZERO);
+        BigDecimal tail = byType.getOrDefault(3, BigDecimal.ZERO);
+        BigDecimal loan = byType.getOrDefault(5, BigDecimal.ZERO);
+
+        BigDecimal paid = deposit.add(down).add(tail).add(loan);
+        return paid.compareTo(dealPrice) >= 0;
+    }
+
+    private Map<Integer, Map<Integer, BigDecimal>> getConfirmedAmountsByTxIds(List<Integer> transactionIds) {
+        if (transactionIds == null || transactionIds.isEmpty()) {
+            return Collections.emptyMap();
         }
 
-        java.math.BigDecimal dealPrice = transaction.getDealPrice();
-        if (dealPrice == null) {
-            return false;
+        List<Map<String, Object>> rows = paymentMapper.selectConfirmedAmountGroupByType(transactionIds);
+        if (rows == null || rows.isEmpty()) {
+            return Collections.emptyMap();
         }
-        java.math.BigDecimal deposit = transaction.getDeposit() == null ? java.math.BigDecimal.ZERO : transaction.getDeposit();
-        java.math.BigDecimal downPayment = transaction.getDownPayment() == null ? java.math.BigDecimal.ZERO : transaction.getDownPayment();
-        java.math.BigDecimal loanAmount = transaction.getLoanAmount() == null ? java.math.BigDecimal.ZERO : transaction.getLoanAmount();
-        java.math.BigDecimal paid = deposit.add(downPayment).add(loanAmount);
-        return paid.compareTo(dealPrice) >= 0;
+
+        Map<Integer, Map<Integer, BigDecimal>> result = new HashMap<>();
+        for (Map<String, Object> row : rows) {
+            if (row == null) {
+                continue;
+            }
+            Integer txId = (Integer) row.get("transaction_id");
+            Integer type = (Integer) row.get("payment_type");
+            BigDecimal amount = (BigDecimal) row.get("amount");
+            if (txId == null || type == null) {
+                continue;
+            }
+            result.computeIfAbsent(txId, k -> new HashMap<>())
+                    .put(type, amount == null ? BigDecimal.ZERO : amount);
+        }
+        return result;
     }
 
     @Override
@@ -657,6 +734,10 @@ public class TransactionServiceImpl extends ServiceImpl<TransactionMapper, Trans
         if (approved != null && approved) {
             transaction.setFinishAudit(2); // 完成审核通过
             transaction.setStatus(4); // 已完成
+
+            if (transaction.getManagerAudit() == null || transaction.getManagerAudit() == 0) {
+                transaction.setManagerAudit(1);
+            }
         } else {
             transaction.setFinishAudit(3); // 完成审核驳回
         }
@@ -677,6 +758,117 @@ public class TransactionServiceImpl extends ServiceImpl<TransactionMapper, Trans
                     transaction.getTransactionNo(),
                     transaction.getSalesId(),
                     statusText);
+        }
+
+        return result;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean resubmitAudit(Integer id) {
+        if (id == null || id <= 0) {
+            throw new ServiceException("交易ID不能为空");
+        }
+
+        Integer currentUserId = SecurityUtils.getUserId();
+        Integer roleType = SecurityUtils.getRoleType();
+        if (currentUserId == null) {
+            throw new ServiceException("未登录或登录已过期");
+        }
+
+        // 检查交易是否存在
+        Transaction transaction = this.getById(id);
+        if (transaction == null) {
+            throw new ServiceException("交易不存在");
+        }
+
+        // 校验权限：销售顾问只能操作自己的交易
+        if (roleType != null && roleType == 2) {
+            if (!currentUserId.equals(transaction.getSalesId())) {
+                throw new ServiceException("无权限操作该交易");
+            }
+        }
+
+        // 只有待付定金且经理驳回的交易才能重新提交
+        if (transaction.getStatus() == null || transaction.getStatus() != 0) {
+            throw new ServiceException("只有待付定金状态的交易才能重新提交审核");
+        }
+        if (transaction.getManagerAudit() == null || transaction.getManagerAudit() != 2) {
+            throw new ServiceException("只有经理驳回的交易才能重新提交审核");
+        }
+
+        // 重置审批状态为待审核
+        transaction.setManagerAudit(0);
+        boolean result = this.updateById(transaction);
+
+        if (result) {
+            // 发送通知给经理
+            notificationService.notifyTransactionPendingManagerAudit(
+                    transaction.getId(),
+                    transaction.getTransactionNo(),
+                    transaction.getSalesId());
+
+            // 通知销售顾问
+            notificationService.notifyTransactionStatusChanged(
+                    transaction.getId(),
+                    transaction.getTransactionNo(),
+                    transaction.getSalesId(),
+                    "已重新提交审核");
+        }
+
+        return result;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean voidTransaction(Integer id, String reason) {
+        if (id == null || id <= 0) {
+            throw new ServiceException("交易ID不能为空");
+        }
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new ServiceException("作废原因不能为空");
+        }
+
+        Integer currentUserId = SecurityUtils.getUserId();
+        Integer roleType = SecurityUtils.getRoleType();
+        if (currentUserId == null) {
+            throw new ServiceException("未登录或登录已过期");
+        }
+
+        // 检查交易是否存在
+        Transaction transaction = this.getById(id);
+        if (transaction == null) {
+            throw new ServiceException("交易不存在");
+        }
+
+        // 只有待付定金状态的交易可以作废
+        if (transaction.getStatus() == null || transaction.getStatus() != 0) {
+            throw new ServiceException("只有待付定金状态的交易可以作废");
+        }
+
+        // 校验权限：销售顾问只能作废自己的交易
+        if (roleType != null && roleType == 2) {
+            if (!currentUserId.equals(transaction.getSalesId())) {
+                throw new ServiceException("无权限操作该交易");
+            }
+        }
+
+        Integer oldStatus = transaction.getStatus();
+
+        // 更新交易状态为已取消
+        transaction.setStatus(5);
+        boolean result = this.updateById(transaction);
+
+        if (result) {
+            // 同步房源状态（如果房源已预订，改回在售）
+            syncHouseStatusOnTransactionStatusChanged(transaction.getHouseId(), oldStatus, 5);
+
+            // 发送通知
+            notificationService.notifyTransactionStatusChanged(
+                    transaction.getId(),
+                    transaction.getTransactionNo(),
+                    transaction.getSalesId(),
+                    "交易已作废：" + reason);
         }
 
         return result;

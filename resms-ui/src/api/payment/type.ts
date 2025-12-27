@@ -2,6 +2,7 @@ export interface PaymentVO {
   id: number;
   transactionId: number;
   transactionNo: string;
+  dealPrice?: number;
   customerName: string;
   houseNo: string;
   paymentType: number; // 1:定金 2:首付...

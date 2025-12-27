@@ -51,23 +51,6 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void notifyTransactionPendingAdminFinishAudit(Integer transactionId, String transactionCode, Integer salesId) {
-        WorkNotice notice = new WorkNotice();
-        notice.setNoticeTitle("交易完成待审核");
-        notice.setNoticeContent(String.format("交易【%s】已提交完成申请，请管理员审核。", transactionCode));
-        notice.setNoticeType(2); // 任务
-        notice.setPriority(1); // 紧急
-        notice.setBizType("transaction_finish_audit");
-        notice.setBizId(transactionId);
-        notice.setRouterPath("/transaction/audit");
-        notice.setReceiverType(2); // 角色
-        notice.setReceiverIds("[1]"); // 管理员角色ID=1
-        notice.setSenderId(0);
-        notice.setSenderName("系统");
-        workNoticeService.publishNotice(notice);
-    }
-
-    @Override
     public void notifyTransactionPendingManagerAudit(Integer transactionId, String transactionCode, Integer salesId) {
         WorkNotice notice = new WorkNotice();
         notice.setNoticeTitle("交易待审核(待定金)");

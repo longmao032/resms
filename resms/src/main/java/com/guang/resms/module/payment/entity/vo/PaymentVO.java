@@ -10,6 +10,8 @@ public class PaymentVO {
     private Integer transactionId;
     private String transactionNo; // 交易编号
 
+    private BigDecimal dealPrice; // 成交价格
+
     private String customerName;  // 客户姓名
     private String houseNo;       // 房源编号
 

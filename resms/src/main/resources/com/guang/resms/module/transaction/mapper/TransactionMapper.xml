@@ -5,7 +5,7 @@
         SELECT t.id, t.transaction_no, t.deal_price, t.loan_status, t.status, t.manager_audit, t.finish_audit AS finishAudit, t.create_time,
                h.house_no, h.unit_name,
                c.real_name AS customer_name, c.phone AS customer_phone,
-               u.real_name AS sales_name
+               t.sales_id, u.real_name AS sales_name
         FROM tb_transaction t
         LEFT JOIN tb_house h ON t.house_id = h.id
         LEFT JOIN tb_customer c ON t.customer_id = c.id
@@ -32,7 +32,7 @@
                (t.deal_price - COALESCE(t.deposit, 0) - COALESCE(t.down_payment, 0) - COALESCE(t.loan_amount, 0)) AS final_payment,
                h.house_no, h.unit_name,
                c.real_name AS customer_name, c.phone AS customer_phone,
-               u.real_name AS sales_name
+               t.sales_id, u.real_name AS sales_name
         FROM tb_transaction t
         LEFT JOIN tb_house h ON t.house_id = h.id
         LEFT JOIN tb_customer c ON t.customer_id = c.id

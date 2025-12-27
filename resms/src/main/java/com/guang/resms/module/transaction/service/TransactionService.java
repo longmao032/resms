@@ -40,4 +40,21 @@ public interface TransactionService extends IService<Transaction> {
     boolean financeApplyFinish(Integer id, String reason);
 
     boolean adminFinishApprove(Integer id, Boolean approved, String reason);
+
+    /**
+     * 重新提交审核（销售将驳回的交易重新提交给经理审核）
+     * 
+     * @param id 交易ID
+     * @return 是否成功
+     */
+    boolean resubmitAudit(Integer id);
+
+    /**
+     * 作废交易
+     * 
+     * @param id     交易ID
+     * @param reason 作废原因
+     * @return 是否成功
+     */
+    boolean voidTransaction(Integer id, String reason);
 }

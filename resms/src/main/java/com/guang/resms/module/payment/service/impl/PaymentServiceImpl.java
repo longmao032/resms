@@ -117,9 +117,8 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentMapper, Payment> impl
 
         Integer currentStatus = transaction.getStatus();
         Integer newStatus = currentStatus;
-        boolean needAuditReset = false;
 
-        // paymentType: 1=, 2=, 3=, 4=
+        // paymentType: 1=, 2=, 3=, 4=, 5=
         Integer paymentType = payment.getPaymentType();
         if (paymentType == null) {
             throw new ServiceException("款项类型不能为空");
@@ -129,8 +128,12 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentMapper, Payment> impl
             if (currentStatus == null || currentStatus != 0) {
                 throw new ServiceException("交易状态不允许确认定金");
             }
+
+            if (transaction.getManagerAudit() == null || transaction.getManagerAudit() != 1) {
+                throw new ServiceException("待付定金阶段必须经理审核通过后才允许确认定金");
+            }
+
             newStatus = 1;
-            needAuditReset = true;
             transaction.setDepositTime(payment.getPaymentTime());
             if (transaction.getDeposit() == null || transaction.getDeposit().compareTo(BigDecimal.ZERO) <= 0) {
                 transaction.setDeposit(payment.getAmount());
@@ -140,19 +143,32 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentMapper, Payment> impl
                 throw new ServiceException("交易状态不允许确认首付款");
             }
             newStatus = 2;
-            needAuditReset = true;
             transaction.setDownPaymentTime(payment.getPaymentTime());
             if (transaction.getDownPayment() == null || transaction.getDownPayment().compareTo(BigDecimal.ZERO) <= 0) {
                 transaction.setDownPayment(payment.getAmount());
+            }
+        } else if (paymentType == 3) {
+            if (currentStatus == null || currentStatus < 2 || currentStatus == 5) {
+                throw new ServiceException("交易状态不允许确认尾款");
+            }
+            newStatus = currentStatus;
+        } else if (paymentType == 5) {
+            if (currentStatus == null || currentStatus < 2 || currentStatus == 5) {
+                throw new ServiceException("交易状态不允许确认贷款");
+            }
+            transaction.setLoanStatus(2);
+            if (transaction.getLoanAmount() == null || transaction.getLoanAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                transaction.setLoanAmount(payment.getAmount());
+            }
+            if (currentStatus == 2) {
+                newStatus = 3;
+                transaction.setTransferTime(payment.getPaymentTime());
             }
         } else {
             // 
             newStatus = currentStatus;
         }
 
-        if (needAuditReset) {
-            transaction.setManagerAudit(0);
-        }
         if (newStatus != null && !newStatus.equals(currentStatus)) {
             transaction.setStatus(newStatus);
         }
@@ -259,6 +275,40 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentMapper, Payment> impl
                     tx.setDownPaymentTime(null);
                     tx.setDownPayment(null);
                     tx.setManagerAudit(0);
+                    transactionMapper.updateById(tx);
+                }
+            }
+
+            if (paymentType != null && paymentType == 3) {
+                // 尾款作废：不强制回滚交易状态，但会影响后续“可申请完成”的条件
+                // 这里仅做阶段保护：交易取消/未到首付阶段，不允许作废尾款
+                if (txStatus == null || txStatus < 2 || txStatus == 5) {
+                    throw new ServiceException("当前交易状态不允许作废尾款收款");
+                }
+            }
+
+            if (paymentType != null && paymentType == 5) {
+                // 贷款作废：如果该交易已无其它确认贷款，则回滚 loan 字段；若交易处于已过户(3)，允许回退到已付首付(2)
+                if (txStatus == null || txStatus < 2 || txStatus == 5) {
+                    throw new ServiceException("当前交易状态不允许作废贷款收款");
+                }
+
+                Long otherConfirmedLoanCnt = this.count(new LambdaQueryWrapper<Payment>()
+                        .eq(Payment::getTransactionId, payment.getTransactionId())
+                        .eq(Payment::getPaymentType, 5)
+                        .eq(Payment::getPaymentStatus, 1)
+                        .ne(Payment::getId, payment.getId()));
+
+                if (otherConfirmedLoanCnt == null || otherConfirmedLoanCnt == 0) {
+                    tx.setLoanAmount(null);
+                    tx.setLoanStatus(0);
+
+                    if (txStatus == 3) {
+                        tx.setStatus(2);
+                        tx.setTransferTime(null);
+                        tx.setManagerAudit(0);
+                    }
+
                     transactionMapper.updateById(tx);
                 }
             }

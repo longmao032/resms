@@ -54,8 +54,8 @@ public class HouseController {
             return ResponseResult.success("查询成功", result);
         } catch (Exception e) {
             log.error("查询房源列表失败", e);
-            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(), 
-                                      "查询失败：" + e.getMessage());
+            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(),
+                    "查询失败：" + e.getMessage());
         }
     }
 
@@ -74,8 +74,8 @@ public class HouseController {
 
         } catch (Exception e) {
             log.error("获取房源详情失败：id={}", id, e);
-            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(), 
-                                      "获取详情失败：" + e.getMessage());
+            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(),
+                    "获取详情失败：" + e.getMessage());
         }
     }
 
@@ -94,8 +94,8 @@ public class HouseController {
 
         } catch (Exception e) {
             log.error("新增房源失败", e);
-            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(), 
-                                      "新增失败：" + e.getMessage());
+            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(),
+                    "新增失败：" + e.getMessage());
         }
     }
 
@@ -114,8 +114,8 @@ public class HouseController {
 
         } catch (Exception e) {
             log.error("更新房源失败：id={}", houseDTO.getId(), e);
-            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(), 
-                                      "更新失败：" + e.getMessage());
+            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(),
+                    "更新失败：" + e.getMessage());
         }
     }
 
@@ -138,8 +138,8 @@ public class HouseController {
 
         } catch (Exception e) {
             log.error("删除房源失败：id={}", id, e);
-            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(), 
-                                      "删除失败：" + e.getMessage());
+            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(),
+                    "删除失败：" + e.getMessage());
         }
     }
 
@@ -158,8 +158,8 @@ public class HouseController {
 
         } catch (Exception e) {
             log.error("批量删除房源失败", e);
-            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(), 
-                                      "批量删除失败：" + e.getMessage());
+            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(),
+                    "批量删除失败：" + e.getMessage());
         }
     }
 
@@ -167,8 +167,8 @@ public class HouseController {
      * 更新房源状态
      */
     @PutMapping("/status/{id}/{status}")
-    public ResponseResult<Void> updateStatus(@PathVariable Integer id, 
-                                            @PathVariable Integer status) {
+    public ResponseResult<Void> updateStatus(@PathVariable Integer id,
+            @PathVariable Integer status) {
         try {
             if (id == null || id <= 0) {
                 return ResponseResult.fail(HttpEnums.BAD_REQUEST.getCode(), "房源ID不能为空");
@@ -186,8 +186,8 @@ public class HouseController {
 
         } catch (Exception e) {
             log.error("更新房源状态失败：id={}, status={}", id, status, e);
-            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(), 
-                                      "状态更新失败：" + e.getMessage());
+            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(),
+                    "状态更新失败：" + e.getMessage());
         }
     }
 
@@ -195,8 +195,8 @@ public class HouseController {
      * 批量更新房源状态
      */
     @PutMapping("/status/batch")
-    public ResponseResult<Integer> batchUpdateStatus(@RequestParam List<Integer> ids, 
-                                                     @RequestParam Integer status) {
+    public ResponseResult<Integer> batchUpdateStatus(@RequestParam List<Integer> ids,
+            @RequestParam Integer status) {
         try {
             if (ids == null || ids.isEmpty()) {
                 return ResponseResult.fail(HttpEnums.BAD_REQUEST.getCode(), "房源ID列表不能为空");
@@ -210,8 +210,8 @@ public class HouseController {
 
         } catch (Exception e) {
             log.error("批量更新房源状态失败", e);
-            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(), 
-                                      "批量更新失败：" + e.getMessage());
+            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(),
+                    "批量更新失败：" + e.getMessage());
         }
     }
 
@@ -219,8 +219,8 @@ public class HouseController {
      * 分配房源给销售
      */
     @PutMapping("/assign/{id}/{salesId}")
-    public ResponseResult<Void> assignSales(@PathVariable Integer id, 
-                                           @PathVariable Integer salesId) {
+    public ResponseResult<Void> assignSales(@PathVariable Integer id,
+            @PathVariable Integer salesId) {
         try {
             if (id == null || id <= 0) {
                 return ResponseResult.fail(HttpEnums.BAD_REQUEST.getCode(), "房源ID不能为空");
@@ -238,8 +238,8 @@ public class HouseController {
 
         } catch (Exception e) {
             log.error("分配房源失败：id={}, salesId={}", id, salesId, e);
-            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(), 
-                                      "分配失败：" + e.getMessage());
+            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(),
+                    "分配失败：" + e.getMessage());
         }
     }
 
@@ -247,8 +247,8 @@ public class HouseController {
      * 批量分配房源给销售
      */
     @PutMapping("/assign/batch")
-    public ResponseResult<Integer> batchAssignSales(@RequestParam List<Integer> ids, 
-                                                    @RequestParam Integer salesId) {
+    public ResponseResult<Integer> batchAssignSales(@RequestParam List<Integer> ids,
+            @RequestParam Integer salesId) {
         try {
             if (ids == null || ids.isEmpty()) {
                 return ResponseResult.fail(HttpEnums.BAD_REQUEST.getCode(), "房源ID列表不能为空");
@@ -262,8 +262,8 @@ public class HouseController {
 
         } catch (Exception e) {
             log.error("批量分配房源失败", e);
-            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(), 
-                                      "批量分配失败：" + e.getMessage());
+            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(),
+                    "批量分配失败：" + e.getMessage());
         }
     }
 
@@ -271,9 +271,9 @@ public class HouseController {
      * 审核房源
      */
     @PutMapping("/audit/{id}")
-    public ResponseResult<Void> audit(@PathVariable Integer id, 
-                                     @RequestParam Boolean approved, 
-                                     @RequestParam(required = false) String reason) {
+    public ResponseResult<Void> audit(@PathVariable Integer id,
+            @RequestParam Boolean approved,
+            @RequestParam(required = false) String reason) {
         try {
             if (id == null || id <= 0) {
                 return ResponseResult.fail(HttpEnums.BAD_REQUEST.getCode(), "房源ID不能为空");
@@ -291,8 +291,36 @@ public class HouseController {
 
         } catch (Exception e) {
             log.error("审核房源失败：id={}, approved={}", id, approved, e);
-            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(), 
-                                      "审核失败：" + e.getMessage());
+            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(),
+                    "审核失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 重新提交审核（销售顾问将已驳回的房源重新提交审核）
+     */
+    @PutMapping("/resubmit/{id}")
+    public ResponseResult<Void> resubmitAudit(@PathVariable Integer id) {
+        try {
+            if (id == null || id <= 0) {
+                return ResponseResult.fail(HttpEnums.BAD_REQUEST.getCode(), "房源ID不能为空");
+            }
+
+            boolean success = houseService.resubmitAudit(id);
+            if (success) {
+                return ResponseResult.success("重新提交成功，请等待审核");
+            } else {
+                return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(), "重新提交失败");
+            }
+
+        } catch (ServiceException e) {
+            log.warn("重新提交审核失败：id={}, msg={}", id, e.getMessage());
+            return ResponseResult.fail(e.getCode() != null ? e.getCode() : HttpEnums.BAD_REQUEST.getCode(),
+                    e.getMessage());
+        } catch (Exception e) {
+            log.error("重新提交审核失败：id={}", id, e);
+            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(),
+                    "重新提交失败：" + e.getMessage());
         }
     }
 
@@ -320,7 +348,7 @@ public class HouseController {
             }
 
             List<String> imageUrls = new ArrayList<>();
-            
+
             // 创建临时目录（以时间戳命名）
             String tempDir = "temp_" + System.currentTimeMillis();
             String tempDirPath = FileUploadUtils.getUploadBasePath() + File.separator + tempDir;
@@ -374,10 +402,11 @@ public class HouseController {
 
         } catch (IOException e) {
             log.error("上传图片失败", e);
-            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(), 
-                                      "上传失败：" + e.getMessage());
+            return ResponseResult.fail(HttpEnums.INTERNAL_SERVER_ERROR.getCode(),
+                    "上传失败：" + e.getMessage());
         } catch (ServiceException e) {
-            return ResponseResult.fail(e.getCode() != null ? e.getCode() : HttpEnums.BAD_REQUEST.getCode(), e.getMessage());
+            return ResponseResult.fail(e.getCode() != null ? e.getCode() : HttpEnums.BAD_REQUEST.getCode(),
+                    e.getMessage());
         }
     }
 }

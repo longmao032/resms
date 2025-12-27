@@ -109,8 +109,6 @@ public interface NotificationService {
         void notifyTransactionPendingFinanceAudit(Integer transactionId, String transactionCode, Integer salesId,
                         String stageText);
 
-        void notifyTransactionPendingAdminFinishAudit(Integer transactionId, String transactionCode, Integer salesId);
-
         /**
          * 收款确认通知 - 通知销售
          * 

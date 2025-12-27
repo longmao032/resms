@@ -168,12 +168,6 @@ const router = createRouter({
           meta: { title: '交易列表', permission: 'transaction:list:manage' }
         },
         {
-          path: '/transaction/audit',
-          name: 'TransactionAudit',
-          component: () => import('@/views/transaction/TransactionAudit.vue'),
-          meta: { title: '交易审核', permission: 'transaction:audit:manage' }
-        },
-        {
           path: '/transaction/statistics',
           name: 'TransactionStatistics',
           component: () => import('@/views/transaction/TransactionStatistics.vue'),

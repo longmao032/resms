@@ -52,7 +52,8 @@ public class TransactionController {
 
     // 3. 新增交易接口
     @PostMapping
-    public ResponseResult<Boolean> add(@RequestBody @Validated com.guang.resms.module.transaction.entity.dto.TransactionAddDTO dto) {
+    public ResponseResult<Boolean> add(
+            @RequestBody @Validated com.guang.resms.module.transaction.entity.dto.TransactionAddDTO dto) {
         boolean result = transactionService.addTransaction(dto);
         if (result) {
             return ResponseResult.success(true);
@@ -85,5 +86,17 @@ public class TransactionController {
             @RequestParam Boolean approved,
             @RequestParam(required = false) String reason) {
         return ResponseResult.success(transactionService.adminFinishApprove(id, approved, reason));
+    }
+
+    @PutMapping("/resubmit/{id}")
+    public ResponseResult<Void> resubmitAudit(@PathVariable Integer id) {
+        transactionService.resubmitAudit(id);
+        return ResponseResult.success("重新提交成功");
+    }
+
+    @PutMapping("/void/{id}")
+    public ResponseResult<Void> voidTransaction(@PathVariable Integer id, @RequestParam String reason) {
+        transactionService.voidTransaction(id, reason);
+        return ResponseResult.success("作废成功");
     }
 }

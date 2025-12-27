@@ -54,12 +54,16 @@ export function getCustomerList() {
     })
 }
 
-// 获取房源列表（用于下拉选择）
+// 获取房源列表（用于下拉选择，只获取在售房源）
 export function getHouseList() {
     return request({
         url: '/house/list',
         method: 'get',
-        params: { pageNum: 1, pageSize: 1000 }
+        params: {
+            pageNum: 1,
+            pageSize: 1000,
+            status: 1  // 只获取在售(status=1)的房源
+        }
     })
 }
 

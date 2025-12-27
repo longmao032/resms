@@ -65,7 +65,7 @@ public interface HouseService {
     /**
      * 更新房源状态
      *
-     * @param id 房源ID
+     * @param id     房源ID
      * @param status 新状态
      * @return 是否成功
      */
@@ -74,7 +74,7 @@ public interface HouseService {
     /**
      * 批量更新房源状态
      *
-     * @param ids 房源ID列表
+     * @param ids    房源ID列表
      * @param status 新状态
      * @return 更新数量
      */
@@ -83,7 +83,7 @@ public interface HouseService {
     /**
      * 分配房源给销售
      *
-     * @param id 房源ID
+     * @param id      房源ID
      * @param salesId 销售ID
      * @return 是否成功
      */
@@ -92,7 +92,7 @@ public interface HouseService {
     /**
      * 批量分配房源给销售
      *
-     * @param ids 房源ID列表
+     * @param ids     房源ID列表
      * @param salesId 销售ID
      * @return 分配数量
      */
@@ -101,10 +101,18 @@ public interface HouseService {
     /**
      * 审核房源
      *
-     * @param id 房源ID
+     * @param id       房源ID
      * @param approved 是否通过
-     * @param reason 审核原因
+     * @param reason   审核原因
      * @return 是否成功
      */
     boolean auditHouse(Integer id, Boolean approved, String reason);
+
+    /**
+     * 重新提交审核（销售顾问将已驳回的房源重新提交审核）
+     *
+     * @param id 房源ID
+     * @return 是否成功
+     */
+    boolean resubmitAudit(Integer id);
 }

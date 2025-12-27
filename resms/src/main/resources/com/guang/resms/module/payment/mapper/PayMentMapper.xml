@@ -6,6 +6,7 @@
         SELECT
         p.*,
         t.transaction_no,
+        t.deal_price AS dealPrice,
         c.real_name AS customer_name,
         h.house_no,
         u.real_name AS finance_name
@@ -54,12 +55,27 @@
                 WHEN 2 THEN '首付款'
                 WHEN 3 THEN '尾款'
                 WHEN 4 THEN '中介费'
+                WHEN 5 THEN '贷款'
                 ELSE '其他'
                 END as `name`,
             SUM(amount) as `value`
         FROM tb_payment
         WHERE payment_status = 1
         GROUP BY payment_type
+    </select>
+
+    <select id="selectConfirmedAmountGroupByType" resultType="java.util.Map">
+        SELECT
+            transaction_id,
+            payment_type,
+            SUM(CASE WHEN flow_type = 1 THEN amount ELSE -amount END) AS amount
+        FROM tb_payment
+        WHERE payment_status = 1
+          AND transaction_id IN
+        <foreach collection="transactionIds" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+        GROUP BY transaction_id, payment_type
     </select>
 
     <select id="selectSalesRanking" resultType="java.util.Map">

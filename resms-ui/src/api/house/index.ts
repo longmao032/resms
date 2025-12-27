@@ -129,6 +129,16 @@ export function auditHouse(id: number, approved: boolean, reason?: string) {
   })
 }
 
+/**
+ * 重新提交审核（销售顾问将已驳回的房源重新提交审核）
+ */
+export function resubmitHouseAudit(id: number) {
+  return request<ApiResponse<void>>({
+    url: `/house/resubmit/${id}`,
+    method: 'put'
+  })
+}
+
 // ... (existing code)
 
 /**

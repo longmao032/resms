@@ -54,3 +54,13 @@ export const reqFinanceApplyFinish = (id: number, reason?: string) => {
 export const reqAdminFinishApprove = (id: number, approved: boolean, reason?: string) => {
   return request.put(`${Api.AdminFinishApprove}/${id}`, null, { params: { approved, reason } });
 };
+
+// 重新提交审核（销售将驳回的交易重新提交给经理审核）
+export const reqResubmitAudit = (id: number) => {
+  return request.put(`/transaction/resubmit/${id}`);
+};
+
+// 作废交易
+export const reqVoidTransaction = (id: number, reason: string) => {
+  return request.put(`/transaction/void/${id}`, null, { params: { reason } });
+};

@@ -585,7 +585,8 @@ public class HouseServiceImpl implements HouseService {
 
         // ========== 权限控制：销售顾问仅允许修改自己负责的房源，且不允许改负责人/状态 ==========
         if (roleType != null && roleType == 2) {
-            if (currentUserId == null || existHouse.getSalesId() == null || !currentUserId.equals(existHouse.getSalesId())) {
+            if (currentUserId == null || existHouse.getSalesId() == null
+                    || !currentUserId.equals(existHouse.getSalesId())) {
                 throw new ServiceException("无权限操作该房源");
             }
             // 强制禁止销售顾问修改 salesId / status（防止越权）
@@ -824,18 +825,17 @@ public class HouseServiceImpl implements HouseService {
             throw new ServiceException("房源不存在");
         }
 
-        // 检查当前状态是否为待审核
-        if (house.getStatus() == null || house.getStatus() != 0) {
-            throw new ServiceException("只能审核待审核状态的房源");
+        // 检查当前状态是否为待审核或已驳回
+        if (house.getStatus() == null || (house.getStatus() != 0 && house.getStatus() != 5)) {
+            throw new ServiceException("只能审核待审核或已驳回状态的房源");
         }
 
         // 更新状态
         if (approved) {
             house.setStatus(1); // 审核通过 -> 在售
         } else {
-            house.setStatus(4); // 审核拒绝 -> 下架
+            house.setStatus(5); // 审核拒绝 -> 已驳回（区别于主动下架=4）
         }
-
         int result = houseMapper.updateById(house);
 
         if (result > 0) {
@@ -865,6 +865,58 @@ public class HouseServiceImpl implements HouseService {
         return result > 0;
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean resubmitAudit(Integer id) {
+        if (id == null || id <= 0) {
+            throw new ServiceException("房源ID不能为空");
+        }
+
+        Integer currentUserId = SecurityUtils.getUserId();
+        Integer roleType = SecurityUtils.getRoleType();
+        if (currentUserId == null) {
+            throw new ServiceException("未登录或登录已过期");
+        }
+
+        // 检查房源是否存在
+        House house = houseMapper.selectById(id);
+        if (house == null) {
+            throw new ServiceException("房源不存在");
+        }
+
+        // 校验权限：销售顾问只能操作自己负责的房源
+        if (roleType != null && roleType == 2) {
+            if (!currentUserId.equals(house.getSalesId())) {
+                throw new ServiceException("无权限操作该房源");
+            }
+        }
+
+        // 只有已驳回状态的房源才能重新提交审核
+        if (house.getStatus() == null || house.getStatus() != 5) {
+            throw new ServiceException("只有已驳回状态的房源才能重新提交审核");
+        }
+
+        // 重置状态为待审核
+        house.setStatus(0);
+        int result = houseMapper.updateById(house);
+
+        if (result > 0) {
+            // 重置图片审核状态为待审核
+            houseImageMapper.update(null,
+                    new LambdaUpdateWrapper<HouseImage>()
+                            .eq(HouseImage::getHouseId, id)
+                            .set(HouseImage::getAuditStatus, 0)
+                            .set(HouseImage::getUpdateTime, new Date()));
+
+            // 发送通知给管理员
+            String houseTitle = String.format("%s (%s)", house.getHouseNo(), house.getLayout());
+            notificationService.notifyHouseCreated(house.getId(), houseTitle, house.getSalesId());
+        }
+
+        log.info("重新提交审核房源：{}", house.getHouseNo());
+        return result > 0;
+    }
+
     /**
      * 验证房源数据
      *
@@ -888,7 +940,7 @@ public class HouseServiceImpl implements HouseService {
 
         // 状态验证
         if (houseDTO.getStatus() != null) {
-            if (houseDTO.getStatus() < 0 || houseDTO.getStatus() > 4) {
+            if (houseDTO.getStatus() < 0 || houseDTO.getStatus() > 5) {
                 throw new ServiceException("状态值无效");
             }
         }
@@ -928,6 +980,8 @@ public class HouseServiceImpl implements HouseService {
                 return "已成交";
             case 4:
                 return "下架";
+            case 5:
+                return "已驳回";
             default:
                 return "未知";
         }

@@ -26,7 +26,10 @@ export interface TransactionVO {
   deposit: number;
   downPayment: number;
   loanAmount: number;
+  tailAmount?: number;
+  paidAmount?: number;
   finalPayment?: number; // 尾款（后端计算）
+  canApplyFinish?: boolean;
 
   // 状态与时间
   loanStatus: number;   // 0=未申请，1=审核中，2=已放款，3=未通过
@@ -46,6 +49,10 @@ export interface TransactionForm {
   downPayment: number;
   loanAmount: number;
   loanStatus: number;
+  tailAmount?: number;
+  paidAmount?: number;
+  finalPayment?: number;
+  canApplyFinish?: boolean;
   status: number;
   managerAudit: number;
   finishAudit?: number;

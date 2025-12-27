@@ -38,6 +38,11 @@
                     </template>
                 </el-table-column>
                 <el-table-column prop="transactionNo" label="关联交易" width="160" />
+                <el-table-column prop="dealPrice" label="成交价" width="120">
+                    <template #default="{ row }">
+                        <span style="font-weight: bold">{{ row.dealPrice == null ? '-' : `¥${row.dealPrice}` }}</span>
+                    </template>
+                </el-table-column>
                 <el-table-column prop="customerName" label="客户" width="100" />
                 <el-table-column prop="houseNo" label="房源" width="120" />
                 <el-table-column prop="amount" label="金额(元)" width="120">
@@ -103,6 +108,7 @@
                         <el-radio :label="1">定金</el-radio>
                         <el-radio :label="2">首付款</el-radio>
                         <el-radio :label="3">尾款</el-radio>
+                        <el-radio :label="5">贷款</el-radio>
                     </el-radio-group>
                 </el-form-item>
                 <el-form-item label="金额" prop="amount">
@@ -214,7 +220,7 @@ const rules = {
 
 // 方法
 const getPaymentTypeText = (type: number) => {
-    const map: Record<number, string> = { 1: '定金', 2: '首付款', 3: '尾款', 4: '中介费' };
+    const map: Record<number, string> = { 1: '定金', 2: '首付款', 3: '尾款', 4: '中介费', 5: '贷款' };
     return map[type] || '未知';
 };
 
