@@ -1,0 +1,59 @@
+@startuml
+        left to right direction
+        skinparam packageStyle rectangle
+
+        actor "系统管理员" as Admin
+        actor "销售经理" as Manager
+        actor "销售顾问" as Consultant
+        actor "财务人员" as Finance
+
+        package "房产销售管理系统" {
+        usecase "用户与角色管理" as UC_User
+        usecase "团队组织架构管理" as UC_Team
+        usecase "查看操作日志" as UC_Log
+
+        usecase "房源录入与维护" as UC_HouseAdd
+        usecase "房源审核" as UC_HouseAudit
+        usecase "房源分配" as UC_HouseAssign
+        usecase "查看销控表" as UC_ControlTable
+
+        usecase "客户档案管理" as UC_Client
+        usecase "带看记录录入" as UC_Visit
+
+        usecase "发起交易/签约" as UC_DealStart
+        usecase "交易审批" as UC_DealAudit
+        usecase "交易结案归档" as UC_DealClose
+
+        usecase "收款/退款管理" as UC_Payment
+        usecase "佣金核算" as UC_Commission
+        usecase "上传收款凭证" as UC_Voucher
+
+        usecase "查看业绩统计" as UC_Report
+        usecase "发布/接收通知" as UC_Notice
+        }
+
+        Admin --> UC_User
+        Admin --> UC_Team
+        Admin --> UC_Log
+        Admin --> UC_Notice
+
+        Manager --> UC_Team
+        Manager --> UC_HouseAudit
+        Manager --> UC_HouseAssign
+        Manager --> UC_DealAudit
+        Manager --> UC_Report
+        Manager --> UC_ControlTable
+
+        Consultant --> UC_HouseAdd
+        Consultant --> UC_Client
+        Consultant --> UC_Visit
+        Consultant --> UC_DealStart
+        Consultant --> UC_ControlTable
+        Consultant --> UC_Notice
+
+        Finance --> UC_Payment
+        Finance --> UC_Voucher
+        Finance --> UC_Commission
+        Finance --> UC_DealClose
+        Finance --> UC_Report
+        @enduml

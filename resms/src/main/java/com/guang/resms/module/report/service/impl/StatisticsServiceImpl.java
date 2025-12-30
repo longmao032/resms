@@ -4,6 +4,9 @@ import com.guang.resms.module.report.entity.vo.statistics.CustomerStatsVO;
 import com.guang.resms.module.report.entity.vo.statistics.HouseStatsVO;
 import com.guang.resms.module.report.entity.vo.statistics.CommissionStatsVO;
 import com.guang.resms.module.report.entity.vo.statistics.PaymentStatsVO;
+import com.guang.resms.module.report.entity.vo.statistics.TodoStatsVO;
+import com.guang.resms.module.report.entity.vo.statistics.TrendStatsVO;
+import com.guang.resms.module.report.entity.vo.statistics.TrendStatsVO.DailyStatsDTO;
 import com.guang.resms.module.report.entity.vo.statistics.TransactionStatsVO;
 import com.guang.resms.module.report.entity.dto.CommissionStatsDTO;
 import com.guang.resms.module.report.mapper.StatisticsMapper;
@@ -113,7 +116,9 @@ public class StatisticsServiceImpl implements StatisticsService {
             Long count = map.get("count") instanceof Number ? ((Number) map.get("count")).longValue() : 0L;
             java.math.BigDecimal amount = map.get("amount") instanceof java.math.BigDecimal
                     ? (java.math.BigDecimal) map.get("amount")
-                    : (map.get("amount") instanceof Number ? new java.math.BigDecimal(((Number) map.get("amount")).toString()) : java.math.BigDecimal.ZERO);
+                    : (map.get("amount") instanceof Number
+                            ? new java.math.BigDecimal(((Number) map.get("amount")).toString())
+                            : java.math.BigDecimal.ZERO);
 
             if (status != null) {
                 if (status == 0) {
@@ -257,5 +262,95 @@ public class StatisticsServiceImpl implements StatisticsService {
             case 2 -> "已发放";
             default -> "其他";
         };
+    }
+
+    @Override
+    public TodoStatsVO getTodoStats() {
+        TodoStatsVO vo = new TodoStatsVO();
+
+        Integer roleType = SecurityUtils.getRoleType();
+        Integer userId = SecurityUtils.getUserId();
+
+        if (roleType == null || userId == null) {
+            return vo; // 返回空数据
+        }
+
+        // 管理员待办
+        if (roleType == 1) {
+            // 待审核交易（managerAudit=0）
+            vo.setPendingTransactionAudits(statisticsMapper.countTransactionsByManagerAudit(0));
+            // 待审核房源（status=0）
+            Long houseCount = statisticsMapper.countHousesByStatus(0);
+            vo.setPendingHouseAudits(houseCount != null ? houseCount.intValue() : 0);
+            // 待审核项目（audit=0）
+            vo.setPendingProjectAudits(statisticsMapper.countProjectsByAudit(0));
+        }
+
+        // 销售经理待办
+        if (roleType == 3) {
+            // 团队待审核交易
+            vo.setTeamPendingTransactions(statisticsMapper.countTeamPendingTransactions(userId));
+        }
+
+        // 销售顾问待办
+        if (roleType == 2) {
+            // 我的待审核交易
+            vo.setMyPendingTransactions(statisticsMapper.countMyPendingTransactions(userId));
+            // 我的待跟进客户（假设需要跟进的客户）
+            vo.setMyFollowUpCustomers(statisticsMapper.countMyCustomers(userId));
+        }
+
+        // 财务待办
+        if (roleType == 4) {
+            // 待确认收款
+            Long paymentCount = statisticsMapper.countPendingConfirmPayments();
+            vo.setPendingPaymentConfirms(paymentCount != null ? paymentCount.intValue() : 0);
+            // 待发放佣金（status=1已核算）
+            vo.setPendingCommissions(statisticsMapper.countCommissionsByStatus(1));
+            // 待处理交易完成申请（finishAudit=0）
+            vo.setPendingFinanceConfirms(statisticsMapper.countTransactionsByFinishAudit(0));
+        }
+
+        return vo;
+    }
+
+    @Override
+    public TrendStatsVO getTrendStats(Integer days) {
+        // 默认查询近7天
+        if (days == null || days <= 0) {
+            days = 7;
+        }
+
+        TrendStatsVO vo = new TrendStatsVO();
+        List<DailyStatsDTO> dailyStats = new ArrayList<>();
+
+        // 生成近N天的日期范围
+        LocalDate today = LocalDate.now();
+        for (int i = days - 1; i >= 0; i--) {
+            LocalDate date = today.minusDays(i);
+            String dateStr = date.toString();
+
+            DailyStatsDTO dailyDTO = new DailyStatsDTO();
+            dailyDTO.setDate(dateStr);
+
+            // 查询当日新增客户数
+            Long newCustomers = statisticsMapper.countNewCustomersLineDate(dateStr);
+            dailyDTO.setNewCustomers(newCustomers != null ? newCustomers.intValue() : 0);
+
+            // 查询当日新增交易数（从selectRecentTransactionTrend获取）
+            // 这里简化处理，直接计算
+            dailyDTO.setNewTransactions(0); // 需要添加mapper方法
+
+            // 查询当日收款金额
+            dailyDTO.setPaymentAmount(statisticsMapper.sumPaymentAmountByDate(dateStr));
+
+            // 查询当日新增房源数
+            dailyDTO.setNewHouses(0); // 需要添加mapper方法
+
+            dailyStats.add(dailyDTO);
+        }
+
+        vo.setDailyStats(dailyStats);
+        return vo;
     }
 }

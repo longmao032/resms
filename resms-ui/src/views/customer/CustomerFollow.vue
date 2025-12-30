@@ -257,23 +257,48 @@ const resetForm = () => resetFormState();
 
 const submitForm = async () => {
   if (!formRef.value) return;
+  let valid = false;
   try {
-    await formRef.value.validate()
+    valid = await formRef.value.validate();
   } catch (err) {
-    return
+    valid = false;
+  }
+  if (!valid) {
+    ElMessage.warning('请完善表单信息');
+    return;
   }
 
   submitLoading.value = true;
   try {
-    const resAny: any = await reqUpdateViewRecord(formData)
-    const apiResp = resAny.data ?? resAny
-    if (apiResp && (apiResp.status || apiResp.code === 200)) {
+    const payload: ViewRecord = {
+      id: formData.id,
+      customerId: formData.customerId,
+      houseId: formData.houseId,
+      salesId: formData.salesId,
+      viewTime: formData.viewTime,
+      customerFeedback: formData.customerFeedback,
+      followAdvice: formData.followAdvice
+    };
+
+    const resAny: any = await reqUpdateViewRecord(payload);
+    const apiResp = resAny?.data ?? resAny;
+
+    const ok = apiResp === true
+      || apiResp?.status === true
+      || apiResp?.code === 200
+      || apiResp?.success === true;
+
+    if (ok) {
       ElMessage.success('操作成功');
       dialogVisible.value = false;
       loadData();
+      return;
     }
+
+    ElMessage.error(apiResp?.message || '操作失败');
   } catch (error) {
     console.error('保存带看记录失败:', error);
+    ElMessage.error('保存失败，请稍后重试');
   } finally {
     submitLoading.value = false;
   }

@@ -386,6 +386,25 @@ const submitLoading = ref(false)
 // 项目列表
 const projectList = ref<any[]>([])
 
+const normalizeIdToNumber = (val: any): number | undefined => {
+  if (val === null || val === undefined || val === '') {
+    return undefined
+  }
+  const n = Number(val)
+  return Number.isFinite(n) ? n : undefined
+}
+
+const ensureProjectOption = (projectId?: number, projectName?: string) => {
+  if (!projectId || !projectName) {
+    return
+  }
+  const exists = projectList.value?.some((p: any) => normalizeIdToNumber(p?.id) === projectId)
+  if (exists) {
+    return
+  }
+  projectList.value = [{ id: projectId, projectName }, ...(projectList.value || [])]
+}
+
 // 销售列表
 const salesList = ref<any[]>([])
 
@@ -514,6 +533,9 @@ const loadHouseDetail = async () => {
 
     if (house) {
 
+      const normalizedProjectId = normalizeIdToNumber(house.projectId)
+      const projectName = house.projectName || house.projectInfo?.projectName
+
       // 填充基本信息
       Object.assign(formData, {
         id: house.id,
@@ -529,11 +551,13 @@ const loadHouseDetail = async () => {
         orientation: house.orientation,
         decoration: house.decoration,
         buildingNo: house.buildingNo,
-        projectId: house.projectId,
+        projectId: normalizedProjectId,
         roomNo: house.roomNo,
         salesId: house.salesId,
         description: house.description
       })
+
+      ensureProjectOption(normalizedProjectId, projectName)
 
       // 填充扩展信息
       if (house.houseType === 2 && house.newHouseInfo) {
@@ -585,9 +609,21 @@ const loadHouseDetail = async () => {
 const loadProjectList = async () => {
   try {
     const res = await getProjectList()
-    if (res.status && res.data) {
-      projectList.value = res.data
+
+    const anyRes: any = res
+    let list: any[] = []
+    if (Array.isArray(anyRes)) {
+      list = anyRes
+    } else if (Array.isArray(anyRes?.data)) {
+      list = anyRes.data
+    } else if (Array.isArray(anyRes?.data?.data)) {
+      list = anyRes.data.data
     }
+
+    projectList.value = list.map((p: any) => ({
+      ...p,
+      id: normalizeIdToNumber(p?.id)
+    })).filter((p: any) => p.id !== undefined)
   } catch (error) {
     console.error('加载项目列表失败:', error)
     ElMessage.error('加载项目列表失败')
@@ -752,15 +788,16 @@ const goBack = () => {
   })
 }
 
-onMounted(() => {
+onMounted(async () => {
   if (isFinance()) {
     ElMessage.error('无权限编辑房源')
     router.push('/house/list')
     return
   }
-  loadProjectList()
+
+  await loadProjectList()
   loadSalesList()
-  loadHouseDetail()
+  await loadHouseDetail()
 })
 </script>
 

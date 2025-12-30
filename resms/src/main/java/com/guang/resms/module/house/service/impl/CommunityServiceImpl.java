@@ -199,6 +199,9 @@ public class CommunityServiceImpl extends ServiceImpl<SecondHouseCommunityMapper
     @Autowired
     private SecondHouseInfoMapper secondHouseInfoMapper;
 
+    @Autowired
+    private com.guang.resms.module.user.mapper.UserRoleMapper userRoleMapper;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean removeById(java.io.Serializable id) {
@@ -219,5 +222,58 @@ public class CommunityServiceImpl extends ServiceImpl<SecondHouseCommunityMapper
      */
     private Integer getManagerId(Integer userId) {
         return teamMemberMapper.selectManagerIdByUserId(userId);
+    }
+
+    @Override
+    public java.util.List<SecondHouseCommunity> getAllCommunities() {
+        // 获取当前用户信息
+        Integer currentUserId = SecurityUtils.getUserId();
+        Integer roleType = SecurityUtils.getRoleType();
+        Integer teamId = SecurityUtils.getTeamId();
+
+        // 构建查询条件:只查询审核通过(status=0)的小区
+        LambdaQueryWrapper<SecondHouseCommunity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(SecondHouseCommunity::getStatus, 0);
+
+        // 权限过滤:只能看到本团队成员和管理员创建的小区
+        java.util.List<Integer> allowedCreatorIds = new java.util.ArrayList<>();
+
+        // 1. 添加所有管理员ID
+        java.util.List<Integer> adminIds = userRoleMapper.selectAdminUserIds();
+        if (adminIds != null && !adminIds.isEmpty()) {
+            allowedCreatorIds.addAll(adminIds);
+        }
+
+        // 2. 添加团队成员ID
+        if (teamId != null) {
+            // 如果用户有团队,查询团队所有成员ID
+            if (roleType != null && roleType == 3) {
+                // 销售经理:查询自己团队的所有成员ID
+                java.util.List<Integer> teamMemberIds = teamMemberMapper.selectUserIdsByManagerId(currentUserId);
+                if (teamMemberIds != null && !teamMemberIds.isEmpty()) {
+                    allowedCreatorIds.addAll(teamMemberIds);
+                }
+            } else if (roleType != null && roleType == 2) {
+                // 销售顾问:查询经理ID,然后查询团队所有成员ID
+                Integer managerId = teamMemberMapper.selectManagerIdByUserId(currentUserId);
+                if (managerId != null) {
+                    java.util.List<Integer> teamMemberIds = teamMemberMapper.selectUserIdsByManagerId(managerId);
+                    if (teamMemberIds != null && !teamMemberIds.isEmpty()) {
+                        allowedCreatorIds.addAll(teamMemberIds);
+                    }
+                }
+            }
+        }
+
+        // 应用权限过滤
+        if (!allowedCreatorIds.isEmpty()) {
+            queryWrapper.in(SecondHouseCommunity::getCreatorId, allowedCreatorIds);
+        } else {
+            // 如果没有任何允许的创建者ID,返回空列表
+            queryWrapper.eq(SecondHouseCommunity::getId, -1);
+        }
+
+        queryWrapper.orderBy(true, true, SecondHouseCommunity::getId);
+        return communityMapper.selectList(queryWrapper);
     }
 }

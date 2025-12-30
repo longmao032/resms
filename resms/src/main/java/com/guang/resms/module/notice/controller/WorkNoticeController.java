@@ -68,6 +68,18 @@ public class WorkNoticeController {
     }
 
     /**
+     * 一键已读
+     */
+    @PostMapping("/read-all")
+    public ResponseResult<?> readAll() {
+        if (!noticeEnabled) {
+            return ResponseResult.fail(HttpEnums.FORBIDDEN.getCode(), "消息/通知功能已禁用");
+        }
+        workNoticeService.markAllAsRead(SecurityUtils.getUserId());
+        return ResponseResult.success("全部标记为已读");
+    }
+
+    /**
      * 撤回通知
      */
     @PostMapping("/withdraw/{id}")

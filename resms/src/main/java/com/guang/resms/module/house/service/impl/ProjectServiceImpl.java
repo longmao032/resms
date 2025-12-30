@@ -42,6 +42,9 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
     @Autowired
     private TeamMemberMapper teamMemberMapper;
 
+    @Autowired
+    private com.guang.resms.module.user.mapper.UserRoleMapper userRoleMapper;
+
     @Override
     public HashMap<String, ArrayList<String>> getAllCity() {
         // 1. 创建查询条件，只查询城市字段并去重
@@ -95,10 +98,54 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 
     @Override
     public List<Project> getAllProjects() {
-        // 查询所有项目，只返回 id 和 projectName 字段
-        LambdaQueryWrapper<Project> queryWrapper = new LambdaQueryWrapper<Project>()
-                .select(Project::getId, Project::getProjectName)
-                .orderBy(true, true, Project::getId);
+        // 获取当前用户信息
+        Integer currentUserId = SecurityUtils.getUserId();
+        Integer roleType = SecurityUtils.getRoleType();
+        Integer teamId = SecurityUtils.getTeamId();
+
+        // 构建查询条件:只查询在售状态(status=1)的项目
+        LambdaQueryWrapper<Project> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Project::getStatus, 1); // 只返回在售状态
+
+        // 权限过滤:只能看到本团队成员和管理员创建的项目
+        java.util.List<Integer> allowedCreatorIds = new java.util.ArrayList<>();
+
+        // 1. 添加所有管理员ID
+        java.util.List<Integer> adminIds = userRoleMapper.selectAdminUserIds();
+        if (adminIds != null && !adminIds.isEmpty()) {
+            allowedCreatorIds.addAll(adminIds);
+        }
+
+        // 2. 添加团队成员ID
+        if (teamId != null) {
+            // 如果用户有团队,查询团队所有成员ID
+            if (roleType != null && roleType == 3) {
+                // 销售经理:查询自己团队的所有成员ID
+                java.util.List<Integer> teamMemberIds = teamMemberMapper.selectUserIdsByManagerId(currentUserId);
+                if (teamMemberIds != null && !teamMemberIds.isEmpty()) {
+                    allowedCreatorIds.addAll(teamMemberIds);
+                }
+            } else if (roleType != null && roleType == 2) {
+                // 销售顾问:查询经理ID,然后查询团队所有成员ID
+                Integer managerId = teamMemberMapper.selectManagerIdByUserId(currentUserId);
+                if (managerId != null) {
+                    java.util.List<Integer> teamMemberIds = teamMemberMapper.selectUserIdsByManagerId(managerId);
+                    if (teamMemberIds != null && !teamMemberIds.isEmpty()) {
+                        allowedCreatorIds.addAll(teamMemberIds);
+                    }
+                }
+            }
+        }
+
+        // 应用权限过滤
+        if (!allowedCreatorIds.isEmpty()) {
+            queryWrapper.in(Project::getCreatorId, allowedCreatorIds);
+        } else {
+            // 如果没有任何允许的创建者ID,返回空列表
+            queryWrapper.eq(Project::getId, -1);
+        }
+
+        queryWrapper.orderBy(true, true, Project::getId);
         return projectMapper.selectList(queryWrapper);
     }
 

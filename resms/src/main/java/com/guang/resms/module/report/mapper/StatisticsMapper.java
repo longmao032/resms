@@ -56,4 +56,41 @@ public interface StatisticsMapper {
     List<Map<String, Object>> groupCommissionByStatus(@Param("dto") CommissionStatsDTO dto);
 
     List<Map<String, Object>> selectRecentCommissionTrend(@Param("dto") CommissionStatsDTO dto);
+
+    // --- 待办事项统计 ---
+
+    /**
+     * 根据经理审核状态统计交易数
+     */
+    Integer countTransactionsByManagerAudit(@Param("managerAudit") Integer managerAudit);
+
+    /**
+     * 根据审核状态统计项目数
+     */
+    Integer countProjectsByAudit(@Param("audit") Integer audit);
+
+    /**
+     * 统计团队待审核交易数（销售经理的团队成员的交易）
+     */
+    Integer countTeamPendingTransactions(@Param("managerId") Integer managerId);
+
+    /**
+     * 统计我的待审核交易数
+     */
+    Integer countMyPendingTransactions(@Param("salesId") Integer salesId);
+
+    /**
+     * 统计我的客户数
+     */
+    Integer countMyCustomers(@Param("salesId") Integer salesId);
+
+    /**
+     * 根据状态统计佣金数
+     */
+    Integer countCommissionsByStatus(@Param("status") Integer status);
+
+    /**
+     * 根据完成审核状态统计交易数
+     */
+    Integer countTransactionsByFinishAudit(@Param("finishAudit") Integer finishAudit);
 }

@@ -9,6 +9,8 @@ import com.guang.resms.module.customer.entity.dto.CustomerQueryDTO;
 import com.guang.resms.module.customer.mapper.CustomerMapper;
 import com.guang.resms.module.customer.service.CustomerService;
 import com.guang.resms.module.team.mapper.TeamMemberMapper;
+import com.guang.resms.module.transaction.entity.Transaction;
+import com.guang.resms.module.transaction.mapper.TransactionMapper;
 import com.guang.resms.common.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,9 @@ public class CustomerServiceImpl extends ServiceImpl<CustomerMapper, Customer> i
 
     @Autowired
     private TeamMemberMapper teamMemberMapper;
+
+    @Autowired
+    private TransactionMapper transactionMapper;
 
     @Override
     public Page<Customer> getCustomerPage(CustomerQueryDTO queryDTO) {
@@ -123,6 +128,24 @@ public class CustomerServiceImpl extends ServiceImpl<CustomerMapper, Customer> i
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean removeById(java.io.Serializable id) {
+        // 权限校验：仅管理员可删除客户
+        Integer roleType = SecurityUtils.getRoleType();
+        if (roleType == null || roleType != 1) {
+            throw new com.guang.resms.common.exception.ServiceException(
+                    "无权限删除客户，仅管理员可操作");
+        }
+
+        // 检查是否有关联的未完成交易（status!=5表示未取消）
+        LambdaQueryWrapper<Transaction> txWrapper = new LambdaQueryWrapper<>();
+        txWrapper.eq(Transaction::getCustomerId, id)
+                .ne(Transaction::getStatus, 5); // 5=已取消
+        Long txCount = transactionMapper.selectCount(txWrapper);
+
+        if (txCount != null && txCount > 0) {
+            throw new com.guang.resms.common.exception.ServiceException(
+                    "该客户存在关联的交易记录，无法删除。请先取消或完成相关交易");
+        }
+
         // 检查是否有关联的看房记录
         LambdaQueryWrapper<com.guang.resms.module.customer.entity.ViewRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(com.guang.resms.module.customer.entity.ViewRecord::getCustomerId, id);

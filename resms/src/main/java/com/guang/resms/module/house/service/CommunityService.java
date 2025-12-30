@@ -43,4 +43,11 @@ public interface CommunityService extends IService<SecondHouseCommunity> {
      * @param reason 审核原因（驳回时使用）
      */
     void auditCommunity(Integer id, Integer status, String reason);
+
+    /**
+     * 获取所有审核通过的小区（用于下拉选择）
+     * 
+     * @return 小区列表（只包含ID和名称）
+     */
+    java.util.List<SecondHouseCommunity> getAllCommunities();
 }

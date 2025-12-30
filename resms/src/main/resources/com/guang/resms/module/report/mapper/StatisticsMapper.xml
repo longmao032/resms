@@ -147,4 +147,55 @@
         ORDER BY date ASC
     </select>
 
+    <!-- 待办事项统计 -->
+    
+    <!-- 根据经理审核状态统计交易数 -->
+    <select id="countTransactionsByManagerAudit" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM tb_transaction WHERE manager_audit = #{managerAudit}
+    </select>
+    
+    <!-- 根据审核状态统计项目数 -->
+    <select id="countProjectsByAudit" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM tb_project WHERE status = #{audit}
+    </select>
+    
+    <!-- 统计团队待审核交易数（销售经理的团队成员的交易） -->
+    <select id="countTeamPendingTransactions" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT t.id)
+        FROM tb_transaction t
+        INNER JOIN tb_team_member tm ON t.sales_id = tm.user_id
+        INNER JOIN tb_team te ON tm.team_id = te.id
+        WHERE te.manager_id = #{managerId}
+        AND t.manager_audit = 0
+    </select>
+    
+    <!-- 统计我的待审核交易数 -->
+    <select id="countMyPendingTransactions" resultType="java.lang.Integer">
+        SELECT COUNT(*) 
+        FROM tb_transaction 
+        WHERE sales_id = #{salesId} 
+        AND manager_audit = 0
+    </select>
+    
+    <!-- 统计我的客户数 -->
+    <select id="countMyCustomers" resultType="java.lang.Integer">
+        SELECT COUNT(*) 
+        FROM tb_customer 
+        WHERE sales_id = #{salesId}
+    </select>
+    
+    <!-- 根据状态统计佣金数 -->
+    <select id="countCommissionsByStatus" resultType="java.lang.Integer">
+        SELECT COUNT(*) 
+        FROM tb_commission 
+        WHERE status = #{status}
+    </select>
+    
+    <!-- 根据完成审核状态统计交易数 -->
+    <select id="countTransactionsByFinishAudit" resultType="java.lang.Integer">
+        SELECT COUNT(*) 
+        FROM tb_transaction 
+        WHERE finish_audit = #{finishAudit}
+    </select>
+
 </mapper>

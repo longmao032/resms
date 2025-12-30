@@ -12,6 +12,7 @@ import com.guang.resms.module.user.mapper.UserMapper;
 import com.guang.resms.module.user.mapper.UserRoleMapper;
 import com.guang.resms.module.user.service.UserService;
 import com.guang.resms.common.exception.ServiceException;
+import com.guang.resms.common.utils.PasswordEncoder;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,16 +34,19 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final UserRoleMapper userRoleMapper;
     private final RoleMapper roleMapper;
+    private final PasswordEncoder passwordEncoder;
 
     // 默认密码
     private static final String DEFAULT_PASSWORD = "123456";
     // 日期格式化器
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public UserServiceImpl(UserMapper userMapper, UserRoleMapper userRoleMapper, RoleMapper roleMapper) {
+    public UserServiceImpl(UserMapper userMapper, UserRoleMapper userRoleMapper, RoleMapper roleMapper,
+            PasswordEncoder passwordEncoder) {
         this.userMapper = userMapper;
         this.userRoleMapper = userRoleMapper;
         this.roleMapper = roleMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -190,11 +194,12 @@ public class UserServiceImpl implements UserService {
         // 验证输入
         validateUserInput(user, null);
 
+        // 加密密码
         if (StringUtils.hasText(user.getPassword())) {
-            user.setPassword(user.getPassword());
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
         } else {
-            // 如果没有提供密码，使用默认密码
-            user.setPassword(DEFAULT_PASSWORD);
+            // 如果没有提供密码，使用默认密码并加密
+            user.setPassword(passwordEncoder.encode(DEFAULT_PASSWORD));
         }
 
         // 设置默认头像（如果没有设置）
@@ -223,9 +228,9 @@ public class UserServiceImpl implements UserService {
             throw new ServiceException("不能禁用系统管理员");
         }
 
-        // 如果提供了新密码
+        // 如果提供了新密码，需要加密
         if (StringUtils.hasText(user.getPassword())) {
-            user.setPassword(user.getPassword());
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
         } else {
             // 如果密码为空，不更新密码字段
             user.setPassword(null);
@@ -321,10 +326,10 @@ public class UserServiceImpl implements UserService {
             throw new ServiceException("用户不存在");
         }
 
-        // 重置为默认密码
+        // 重置为默认密码（需要加密）
         User updateUser = new User();
         updateUser.setId(userId);
-        updateUser.setPassword(DEFAULT_PASSWORD);
+        updateUser.setPassword(passwordEncoder.encode(DEFAULT_PASSWORD));
 
         int result = userMapper.updateById(updateUser);
         if (result <= 0) {
@@ -341,15 +346,15 @@ public class UserServiceImpl implements UserService {
             throw new ServiceException("用户不存在");
         }
 
-        // 验证原密码
-        if (!oldPassword.equals(user.getPassword())) {
+        // 验证原密码（使用BCrypt验证）
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
             throw new ServiceException("原密码错误");
         }
 
-        // 更新密码
+        // 更新密码（需要加密）
         User updateUser = new User();
         updateUser.setId(userId);
-        updateUser.setPassword(newPassword);
+        updateUser.setPassword(passwordEncoder.encode(newPassword));
 
         int result = userMapper.updateById(updateUser);
         if (result <= 0) {

@@ -6,11 +6,14 @@ import com.guang.resms.module.report.entity.vo.statistics.CustomerStatsVO;
 import com.guang.resms.module.report.entity.vo.statistics.CommissionStatsVO;
 import com.guang.resms.module.report.entity.vo.statistics.HouseStatsVO;
 import com.guang.resms.module.report.entity.vo.statistics.PaymentStatsVO;
+import com.guang.resms.module.report.entity.vo.statistics.TodoStatsVO;
+import com.guang.resms.module.report.entity.vo.statistics.TrendStatsVO;
 import com.guang.resms.module.report.entity.vo.statistics.TransactionStatsVO;
 import com.guang.resms.module.report.service.StatisticsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -58,5 +61,21 @@ public class StatisticsController {
     @GetMapping("/commission")
     public ResponseResult<CommissionStatsVO> getCommissionStats(CommissionStatsDTO dto) {
         return ResponseResult.success(statisticsService.getCommissionStats(dto));
+    }
+
+    /**
+     * 获取待办事项统计
+     */
+    @GetMapping("/todos")
+    public ResponseResult<TodoStatsVO> getTodoStats() {
+        return ResponseResult.success(statisticsService.getTodoStats());
+    }
+
+    /**
+     * 获取趋势统计数据
+     */
+    @GetMapping("/trends")
+    public ResponseResult<TrendStatsVO> getTrendStats(@RequestParam(defaultValue = "7") Integer days) {
+        return ResponseResult.success(statisticsService.getTrendStats(days));
     }
 }

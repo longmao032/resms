@@ -158,6 +158,17 @@
                 <el-descriptions-item label="客户">{{ currentDetail.customerName }}</el-descriptions-item>
                 <el-descriptions-item label="金额">¥{{ currentDetail.amount }}</el-descriptions-item>
                 <el-descriptions-item label="经办人">{{ currentDetail.financeName }}</el-descriptions-item>
+                <el-descriptions-item label="收据凭证" :span="2">
+                    <el-image 
+                        v-if="currentDetail.proofUrl" 
+                        :src="'/uploads' + currentDetail.proofUrl"
+                        :preview-src-list="['/uploads' + currentDetail.proofUrl]" 
+                        fit="cover"
+                        style="width: 100px; height: 100px; cursor: pointer;" 
+                        preview-teleported 
+                    />
+                    <span v-else style="color: #909399;">暂无凭证</span>
+                </el-descriptions-item>
             </el-descriptions>
         </el-dialog>
     </div>

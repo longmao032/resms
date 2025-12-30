@@ -22,7 +22,6 @@ public class ViewRecordController {
         return ResponseResult.success(viewRecordService.getViewRecordPage(queryDTO));
     }
 
-    // 新增记录接口已删除 - 跟进记录由预约看房完成后自动生成
 
     // 更新记录
     @PutMapping

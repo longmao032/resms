@@ -143,4 +143,13 @@ public class CommunityController {
             throw new ServiceException(HttpEnums.FORBIDDEN.getCode(), "权限不足");
         }
     }
+
+    /**
+     * 获取所有审核通过的小区列表（用于下拉选择）
+     */
+    @GetMapping("/all")
+    public ResponseResult<java.util.List<SecondHouseCommunity>> getAllCommunities() {
+        java.util.List<SecondHouseCommunity> communities = communityService.getAllCommunities();
+        return ResponseResult.success(communities);
+    }
 }

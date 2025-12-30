@@ -30,4 +30,12 @@ public interface UserRoleMapper extends BaseMapper<UserRole> {
      * @return 主角色ID
      */
     Integer selectPrimaryRoleIdByUserId(@Param("userId") Integer userId);
+
+    /**
+     * 查询所有管理员用户ID列表 (roleId=1)
+     * 
+     * @return 管理员用户ID列表
+     */
+    @org.apache.ibatis.annotations.Select("SELECT user_id FROM tb_user_role WHERE role_id = 1")
+    List<Integer> selectAdminUserIds();
 }

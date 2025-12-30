@@ -155,7 +155,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Refresh, TrendCharts, List, Download } from '@element-plus/icons-vue'
-import { getTeamPerformance } from '@/api/team'
+import { getTeamPerformance, exportTeamPerformance } from '@/api/team'
 import type { TeamPerformanceQuery, TeamPerformanceVO, PerformanceSummary } from '@/api/team/type'
 
 // 状态定义
@@ -259,8 +259,40 @@ const handleDateChange = (val: [string, string] | null) => {
   }
 }
 
-const handleExport = () => {
-  ElMessage.success('导出功能开发中...')
+const handleExport = async () => {
+  try {
+    loading.value = true
+    const res = await exportTeamPerformance(queryParams) as any
+    
+    // 创建Blob对象
+    const blob = new Blob([res], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    })
+    
+    // 创建下载链接
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    
+    // 生成文件名
+    const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+    link.download = `团队业绩报表_${timestamp}.xlsx`
+    
+    // 触发下载
+    document.body.appendChild(link)
+    link.click()
+    
+    // 清理
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    
+    ElMessage.success('导出成功')
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败，请稍后重试')
+  } finally {
+    loading.value = false
+  }
 }
 
 // 辅助函数

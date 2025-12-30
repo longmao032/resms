@@ -22,7 +22,19 @@ export const useUserStore = defineStore('user', () => {
 
   // Getters
   const currentUser = computed(() => userInfo.value)
-  const userMenus = computed(() => menus.value)
+
+  // 菜单排序：强制首页排第一
+  const sortMenus = (menuList: Menu[]) => {
+    return [...menuList].sort((a, b) => {
+      // 首页（path为/dashboard）永远排第一
+      if (a.path === '/dashboard') return -1
+      if (b.path === '/dashboard') return 1
+      // 其他菜单按sortOrder排序
+      return (a.sortOrder || 0) - (b.sortOrder || 0)
+    })
+  }
+
+  const userMenus = computed(() => sortMenus(menus.value))
   const userPermissions = computed(() => permissions.value)
   const hasPermission = (permission: string) =>
     permissions.value.includes('*') || permissions.value.includes(permission)

@@ -27,9 +27,9 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
     private final RoleMapper roleMapper;
 
     public JwtAuthInterceptor(JwtUtil jwtUtil,
-                              ObjectMapper objectMapper,
-                              UserRoleMapper userRoleMapper,
-                              RoleMapper roleMapper) {
+            ObjectMapper objectMapper,
+            UserRoleMapper userRoleMapper,
+            RoleMapper roleMapper) {
         this.jwtUtil = jwtUtil;
         this.objectMapper = objectMapper;
         this.userRoleMapper = userRoleMapper;
@@ -37,12 +37,14 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+            throws Exception {
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             return true;
         }
 
         String path = request.getRequestURI();
+        // 放行登录接口
         if ("/auth/login".equals(path)) {
             return true;
         }

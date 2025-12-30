@@ -93,8 +93,8 @@ const isDev = computed(() => {
 
 // 表单数据
 const formData = reactive({
-  username: 'zhangsan',
-  password: '123456',
+  username: '',
+  password: '',
   rememberMe: false
 })
 
@@ -176,7 +176,7 @@ const handleLogin = async () => {
     saveRememberedCredentials()
 
     ElMessage.success('登录成功，欢迎使用系统！')
-    router.push('/')
+    router.push('/dashboard')
 
   } catch (err: any) {
     console.error('登录失败:', err)

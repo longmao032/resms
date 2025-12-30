@@ -30,6 +30,15 @@ export function readNotice(id: number, config?: any) {
     })
 }
 
+// 一键已读
+export function readAllNotices(config?: any) {
+    return request({
+        url: '/work-notice/read-all',
+        method: 'post',
+        ...(config || {})
+    })
+}
+
 // 删除通知
 export function deleteNotice(id: number, config?: any) {
     return request({

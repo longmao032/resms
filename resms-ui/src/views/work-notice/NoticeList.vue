@@ -24,6 +24,7 @@
         <el-form-item>
           <el-button type="primary" @click="handleQuery">查询</el-button>
           <el-button @click="resetQuery">重置</el-button>
+          <el-button type="warning" @click="handleReadAll">一键已读</el-button>
           <el-button v-if="canSend" type="success" @click="handleSend">发布通知</el-button>
         </el-form-item>
       </el-form>
@@ -130,7 +131,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
-import { getNoticeList, readNotice, deleteNotice } from '@/api/notice'
+import { getNoticeList, readNotice, readAllNotices, deleteNotice } from '@/api/notice'
 import { useUserStore } from '@/stores/userStore'
 import { useNoticeStore } from '@/stores/noticeStore'
 import { User, Warning } from '@element-plus/icons-vue'
@@ -222,6 +223,23 @@ const resetQuery = () => {
 
 const handleSend = () => {
   formVisible.value = true
+}
+
+const handleReadAll = async () => {
+  try {
+    await ElMessageBox.confirm('确定要将所有未读通知标记为已读吗？', '提示', { 
+      type: 'warning',
+      confirmButtonText: '确定',
+      cancelButtonText: '取消'
+    })
+    await readAllNotices()
+    ElMessage.success('全部标记为已读')
+    // 刷新列表和未读计数
+    handleQuery()
+    noticeStore.fetchUnread()
+  } catch {
+    // 用户取消操作
+  }
 }
 
 const handleDetail = async (item: any) => {

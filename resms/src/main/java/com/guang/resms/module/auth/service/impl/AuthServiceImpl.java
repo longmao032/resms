@@ -12,6 +12,7 @@ import com.guang.resms.module.user.mapper.RoleMapper;
 import com.guang.resms.module.auth.service.AuthService;
 import com.guang.resms.module.user.service.PermissionService;
 import com.guang.resms.common.utils.JwtUtil;
+import com.guang.resms.common.utils.PasswordEncoder;
 import com.guang.resms.common.exception.HttpEnums;
 import com.guang.resms.common.exception.ServiceException;
 import org.springframework.stereotype.Service;
@@ -30,10 +31,11 @@ public class AuthServiceImpl implements AuthService {
     private final TeamMemberMapper teamMemberMapper;
     private final UserRoleMapper userRoleMapper;
     private final RoleMapper roleMapper;
+    private final PasswordEncoder passwordEncoder;
 
     public AuthServiceImpl(UserMapper userMapper, JwtUtil jwtUtil, PermissionService permissionService,
             TeamMapper teamMapper, TeamMemberMapper teamMemberMapper,
-            UserRoleMapper userRoleMapper, RoleMapper roleMapper) {
+            UserRoleMapper userRoleMapper, RoleMapper roleMapper, PasswordEncoder passwordEncoder) {
         this.userMapper = userMapper;
         this.jwtUtil = jwtUtil;
         this.permissionService = permissionService;
@@ -41,6 +43,7 @@ public class AuthServiceImpl implements AuthService {
         this.teamMemberMapper = teamMemberMapper;
         this.userRoleMapper = userRoleMapper;
         this.roleMapper = roleMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -54,19 +57,23 @@ public class AuthServiceImpl implements AuthService {
         }
 
         try {
-            // 3. 查询用户（只查询启用状态的用户）
+            // 3. 查询用户（不限定状态，以便能正确提示账号被锁定）
             User user = userMapper.selectOne(new LambdaQueryWrapper<User>()
-                    .eq(User::getUsername, username.trim())
-                    .eq(User::getStatus, 1)); // 只查询启用状态的用户
+                    .eq(User::getUsername, username.trim()));
 
             // 4. 检查用户是否存在
             if (user == null) {
                 throw new ServiceException(HttpEnums.USERNAME_PASSWORD_ERROR.getMessage());
             }
 
-            // 5. 验证密码（注意：当前是明文比较，建议后续使用BCrypt加密）
-            if (!password.equals(user.getPassword())) {
+            // 5. 验证密码（使用BCrypt加密验证）
+            if (!passwordEncoder.matches(password, user.getPassword())) {
                 throw new ServiceException(HttpEnums.USERNAME_PASSWORD_ERROR.getMessage());
+            }
+
+            // 6. 检查账号状态
+            if (user.getStatus() != 1) {
+                throw new ServiceException("账号已被锁定，请联系管理员");
             }
 
             // 6. 查询用户的主角色ID

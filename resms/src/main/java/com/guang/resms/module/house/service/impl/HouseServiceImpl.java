@@ -641,9 +641,9 @@ public class HouseServiceImpl implements HouseService {
             throw new ServiceException("房源不存在");
         }
 
-        // 检查房源状态（已预订/已成交的房源不能删除）
-        if (house.getStatus() != null && (house.getStatus() == 2 || house.getStatus() == 3)) {
-            throw new ServiceException("已预订或已成交的房源不能删除");
+        // 检查房源状态（在售/已预订/已成交的房源不能删除）
+        if (house.getStatus() != null && (house.getStatus() == 1 || house.getStatus() == 2 || house.getStatus() == 3)) {
+            throw new ServiceException("在售、已预订或已成交的房源不能删除");
         }
 
         // 检查是否有关联的交易记录（未取消/未结束）

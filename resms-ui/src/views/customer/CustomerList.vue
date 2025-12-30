@@ -151,8 +151,8 @@ import { useUserStore } from '@/stores/userStore';
 // User Store
 const userStore = useUserStore();
 const roleType = computed(() => userStore.userInfo?.roleType);
-// 权限计算属性: 销售顾问(roleType=3)不能删除
-const canDelete = computed(() => roleType.value !== 2);
+// 权限计算属性: 仅管理员(roleType=1)可删除客户
+const canDelete = computed(() => roleType.value === 1);
 
 // --- 状态定义 ---
 const loading = ref(false);

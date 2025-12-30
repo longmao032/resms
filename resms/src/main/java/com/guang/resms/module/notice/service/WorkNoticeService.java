@@ -24,6 +24,11 @@ public interface WorkNoticeService extends IService<WorkNotice> {
     void markAsRead(Integer userId, Integer noticeId);
 
     /**
+     * 一键已读（标记当前用户所有未读通知为已读）
+     */
+    void markAllAsRead(Integer userId);
+
+    /**
      * 获取我的通知列表
      */
     IPage<WorkNoticeVO> getMyNoticePage(WorkNoticeQueryDTO dto, Integer userId, Integer roleId);

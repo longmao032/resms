@@ -7,7 +7,7 @@
 
     <div class="stats-cards">
       <el-row :gutter="20">
-        <el-col :span="6">
+        <el-col :span="6" v-if="visibleCards.includes('users')">
           <el-card class="stat-card">
             <div class="stat-content">
               <div class="stat-icon">
@@ -20,7 +20,7 @@
             </div>
           </el-card>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="6" v-if="visibleCards.includes('houses')">
           <el-card class="stat-card">
             <div class="stat-content">
               <div class="stat-icon">
@@ -33,7 +33,7 @@
             </div>
           </el-card>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="6" v-if="visibleCards.includes('transactions')">
           <el-card class="stat-card">
             <div class="stat-content">
               <div class="stat-icon">
@@ -46,7 +46,7 @@
             </div>
           </el-card>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="6" v-if="visibleCards.includes('commissions')">
           <el-card class="stat-card">
             <div class="stat-content">
               <div class="stat-icon">
@@ -62,8 +62,11 @@
       </el-row>
     </div>
 
+    <!-- 趋势图表 - 所有角色可见 -->
+    <TrendChart v-if="shouldShowTrends" />
 
-
+    <!-- 待办事项 - 根据角色显示不同待办 -->
+    <TodoList />
   
   </div>
 </template>
@@ -80,6 +83,8 @@ import {
 import { useUserStore } from '@/stores/userStore'
 import { reqUserPage } from '@/api/user'
 import { getHouseStats, getTransactionStats, getCommissionStats } from '@/api/statistics'
+import TrendChart from '@/components/TrendChart.vue'
+import TodoList from '@/components/TodoList.vue'
 
 const userStore = useUserStore()
 
@@ -91,6 +96,32 @@ const currentDate = computed(() => {
     day: 'numeric',
     weekday: 'long'
   })
+})
+
+// 角色个性化 - 判断是否显示趋势图表
+const shouldShowTrends = computed(() => {
+  const roleType = userStore.currentUser?.roleType
+  // 所有角色都可以看趋势图表
+  return roleType !== undefined
+})
+
+// 角色个性化 - 根据角色显示不同的统计卡片
+const visibleCards = computed(() => {
+  const roleType = userStore.currentUser?.roleType
+  
+  if (roleType === 1) {
+    // 管理员 - 显示全部统计
+    return ['users', 'houses', 'transactions', 'commissions']
+  } else if (roleType === 2 || roleType === 3) {
+    // 销售顾问/销售经理 - 显示房源、交易、佣金
+    return ['houses', 'transactions', 'commissions']
+  } else if (roleType === 4) {
+    // 财务 - 显示交易、佣金
+    return ['transactions', 'commissions']
+  }
+  
+  // 默认显示全部
+  return ['users', 'houses', 'transactions', 'commissions']
 })
 
 const loading = ref(false)

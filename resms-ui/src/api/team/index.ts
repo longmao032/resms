@@ -90,3 +90,15 @@ export function getTeamPerformance(params: TeamPerformanceQuery) {
   })
 }
 
+/**
+ * 导出团队业绩
+ */
+export function exportTeamPerformance(params: TeamPerformanceQuery) {
+  return request({
+    url: '/team/performance/export',
+    method: 'get',
+    params,
+    responseType: 'blob' // 重要: 设置响应类型为blob
+  })
+}
+

@@ -19,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class WorkNoticeServiceImpl extends ServiceImpl<WorkNoticeMapper, WorkNotice> implements WorkNoticeService {
@@ -128,6 +130,45 @@ public class WorkNoticeServiceImpl extends ServiceImpl<WorkNoticeMapper, WorkNot
             noticeReadMapper.insert(read);
 
             // 更新主表的已读计数（原子操作）
+            workNoticeMapper.incrementReadCount(noticeId);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void markAllAsRead(Integer userId) {
+        // 1. 查询当前用户的所有通知（分页查询所有，设置较大页面）
+        WorkNoticeQueryDTO dto = new WorkNoticeQueryDTO();
+        dto.setPageNum(1);
+        dto.setPageSize(10000); // 获取所有通知
+
+        Integer roleId = SecurityUtils.getRoleType();
+        IPage<WorkNoticeVO> noticePage = workNoticeMapper.selectMyNoticePage(
+                new Page<>(dto.getPageNum(), dto.getPageSize()),
+                dto,
+                userId,
+                roleId);
+
+        // 2. 过滤出未读的通知ID
+        List<Integer> unreadNoticeIds = noticePage.getRecords().stream()
+                .filter(notice -> !notice.getIsRead())
+                .map(WorkNoticeVO::getId)
+                .collect(Collectors.toList());
+
+        if (unreadNoticeIds.isEmpty()) {
+            return; // 没有未读通知，直接返回
+        }
+
+        // 3. 批量插入已读记录
+        Date now = new Date();
+        for (Integer noticeId : unreadNoticeIds) {
+            NoticeRead read = new NoticeRead();
+            read.setNoticeId(noticeId);
+            read.setUserId(userId);
+            read.setReadTime(now);
+            noticeReadMapper.insert(read);
+
+            // 4. 更新已读计数
             workNoticeMapper.incrementReadCount(noticeId);
         }
     }
